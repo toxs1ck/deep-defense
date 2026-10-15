@@ -20,3 +20,5 @@ extends Resource
 @export var air_acceleration: float = 30.0
 ## Wie schnell sich das Modell in Laufrichtung dreht.
 @export var turn_speed: float = 20.0
+## Reichweite für Interaktionen in Metern, gemessen ab Augenhöhe.
+@export var interaction_range: float = 2.5

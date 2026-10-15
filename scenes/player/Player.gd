@@ -1,8 +1,19 @@
+class_name Player
 extends CharacterBody3D
 ## Spielfigur: läuft relativ zur Kamera, sprintet und springt.
 ## Der Node-Name ist die Peer-ID des Besitzers. Nur der Besitzer simuliert die Bewegung (direktes Spielgefühl);
 ## alle anderen bekommen Position und Blickrichtung über den MultiplayerSynchronizer und glätten sie.
 ## Der Körper selbst dreht sich nicht; nur „Model“ schaut in Laufrichtung, damit die Kamera unabhängig bleibt.
+
+## Nur beim lokalen Spieler: das anvisierte Objekt hat gewechselt (null = nichts im Visier).
+signal interaction_target_changed(target: InteractableComponent)
+
+const GROUP: StringName = &"players"
+## Augenhöhe über den Füßen; Startpunkt für die Reichweite von Interaktionen.
+const EYE_HEIGHT: float = 1.6
+## Physik-Ebenen, die der Interaktions-Raycast trifft: world (1), buildable (4), interactable (6).
+## Wände blockieren damit die Sicht auf Objekte dahinter.
+const INTERACTION_MASK: int = (1 << 0) | (1 << 3) | (1 << 5)
 
 @export var data: PlayerData
 ## Wie schnell fremde Figuren zur empfangenen Position aufschließen. Höher = direkter, aber ruckeliger.
@@ -18,6 +29,8 @@ extends CharacterBody3D
 @onready var _model: Node3D = $Model
 @onready var _body: MeshInstance3D = $Model/Body
 
+var _interaction_target: InteractableComponent = null
+
 ## Restzeit, in der ein Sprung noch erlaubt ist; am Boden immer voll.
 var _coyote_timer: float = 0.0
 ## Restzeit, in der ein gedrückter Sprung noch auf Bodenkontakt wartet.
@@ -25,6 +38,7 @@ var _jump_buffer_timer: float = 0.0
 
 
 func _enter_tree() -> void:
+	add_to_group(GROUP)
 	# Läuft vor _ready und auf allen Peers, damit die Autorität überall gleich gesetzt ist.
 	if name.is_valid_int():
 		set_multiplayer_authority(name.to_int())
@@ -94,6 +108,10 @@ func _physics_process(delta: float) -> void:
 	sync_position = global_position
 	sync_yaw = _model.rotation.y
 
+	_update_interaction_target()
+	if _interaction_target and Input.is_action_just_pressed("interact"):
+		_interaction_target.request_interact()
+
 
 ## Jeder Spieler bekommt eine eigene Farbe aus seiner Peer-ID, damit man Figuren unterscheiden kann.
 ## Der Host (ID 1) behält das Orange aus der Szene.
@@ -104,3 +122,26 @@ func _apply_player_color() -> void:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = Color.from_hsv(fposmod(peer_id * 0.618034, 1.0), 0.65, 0.85)
 	_body.material_override = material
+
+
+## Raycast von der Kamera durch die Bildmitte. Getroffen zählt nur, was vor der Figur und in Reichweite liegt.
+func _update_interaction_target() -> void:
+	var view := _camera.get_view_transform()
+	var eye := global_position + Vector3.UP * EYE_HEIGHT
+	var forward := -view.basis.z
+	var reach := view.origin.distance_to(eye) + data.interaction_range
+	var query := PhysicsRayQueryParameters3D.create(view.origin, view.origin + forward * reach, INTERACTION_MASK, [get_rid()])
+	query.collide_with_areas = true
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+
+	var target: InteractableComponent = null
+	if not hit.is_empty():
+		var hit_position: Vector3 = hit["position"]
+		var candidate := hit["collider"] as InteractableComponent
+		var in_front := (hit_position - eye).dot(forward) > 0.0
+		if candidate and candidate.enabled and in_front and eye.distance_to(hit_position) <= data.interaction_range:
+			target = candidate
+
+	if target != _interaction_target:
+		_interaction_target = target
+		interaction_target_changed.emit(target)

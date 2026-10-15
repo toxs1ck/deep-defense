@@ -46,6 +46,11 @@ func activate() -> void:
 	set_process_unhandled_input(true)
 
 
+## Globale Transformation der eigentlichen Kamera, z. B. für Raycasts durch die Bildmitte.
+func get_view_transform() -> Transform3D:
+	return _camera.global_transform
+
+
 ## Basis nur mit der Gier der Kamera, um Eingaben relativ zur Blickrichtung umzurechnen.
 func get_yaw_basis() -> Basis:
 	return Basis(Vector3.UP, global_rotation.y)

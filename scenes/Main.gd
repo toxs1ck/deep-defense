@@ -10,12 +10,15 @@ const SPAWN_SPACING: float = 1.5
 @onready var _players: Node3D = $Players
 @onready var _menu: MainMenu = $UI/MainMenu
 @onready var _help: Label = $UI/Help
+@onready var _hud: HUD = $UI/HUD
 @onready var _network_status: Label = $UI/NetworkStatus
 
 
 func _ready() -> void:
 	print("Deep Defense gestartet – Godot %s" % Engine.get_version_info().string)
 	_help.visible = false
+	_hud.visible = false
+	_players.child_entered_tree.connect(_on_player_added)
 	_network_status.visible = false
 	_menu.host_requested.connect(_on_host_requested)
 	_menu.join_requested.connect(_on_join_requested)
@@ -72,6 +75,7 @@ func _on_join_requested(address: String) -> void:
 func _on_session_started() -> void:
 	_menu.visible = false
 	_help.visible = true
+	_hud.visible = true
 	_network_status.visible = true
 	# Hilft beim Testen mit mehreren Fenstern, sie auseinanderzuhalten.
 	var role := "Host" if multiplayer.is_server() else "Client %d" % multiplayer.get_unique_id()
@@ -95,6 +99,13 @@ func _on_player_joined(peer_id: int) -> void:
 	var spawn := SPAWN_ORIGIN + Vector3(SPAWN_SPACING * _players.get_child_count(), 0, 0)
 	player.set("sync_position", spawn)
 	_players.add_child(player, true)
+
+
+## Läuft auf allen Peers, auch für vom MultiplayerSpawner erzeugte Figuren. Nur die eigene Figur speist das HUD.
+func _on_player_added(node: Node) -> void:
+	var player := node as Player
+	if player and player.is_multiplayer_authority():
+		player.interaction_target_changed.connect(_hud.show_interaction)
 
 
 func _on_player_left(peer_id: int) -> void:
