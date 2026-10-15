@@ -1,7 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/world/Stairs.tscn" id="1_stairs"]
-[ext_resource type="PackedScene" path="res://scenes/world/TestRock.tscn" id="2_rock"]
+[ext_resource type="PackedScene" path="res://scenes/world/OreDeposit.tscn" id="2_deposit"]
+[ext_resource type="Resource" path="res://data/ores/coal.tres" id="3_coal"]
+[ext_resource type="Resource" path="res://data/ores/iron.tres" id="4_iron"]
+[ext_resource type="Resource" path="res://data/ores/gold.tres" id="5_gold"]
+[ext_resource type="Resource" path="res://data/ores/crystal.tres" id="6_crystal"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
 albedo_color = Color(0.32, 0.27, 0.22, 1)
@@ -101,5 +105,18 @@ material = SubResource("StandardMaterial3D_wall")
 [node name="Stairs" parent="." instance=ExtResource("1_stairs")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -1.3)
 
-[node name="TestRock" parent="." instance=ExtResource("2_rock")]
+[node name="CoalDeposit" parent="." instance=ExtResource("2_deposit")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0, 1)
+ore = ExtResource("3_coal")
+
+[node name="IronDeposit" parent="." instance=ExtResource("2_deposit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, 3)
+ore = ExtResource("4_iron")
+
+[node name="GoldDeposit" parent="." instance=ExtResource("2_deposit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, -4)
+ore = ExtResource("5_gold")
+
+[node name="CrystalDeposit" parent="." instance=ExtResource("2_deposit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, -12)
+ore = ExtResource("6_crystal")

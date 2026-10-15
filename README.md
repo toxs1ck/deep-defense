@@ -44,4 +44,5 @@ Zusätzlich (nicht im GDD): `camera_switch_shoulder` – V / rechten Stick drüc
 - [x] 2 – Spielfigur & Kamera
 - [x] 3 – Netzwerk-Basis
 - [x] 4 – Interaktion
-- [ ] 5 – Erzvorkommen & Abbau
+- [x] 5 – Erzvorkommen & Abbau
+- [ ] 6 – Tragen & Ablegen

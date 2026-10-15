@@ -30,6 +30,8 @@ const INTERACTION_MASK: int = (1 << 0) | (1 << 3) | (1 << 5)
 @onready var _body: MeshInstance3D = $Model/Body
 
 var _interaction_target: InteractableComponent = null
+## Wartezeit bis zur nächsten wiederholten Interaktion beim Gedrückthalten.
+var _interact_cooldown: float = 0.0
 
 ## Restzeit, in der ein Sprung noch erlaubt ist; am Boden immer voll.
 var _coyote_timer: float = 0.0
@@ -109,8 +111,12 @@ func _physics_process(delta: float) -> void:
 	sync_yaw = _model.rotation.y
 
 	_update_interaction_target()
-	if _interaction_target and Input.is_action_just_pressed("interact"):
-		_interaction_target.request_interact()
+	_interact_cooldown = maxf(0.0, _interact_cooldown - delta)
+	if _interaction_target and _interact_cooldown <= 0.0:
+		var held := _interaction_target.allow_hold and Input.is_action_pressed("interact")
+		if held or Input.is_action_just_pressed("interact"):
+			_interaction_target.request_interact()
+			_interact_cooldown = 1.0 / data.mining_rate if _interaction_target.allow_hold else 0.0
 
 
 ## Jeder Spieler bekommt eine eigene Farbe aus seiner Peer-ID, damit man Figuren unterscheiden kann.

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="OreData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/OreData.gd" id="1_ore"]
+
+[resource]
+script = ExtResource("1_ore")
+display_name = "Gold"
+value = 30
+hits_per_chunk = 6
+chunks_per_deposit = 4
+weight = 2
+color = Color(0.95, 0.75, 0.2, 1)

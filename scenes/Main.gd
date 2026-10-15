@@ -4,10 +4,12 @@ extends Node3D
 ## Zum schnellen Testen per Kommandozeile: „-- --host“ oder „-- --join=127.0.0.1“.
 
 const PLAYER_SCENE: PackedScene = preload("res://scenes/player/Player.tscn")
+const CHUNK_SCENE: PackedScene = preload("res://scenes/world/OreChunk.tscn")
 const SPAWN_ORIGIN: Vector3 = Vector3(0, 0, 4)
 const SPAWN_SPACING: float = 1.5
 
 @onready var _players: Node3D = $Players
+@onready var _chunks: Node3D = $Chunks
 @onready var _menu: MainMenu = $UI/MainMenu
 @onready var _help: Label = $UI/Help
 @onready var _hud: HUD = $UI/HUD
@@ -19,6 +21,8 @@ func _ready() -> void:
 	_help.visible = false
 	_hud.visible = false
 	_players.child_entered_tree.connect(_on_player_added)
+	for deposit: OreDeposit in get_tree().get_nodes_in_group(OreDeposit.GROUP):
+		deposit.chunk_broken_off.connect(_on_chunk_broken_off)
 	_network_status.visible = false
 	_menu.host_requested.connect(_on_host_requested)
 	_menu.join_requested.connect(_on_join_requested)
@@ -106,6 +110,16 @@ func _on_player_added(node: Node) -> void:
 	var player := node as Player
 	if player and player.is_multiplayer_authority():
 		player.interaction_target_changed.connect(_hud.show_interaction)
+
+
+## Nur auf dem Host: Brocken spawnen, der ChunkSpawner repliziert sie zu den Clients.
+func _on_chunk_broken_off(ore: OreData, spawn_position: Vector3, impulse: Vector3) -> void:
+	var chunk := CHUNK_SCENE.instantiate() as OreChunk
+	chunk.ore_path = ore.resource_path
+	chunk.position = spawn_position
+	chunk.sync_position = spawn_position
+	_chunks.add_child(chunk, true)
+	chunk.apply_central_impulse(impulse * chunk.mass)
 
 
 func _on_player_left(peer_id: int) -> void:

@@ -14,6 +14,8 @@ const HOST_RANGE_TOLERANCE: float = 2.0
 ## Text im Prompt, z. B. „Abbauen“ → „E: Abbauen“.
 @export var prompt_text: String = "Benutzen"
 @export var enabled: bool = true
+## Gedrückt halten wiederholt die Interaktion im Takt der Abbaurate des Spielers (z. B. Abbauen).
+@export var allow_hold: bool = false
 
 
 func _ready() -> void:

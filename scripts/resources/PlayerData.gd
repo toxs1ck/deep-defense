@@ -22,3 +22,5 @@ extends Resource
 @export var turn_speed: float = 20.0
 ## Reichweite für Interaktionen in Metern, gemessen ab Augenhöhe.
 @export var interaction_range: float = 2.5
+## Schläge pro Sekunde mit der Spitzhacke beim Abbauen (GDD: 1,5).
+@export var mining_rate: float = 1.5
