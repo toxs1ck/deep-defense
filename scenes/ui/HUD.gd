@@ -1,6 +1,6 @@
 class_name HUD
 extends Control
-## Spiel-HUD: Teamkasse, Fadenkreuz und Interaktions-Prompt („E: Abbauen“), beim Tragen der Hinweis zum Ablegen/Werfen.
+## Spiel-HUD: Teamkasse, Schicht und Phase, Fadenkreuz und Interaktions-Prompt („E: Abbauen“), beim Tragen der Hinweis zum Ablegen/Werfen.
 ## Die angezeigte Taste kommt aus der Input Map und wechselt zwischen Tastatur und Controller,
 ## je nachdem, was zuletzt benutzt wurde.
 
@@ -18,17 +18,30 @@ const MOUSE_BUTTON_NAMES: Dictionary = {
 
 @onready var _prompt_label: Label = %PromptLabel
 @onready var _money_label: Label = %MoneyLabel
+@onready var _run_label: Label = %RunLabel
+@onready var _banner_label: Label = %BannerLabel
 
 var _target: InteractableComponent = null
 var _carrying: bool = false
 ## Zuletzt angezeigter Betrag; -1 = noch keiner, dann ohne Aufleuchten.
 var _money: int = -1
+var _banner_tween: Tween = null
 var _using_gamepad: bool = false
 
 
 func _ready() -> void:
 	_prompt_label.visible = false
 	set_money(Economy.team_money)
+	_banner_label.visible = false
+	RunManager.phase_changed.connect(_on_phase_changed)
+	RunManager.ready_changed.connect(func(_peers: PackedInt32Array, _count: int) -> void: _refresh_run_label())
+	_refresh_run_label()
+
+
+func _process(_delta: float) -> void:
+	# Countdown der Kampfphase läuft lokal.
+	if RunManager.phase == RunManager.Phase.COMBAT:
+		_refresh_run_label()
 
 
 func _input(event: InputEvent) -> void:
@@ -58,6 +71,47 @@ func set_money(amount: int) -> void:
 		_money_label.pivot_offset = _money_label.size / 2.0
 		_money_label.scale = Vector2.ONE * 1.25
 		create_tween().tween_property(_money_label, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _on_phase_changed(phase: int) -> void:
+	_refresh_run_label()
+	var round_number := RunManager.current_round
+	match phase:
+		RunManager.Phase.BUILD:
+			var boss_note := " – Boss-Schicht!" if RunManager.is_boss_round(round_number) else ""
+			_show_banner("Schicht %d – Bauphase%s" % [round_number, boss_note])
+		RunManager.Phase.COMBAT:
+			_show_banner("Kampfphase!")
+		RunManager.Phase.RUN_OVER:
+			_show_banner("Run geschafft!")
+
+
+func _refresh_run_label() -> void:
+	var run := RunManager
+	var header := "Schicht %d/%d" % [run.current_round, run.data.rounds_per_run]
+	match run.phase:
+		RunManager.Phase.BUILD:
+			var own := "bereit" if run.is_local_player_ready() else "%s: bereit" % _action_key_name(&"ready")
+			_run_label.text = "%s · Bauphase · Bereit %d/%d (%s)" % [header, run.ready_peers.size(), run.player_count, own]
+		RunManager.Phase.COMBAT:
+			var seconds := ceili(run.combat_time_left)
+			_run_label.text = "%s · Kampfphase · %d:%02d" % [header, floori(seconds / 60.0), seconds % 60]
+		RunManager.Phase.RUN_OVER:
+			_run_label.text = "Run geschafft – alle %d Schichten überstanden" % run.data.rounds_per_run
+		_:
+			_run_label.text = ""
+
+
+func _show_banner(text: String) -> void:
+	if _banner_tween:
+		_banner_tween.kill()
+	_banner_label.text = text
+	_banner_label.visible = true
+	_banner_label.modulate.a = 1.0
+	_banner_tween = create_tween()
+	_banner_tween.tween_interval(1.8)
+	_banner_tween.tween_property(_banner_label, "modulate:a", 0.0, 0.6)
+	_banner_tween.tween_callback(func() -> void: _banner_label.visible = false)
 
 
 func set_carrying(carrying: bool) -> void:

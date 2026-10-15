@@ -1,14 +1,13 @@
 class_name Elevator
 extends Node3D
 ## Aufzug, Kern der Mine. Erz kommt in den Korb: getragen per E („Erz einladen“) oder geworfen/abgelegt.
-## Der Host führt die Ladung (begrenzt auf data.capacity) und zahlt sie mit pay_out() in die Teamkasse aus.
-## Laut GDD passiert das zu Beginn der Bauphase (Aufgabe 8); bis dahin löst der Hebel die Auszahlung aus.
+## Der Host führt die Ladung (begrenzt auf data.capacity) und zahlt sie zu Beginn jeder Schicht
+## (RunManager.round_started) in die Teamkasse aus.
 
 @export var data: ElevatorData
 
 @onready var _basket: Area3D = $Basket
 @onready var _load_interactable: InteractableComponent = $LoadInteractable
-@onready var _lever_interactable: InteractableComponent = $Lever/InteractableComponent
 @onready var _load_label: Label3D = $LoadLabel
 
 ## Nur Host: die geladenen Erzarten, ein Eintrag pro Brocken.
@@ -23,7 +22,7 @@ func _ready() -> void:
 	_basket.monitoring = multiplayer.is_server()
 	_basket.body_entered.connect(_on_basket_body_entered)
 	_load_interactable.interacted.connect(_on_load_interacted)
-	_lever_interactable.interacted.connect(func(_player: Player) -> void: pay_out())
+	RunManager.round_started.connect(_on_round_started)
 	NetworkManager.player_joined.connect(_on_player_joined)
 	_update_label()
 
@@ -40,6 +39,12 @@ func pay_out() -> int:
 	_cargo.clear()
 	_broadcast_cargo()
 	return amount
+
+
+## Schichtbeginn: Der Aufzug fährt hoch und zahlt aus (GDD, „Ablauf einer Schicht“).
+func _on_round_started(_round_number: int) -> void:
+	if multiplayer.is_server():
+		pay_out()
 
 
 func is_full() -> bool:

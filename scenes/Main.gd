@@ -52,6 +52,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("menu") and not _menu.visible:
 		_pause_menu.toggle()
 		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ready") and not _menu.visible and not GameState.input_blocked:
+		RunManager.request_toggle_ready()
+		get_viewport().set_input_as_handled()
 
 
 func _apply_command_line() -> void:
@@ -73,6 +76,7 @@ func _on_host_requested() -> void:
 		_menu.show_status("Hosten fehlgeschlagen: %s" % error_string(error))
 		return
 	_on_session_started()
+	RunManager.start_run()
 
 
 func _on_join_requested(address: String) -> void:
@@ -109,6 +113,7 @@ func _return_to_menu() -> void:
 	NetworkManager.leave_game()
 	GameState.input_blocked = false
 	Economy.reset()
+	RunManager.reset()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	get_tree().reload_current_scene()
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scenes/world/Elevator.gd" id="1_elevator"]
 [ext_resource type="Resource" path="res://data/elevator/default_elevator.tres" id="2_data"]
@@ -10,17 +10,11 @@ albedo_color = Color(0.35, 0.37, 0.4, 1)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wood"]
 albedo_color = Color(0.45, 0.32, 0.2, 1)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lever"]
-albedo_color = Color(0.75, 0.15, 0.12, 1)
-
 [sub_resource type="BoxShape3D" id="BoxShape3D_basket"]
 size = Vector3(2.7, 1.2, 2.7)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_load"]
 size = Vector3(3, 1.4, 3)
-
-[sub_resource type="SphereShape3D" id="SphereShape3D_lever"]
-radius = 0.45
 
 [node name="Elevator" type="Node3D"]
 script = ExtResource("1_elevator")
@@ -100,31 +94,6 @@ requires_carrying = true
 [node name="CollisionShape3D" type="CollisionShape3D" parent="LoadInteractable"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 shape = SubResource("BoxShape3D_load")
-
-[node name="Lever" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0, -1.3)
-
-[node name="Base" type="CSGBox3D" parent="Lever"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-use_collision = true
-size = Vector3(0.3, 1, 0.3)
-material = SubResource("StandardMaterial3D_metal")
-
-[node name="Handle" type="CSGBox3D" parent="Lever"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
-size = Vector3(0.08, 0.5, 0.08)
-material = SubResource("StandardMaterial3D_lever")
-
-[node name="InteractableComponent" type="Area3D" parent="Lever"]
-collision_layer = 32
-collision_mask = 0
-monitoring = false
-script = ExtResource("3_interact")
-prompt_text = "Aufzug hochschicken (Auszahlung)"
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Lever/InteractableComponent"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
-shape = SubResource("SphereShape3D_lever")
 
 [node name="LoadLabel" type="Label3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, 0)

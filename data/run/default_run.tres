@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="RunData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/RunData.gd" id="1_data"]
+
+[resource]
+script = ExtResource("1_data")
+rounds_per_run = 15
+boss_rounds = Array[int]([5, 10, 15])
+combat_duration = 150.0
