@@ -7,7 +7,17 @@
 
 1. [Godot 4.7](https://godotengine.org/download) (Standard-Version, kein .NET) installieren.
 2. Im Projektmanager „Importieren“ wählen und `project.godot` in diesem Ordner öffnen.
-3. Mit F5 starten. Die Main-Szene startet im Testraum mit einer Spielfigur; Esc beendet.
+3. Mit F5 starten. Im Startmenü „Spiel hosten“ wählen (gilt auch für Solo); Esc beendet.
+
+## Multiplayer auf einem PC testen
+
+1. Im Editor **Debug → Laufende Instanzen anpassen…** (*Customize Run Instances*) öffnen.
+2. „Mehrere Instanzen aktivieren“ einschalten und 2 Instanzen einstellen.
+3. Bei Instanz 1 unter *Arguments* `-- --host` eintragen, bei Instanz 2 `-- --join`.
+4. F5: Beide Fenster starten direkt im Spiel, ohne Menü.
+
+Alternativ im Menü des einen Fensters hosten und im anderen mit `127.0.0.1` beitreten. Im LAN die IP des
+Hosts eintragen; der Host muss UDP-Port 7777 freigeben.
 
 ## Ordnerstruktur
 
@@ -32,4 +42,5 @@ Zusätzlich (nicht im GDD): `camera_switch_shoulder` – V / rechten Stick drüc
 
 - [x] 1 – Projektgerüst
 - [x] 2 – Spielfigur & Kamera
-- [ ] 3 – Netzwerk-Basis
+- [x] 3 – Netzwerk-Basis
+- [ ] 4 – Interaktion

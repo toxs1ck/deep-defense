@@ -1,9 +1,18 @@
 extends CharacterBody3D
 ## Spielfigur: läuft relativ zur Kamera, sprintet und springt.
-## Nur der Besitzer der Figur verarbeitet Eingaben, damit der Multiplayer (Aufgabe 3) direkt andocken kann.
+## Der Node-Name ist die Peer-ID des Besitzers. Nur der Besitzer simuliert die Bewegung (direktes Spielgefühl);
+## alle anderen bekommen Position und Blickrichtung über den MultiplayerSynchronizer und glätten sie.
 ## Der Körper selbst dreht sich nicht; nur „Model“ schaut in Laufrichtung, damit die Kamera unabhängig bleibt.
 
 @export var data: PlayerData
+## Wie schnell fremde Figuren zur empfangenen Position aufschließen. Höher = direkter, aber ruckeliger.
+@export var remote_smoothing: float = 18.0
+## Ab dieser Abweichung in Metern springt eine fremde Figur direkt an die Zielposition (z. B. nach Respawn).
+@export var remote_snap_distance: float = 3.0
+
+## Vom Besitzer gesetzt und per MultiplayerSynchronizer verteilt.
+@export var sync_position: Vector3
+@export var sync_yaw: float
 
 @onready var _camera: PlayerCamera = $PlayerCamera
 @onready var _model: Node3D = $Model
@@ -14,10 +23,30 @@ var _coyote_timer: float = 0.0
 var _jump_buffer_timer: float = 0.0
 
 
+func _enter_tree() -> void:
+	# Läuft vor _ready und auf allen Peers, damit die Autorität überall gleich gesetzt ist.
+	if name.is_valid_int():
+		set_multiplayer_authority(name.to_int())
+
+
 func _ready() -> void:
 	assert(data != null, "Player braucht eine PlayerData-Resource")
+	# Der Host setzt sync_position vor dem Spawnen; sie kommt auch bei den Clients mit an.
+	global_position = sync_position
+	_model.rotation.y = sync_yaw
 	if is_multiplayer_authority():
 		_camera.activate()
+
+
+func _process(delta: float) -> void:
+	if is_multiplayer_authority():
+		return
+	if global_position.distance_to(sync_position) > remote_snap_distance:
+		global_position = sync_position
+	else:
+		var weight := 1.0 - exp(-remote_smoothing * delta)
+		global_position = global_position.lerp(sync_position, weight)
+	_model.rotation.y = lerp_angle(_model.rotation.y, sync_yaw, 1.0 - exp(-remote_smoothing * delta))
 
 
 func _physics_process(delta: float) -> void:
@@ -59,3 +88,6 @@ func _physics_process(delta: float) -> void:
 	if direction.length_squared() > 0.001:
 		var target_yaw := atan2(-direction.x, -direction.z)
 		_model.rotation.y = lerp_angle(_model.rotation.y, target_yaw, minf(1.0, data.turn_speed * delta))
+
+	sync_position = global_position
+	sync_yaw = _model.rotation.y

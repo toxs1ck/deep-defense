@@ -1,8 +1,8 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scenes/Main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/world/TestRoom.tscn" id="2_room"]
-[ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="3_player"]
+[ext_resource type="PackedScene" path="res://scenes/ui/MainMenu.tscn" id="3_menu"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -23,8 +23,15 @@ shadow_enabled = true
 
 [node name="TestRoom" parent="." instance=ExtResource("2_room")]
 
-[node name="Player" parent="." instance=ExtResource("3_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+[node name="Players" type="Node3D" parent="."]
+
+[node name="PlayerSpawner" type="MultiplayerSpawner" parent="."]
+_spawnable_scenes = PackedStringArray("res://scenes/player/Player.tscn")
+spawn_path = NodePath("../Players")
+
+[node name="MenuCamera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.857167, 0.515038, 0, -0.515038, 0.857167, 0, 6, 12)
+fov = 75.0
 
 [node name="UI" type="CanvasLayer" parent="."]
 
@@ -35,3 +42,5 @@ offset_right = 624.0
 offset_bottom = 104.0
 text = "WASD / linker Stick: laufen · Shift: sprinten · Leertaste: springen
 Maus / rechter Stick: Kamera · V / R3: Schulter wechseln · Esc: beenden"
+
+[node name="MainMenu" parent="UI" instance=ExtResource("3_menu")]
