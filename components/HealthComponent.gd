@@ -1,0 +1,52 @@
+class_name HealthComponent
+extends Node
+## Lebenspunkte. Nur der Host verursacht Schaden; der neue Stand geht per RPC an alle.
+## sync_on_join: für Objekte, die fest in der Szene stehen (z. B. Aufzug), bekommen später Beitretende den Stand.
+## Gespawnte Objekte (Gegner) brauchen das nicht, sie sind ohnehin kurzlebig.
+
+signal health_changed(current: int, maximum: int)
+## Auf allen Peers, einmal beim Übergang auf 0.
+signal died
+
+@export var max_health: int = 100
+@export var sync_on_join: bool = false
+
+var current_health: int = 0
+
+
+func _ready() -> void:
+	current_health = max_health
+	if sync_on_join:
+		NetworkManager.player_joined.connect(_on_player_joined)
+
+
+## Maximum setzen und voll heilen, z. B. aus einer Daten-Resource. Lokal auf jedem Peer aufrufen.
+func setup(maximum: int) -> void:
+	max_health = maximum
+	current_health = maximum
+	health_changed.emit(current_health, max_health)
+
+
+func is_dead() -> bool:
+	return current_health <= 0
+
+
+## Nur Host.
+func damage(amount: int) -> void:
+	if not multiplayer.is_server() or is_dead() or amount <= 0:
+		return
+	_set_health.rpc(maxi(0, current_health - amount))
+
+
+func _on_player_joined(peer_id: int) -> void:
+	if multiplayer.is_server() and peer_id != multiplayer.get_unique_id():
+		_set_health.rpc_id(peer_id, current_health)
+
+
+@rpc("authority", "call_local", "reliable")
+func _set_health(value: int) -> void:
+	var was_alive := current_health > 0
+	current_health = value
+	health_changed.emit(current_health, max_health)
+	if was_alive and current_health <= 0:
+		died.emit()

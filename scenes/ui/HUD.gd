@@ -19,6 +19,7 @@ const MOUSE_BUTTON_NAMES: Dictionary = {
 @onready var _prompt_label: Label = %PromptLabel
 @onready var _money_label: Label = %MoneyLabel
 @onready var _run_label: Label = %RunLabel
+@onready var _elevator_label: Label = %ElevatorLabel
 @onready var _banner_label: Label = %BannerLabel
 
 var _target: InteractableComponent = null
@@ -83,7 +84,7 @@ func _on_phase_changed(phase: int) -> void:
 		RunManager.Phase.COMBAT:
 			_show_banner("Kampfphase!")
 		RunManager.Phase.RUN_OVER:
-			_show_banner("Run geschafft!")
+			_show_banner("Run geschafft!" if RunManager.victory else "Der Aufzug ist zerstört!")
 
 
 func _refresh_run_label() -> void:
@@ -97,7 +98,10 @@ func _refresh_run_label() -> void:
 			var seconds := ceili(run.combat_time_left)
 			_run_label.text = "%s · Kampfphase · %d:%02d" % [header, floori(seconds / 60.0), seconds % 60]
 		RunManager.Phase.RUN_OVER:
-			_run_label.text = "Run geschafft – alle %d Schichten überstanden" % run.data.rounds_per_run
+			if run.victory:
+				_run_label.text = "Run geschafft – alle %d Schichten überstanden" % run.data.rounds_per_run
+			else:
+				_run_label.text = "Run verloren in Schicht %d · Esc: Spiel verlassen" % run.current_round
 		_:
 			_run_label.text = ""
 
@@ -112,6 +116,12 @@ func _show_banner(text: String) -> void:
 	_banner_tween.tween_interval(1.8)
 	_banner_tween.tween_property(_banner_label, "modulate:a", 0.0, 0.6)
 	_banner_tween.tween_callback(func() -> void: _banner_label.visible = false)
+
+
+func set_elevator_health(current: int, maximum: int) -> void:
+	_elevator_label.text = "Aufzug: %d/%d LP" % [current, maximum]
+	# Rot, sobald weniger als ein Drittel übrig ist.
+	_elevator_label.modulate = Color(1, 0.35, 0.3) if current * 3 < maximum else Color.WHITE
 
 
 func set_carrying(carrying: bool) -> void:

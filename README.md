@@ -24,9 +24,9 @@ Hosts eintragen; der Host muss UDP-Port 7777 freigeben.
 | Ordner | Inhalt |
 | --- | --- |
 | `autoload/` | Globale Systeme: `GameState`, `RunManager`, `Economy`, `NetworkManager` |
-| `data/` | Balancing-Werte als `.tres`: `player/`, `run/`, `elevator/`, `ores/`, `buildables/`, `enemies/`, `traits/`, `items/`, `recipes/` |
+| `data/` | Balancing-Werte als `.tres`: `player/`, `run/`, `elevator/`, `ores/`, `enemies/`, `buildables/`, `enemies/`, `traits/`, `items/`, `recipes/` |
 | `scenes/` | `Main.tscn` sowie `player/`, `enemies/`, `buildables/`, `world/`, `ui/` |
-| `components/` | Wiederverwendbare Kind-Nodes: `InteractableComponent`, `CarryComponent`, später Health, Hitbox, Carry, Ability … |
+| `components/` | Wiederverwendbare Kind-Nodes: `InteractableComponent`, `CarryComponent`, `HealthComponent`, später Health, Hitbox, Carry, Ability … |
 | `scripts/` | Hilfsklassen und Resource-Klassen (`resources/`), z. B. `WaveGenerator.gd`, `MineGenerator.gd` |
 
 ## Input Map
@@ -48,4 +48,5 @@ Zusätzlich (nicht im GDD): `camera_switch_shoulder` – V / rechten Stick drüc
 - [x] 6 – Tragen & Ablegen
 - [x] 7 – Aufzug & Teamkasse
 - [x] 8 – Runden-Ablauf
-- [ ] 9 – Gegner-Basis
+- [x] 9 – Gegner-Basis
+- [ ] 10 – Spieler-Kampf

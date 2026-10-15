@@ -1,10 +1,11 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scenes/Main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/world/TestRoom.tscn" id="2_room"]
 [ext_resource type="PackedScene" path="res://scenes/ui/MainMenu.tscn" id="3_menu"]
 [ext_resource type="PackedScene" path="res://scenes/ui/HUD.tscn" id="4_hud"]
 [ext_resource type="PackedScene" path="res://scenes/ui/PauseMenu.tscn" id="5_pause"]
+[ext_resource type="Script" path="res://scenes/world/WaveSpawner.gd" id="6_waves"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -36,6 +37,16 @@ spawn_path = NodePath("../Players")
 [node name="ChunkSpawner" type="MultiplayerSpawner" parent="."]
 _spawnable_scenes = PackedStringArray("res://scenes/world/OreChunk.tscn")
 spawn_path = NodePath("../Chunks")
+
+[node name="Enemies" type="Node3D" parent="."]
+
+[node name="EnemySpawner" type="MultiplayerSpawner" parent="."]
+_spawnable_scenes = PackedStringArray("res://scenes/enemies/Enemy.tscn")
+spawn_path = NodePath("../Enemies")
+
+[node name="WaveSpawner" type="Node" parent="." node_paths=PackedStringArray("enemies")]
+script = ExtResource("6_waves")
+enemies = NodePath("../Enemies")
 
 [node name="MenuCamera" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.857167, 0.515038, 0, -0.515038, 0.857167, 0, 6, 12)

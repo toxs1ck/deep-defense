@@ -1,8 +1,9 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scenes/world/Elevator.gd" id="1_elevator"]
 [ext_resource type="Resource" path="res://data/elevator/default_elevator.tres" id="2_data"]
 [ext_resource type="Script" path="res://components/InteractableComponent.gd" id="3_interact"]
+[ext_resource type="Script" path="res://components/HealthComponent.gd" id="4_health"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_metal"]
 albedo_color = Color(0.35, 0.37, 0.4, 1)
@@ -100,3 +101,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, 0)
 billboard = 1
 outline_size = 8
 text = "Aufzug"
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("4_health")
+max_health = 500
+sync_on_join = true

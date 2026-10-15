@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/world/Stairs.tscn" id="1_stairs"]
 [ext_resource type="PackedScene" path="res://scenes/world/OreDeposit.tscn" id="2_deposit"]
@@ -7,6 +7,7 @@
 [ext_resource type="Resource" path="res://data/ores/gold.tres" id="5_gold"]
 [ext_resource type="Resource" path="res://data/ores/crystal.tres" id="6_crystal"]
 [ext_resource type="PackedScene" path="res://scenes/world/Elevator.tscn" id="7_elevator"]
+[ext_resource type="Script" path="res://scenes/world/NavigationBaker.gd" id="8_nav"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
 albedo_color = Color(0.32, 0.27, 0.22, 1)
@@ -17,7 +18,17 @@ albedo_color = Color(0.42, 0.4, 0.38, 1)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_accent"]
 albedo_color = Color(0.55, 0.42, 0.25, 1)
 
-[node name="TestRoom" type="Node3D"]
+[sub_resource type="NavigationMesh" id="NavigationMesh_room"]
+geometry_source_geometry_mode = 1
+geometry_source_group_name = &"nav_source"
+cell_size = 0.25
+cell_height = 0.25
+agent_height = 1.0
+agent_radius = 0.4
+agent_max_climb = 0.3
+agent_max_slope = 45.0
+
+[node name="TestRoom" type="Node3D" groups=["nav_source"]]
 
 [node name="Floor" type="CSGBox3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
@@ -124,3 +135,13 @@ ore = ExtResource("6_crystal")
 
 [node name="Elevator" parent="." instance=ExtResource("7_elevator")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12)
+
+[node name="EnemySpawnWest" type="Marker3D" parent="." groups=["enemy_spawns"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -13.5)
+
+[node name="EnemySpawnEast" type="Marker3D" parent="." groups=["enemy_spawns"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, -13.5)
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavigationMesh_room")
+script = ExtResource("8_nav")

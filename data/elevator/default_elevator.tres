@@ -4,6 +4,7 @@
 
 [resource]
 script = ExtResource("1_data")
+max_health = 500
 capacity = 20
 load_bonus = 0.1
 mixed_ore_types_for_bonus = 3

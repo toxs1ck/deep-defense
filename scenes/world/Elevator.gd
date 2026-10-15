@@ -2,10 +2,15 @@ class_name Elevator
 extends Node3D
 ## Aufzug, Kern der Mine. Erz kommt in den Korb: getragen per E („Erz einladen“) oder geworfen/abgelegt.
 ## Der Host führt die Ladung (begrenzt auf data.capacity) und zahlt sie zu Beginn jeder Schicht
-## (RunManager.round_started) in die Teamkasse aus.
+## (RunManager.round_started) in die Teamkasse aus. Fällt seine Lebenspunkte auf 0, ist der Run verloren.
+
+const GROUP: StringName = &"elevator"
+## Wohin Gegner laufen: knapp hinter der offenen Seite des Korbs (lokal).
+const ATTACK_POINT: Vector3 = Vector3(0, 0, -1.0)
 
 @export var data: ElevatorData
 
+@onready var health: HealthComponent = $HealthComponent
 @onready var _basket: Area3D = $Basket
 @onready var _load_interactable: InteractableComponent = $LoadInteractable
 @onready var _load_label: Label3D = $LoadLabel
@@ -17,8 +22,15 @@ var _item_count: int = 0
 var _cargo_value: int = 0
 
 
+func _enter_tree() -> void:
+	add_to_group(GROUP)
+
+
 func _ready() -> void:
 	assert(data != null, "Elevator braucht eine ElevatorData-Resource")
+	health.setup(data.max_health)
+	health.health_changed.connect(_on_health_changed)
+	health.died.connect(_on_died)
 	_basket.monitoring = multiplayer.is_server()
 	_basket.body_entered.connect(_on_basket_body_entered)
 	_load_interactable.interacted.connect(_on_load_interacted)
@@ -39,6 +51,23 @@ func pay_out() -> int:
 	_cargo.clear()
 	_broadcast_cargo()
 	return amount
+
+
+func get_attack_point() -> Vector3:
+	return to_global(ATTACK_POINT)
+
+
+## Kurzes rotes Aufblitzen der Anzeige, wenn der Aufzug Schaden nimmt.
+func _on_health_changed(current: int, maximum: int) -> void:
+	_update_label()
+	if current < maximum:
+		_load_label.modulate = Color(1, 0.3, 0.3)
+		create_tween().tween_property(_load_label, "modulate", Color.WHITE, 0.3)
+
+
+func _on_died() -> void:
+	if multiplayer.is_server():
+		RunManager.fail_run()
 
 
 ## Schichtbeginn: Der Aufzug fährt hoch und zahlt aus (GDD, „Ablauf einer Schicht“).
@@ -105,4 +134,5 @@ func _sync_cargo(item_count: int, value: int) -> void:
 
 func _update_label() -> void:
 	var full_note := "\nVOLL" if is_full() else ""
-	_load_label.text = "Aufzug\nLadung: %d/%d · %d $%s" % [_item_count, data.capacity, _cargo_value, full_note]
+	_load_label.text = "Aufzug · %d/%d LP\nLadung: %d/%d · %d $%s" % [
+		health.current_health, health.max_health, _item_count, data.capacity, _cargo_value, full_note]

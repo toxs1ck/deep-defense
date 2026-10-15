@@ -33,6 +33,9 @@ func _ready() -> void:
 	_pause_menu.leave_requested.connect(_return_to_menu)
 	_pause_menu.quit_requested.connect(get_tree().quit)
 	Economy.money_changed.connect(_hud.set_money)
+	var elevator := get_tree().get_first_node_in_group(Elevator.GROUP) as Elevator
+	elevator.health.health_changed.connect(_hud.set_elevator_health)
+	_hud.set_elevator_health(elevator.health.current_health, elevator.health.max_health)
 	NetworkManager.player_joined.connect(_on_player_joined)
 	NetworkManager.player_left.connect(_on_player_left)
 	NetworkManager.connection_succeeded.connect(_on_session_started)
