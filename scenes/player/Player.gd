@@ -7,6 +7,9 @@ extends CharacterBody3D
 
 ## Nur beim lokalen Spieler: das anvisierte Objekt hat gewechselt (null = nichts im Visier).
 signal interaction_target_changed(target: InteractableComponent)
+## Nur beim lokalen Spieler sinnvoll: trägt jetzt etwas bzw. nichts mehr. Reicht CarryComponent.carried_changed
+## weiter, damit man sich schon vor _ready verbinden kann (z. B. Main beim Hinzufügen der Figur).
+signal carrying_changed(is_carrying: bool)
 
 const GROUP: StringName = &"players"
 ## Augenhöhe über den Füßen; Startpunkt für die Reichweite von Interaktionen.
@@ -55,6 +58,7 @@ func _ready() -> void:
 	global_position = sync_position
 	_model.rotation.y = sync_yaw
 	_apply_player_color()
+	carry.carried_changed.connect(func(is_carrying: bool) -> void: carrying_changed.emit(is_carrying))
 	if is_multiplayer_authority():
 		_camera.activate()
 

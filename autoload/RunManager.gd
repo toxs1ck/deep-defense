@@ -5,7 +5,6 @@ extends Node
 enum Phase { LOBBY, BUILD, COMBAT, RUN_OVER }
 
 signal phase_changed(new_phase: Phase)
-signal round_started(round_number: int)
 
 const ROUNDS_PER_RUN: int = 15
 const BOSS_ROUNDS: Array[int] = [5, 10, 15]

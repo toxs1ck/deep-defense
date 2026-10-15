@@ -106,11 +106,12 @@ func _on_player_joined(peer_id: int) -> void:
 
 
 ## Läuft auf allen Peers, auch für vom MultiplayerSpawner erzeugte Figuren. Nur die eigene Figur speist das HUD.
+## Achtung: Die Figur ist hier noch nicht „ready“, @onready-Felder sind leer. Nur Signale der Figur verbinden.
 func _on_player_added(node: Node) -> void:
 	var player := node as Player
 	if player and player.is_multiplayer_authority():
 		player.interaction_target_changed.connect(_hud.show_interaction)
-		player.carry.carried_changed.connect(_hud.set_carrying)
+		player.carrying_changed.connect(_hud.set_carrying)
 
 
 ## Nur auf dem Host: Brocken spawnen, der ChunkSpawner repliziert sie zu den Clients.

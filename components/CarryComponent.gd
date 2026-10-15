@@ -86,7 +86,7 @@ func _exit_tree() -> void:
 
 func _release_all(velocity: Vector3) -> void:
 	var drop_at := global_position + DROP_OFFSET
-	for chunk in carried.duplicate():
+	for chunk: OreChunk in carried.duplicate():
 		if is_instance_valid(chunk) and not chunk.is_queued_for_deletion():
 			chunk.release(drop_at, velocity)
 		drop_at += Vector3.UP * STACK_SPACING
