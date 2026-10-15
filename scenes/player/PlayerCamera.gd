@@ -4,13 +4,13 @@ extends Node3D
 ## Dieser Knoten dreht um die Hochachse (Gier), „Pitch“ neigt. Zwei SpringArm3D verhindern Clipping:
 ## „ShoulderArm“ prüft den Schulterversatz zur Seite, „BackArm“ den Abstand nach hinten.
 
-@export var distance: float = 4.0
+@export var distance: float = 3.0
 ## Versatz über die Schulter in Metern.
 @export var shoulder_offset: float = 0.6
 ## Startseite: true = rechte Schulter. Mit „camera_switch_shoulder“ wechselbar.
 @export var right_shoulder: bool = true
 ## Dauer des Schulterwechsels in Sekunden.
-@export var shoulder_switch_time: float = 0.25
+@export var shoulder_switch_time: float = 0.15
 @export var fov: float = 75.0
 ## Grad pro Pixel Mausbewegung.
 @export var mouse_sensitivity: float = 0.15
@@ -24,7 +24,7 @@ extends Node3D
 @onready var _back_arm: SpringArm3D = $Pitch/ShoulderArm/BackArm
 @onready var _camera: Camera3D = $Pitch/ShoulderArm/BackArm/Camera3D
 
-## Aktuelle Schulterseite von -1 (links) bis 1 (rechts); läuft beim Wechsel weich durch 0.
+## Fortschritt des Schulterwechsels von -1 (links) bis 1 (rechts); läuft linear, angezeigt wird er mit Easing.
 var _shoulder_side: float = 1.0
 
 
@@ -86,7 +86,9 @@ func _rotate_view(degrees: Vector2) -> void:
 ## Dreht den Schulterarm zur aktuellen Seite und gleicht den hinteren Arm aus, damit die Kamera nach vorne schaut.
 ## Der Seitenwechsel läuft über die Armlänge, die Richtung springt nur bei Länge 0 um.
 func _apply_shoulder() -> void:
-	var side_sign := 1.0 if _shoulder_side >= 0.0 else -1.0
+	# smoothstep sorgt für sanftes Anfahren und Abbremsen statt einer linearen Bewegung.
+	var eased := smoothstep(-1.0, 1.0, _shoulder_side) * 2.0 - 1.0
+	var side_sign := 1.0 if eased >= 0.0 else -1.0
 	_shoulder_arm.basis = Basis(Vector3.UP, side_sign * PI / 2.0)
 	_back_arm.basis = Basis(Vector3.UP, -side_sign * PI / 2.0)
-	_shoulder_arm.spring_length = shoulder_offset * absf(_shoulder_side)
+	_shoulder_arm.spring_length = shoulder_offset * absf(eased)

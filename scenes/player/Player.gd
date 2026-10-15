@@ -8,6 +8,9 @@ extends CharacterBody3D
 @onready var _camera: PlayerCamera = $PlayerCamera
 @onready var _model: Node3D = $Model
 
+## Restzeit, in der ein Sprung noch erlaubt ist; am Boden immer voll.
+var _coyote_timer: float = 0.0
+
 
 func _ready() -> void:
 	assert(data != null, "Player braucht eine PlayerData-Resource")
@@ -20,11 +23,16 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var gravity := get_gravity() * data.gravity_scale
-	if not is_on_floor():
+	if is_on_floor():
+		_coyote_timer = data.coyote_time
+	else:
+		_coyote_timer = maxf(0.0, _coyote_timer - delta)
 		var falling := velocity.y < 0.0
 		velocity += gravity * (data.fall_gravity_multiplier if falling else 1.0) * delta
-	elif Input.is_action_just_pressed("jump"):
+
+	if Input.is_action_just_pressed("jump") and _coyote_timer > 0.0:
 		velocity.y = sqrt(2.0 * gravity.length() * data.jump_height)
+		_coyote_timer = 0.0
 
 	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := _camera.get_yaw_basis() * Vector3(input_dir.x, 0.0, input_dir.y)

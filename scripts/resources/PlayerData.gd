@@ -6,6 +6,8 @@ extends Resource
 @export var sprint_speed: float = 7.5
 ## Sprunghöhe in Metern; die Absprunggeschwindigkeit wird daraus berechnet.
 @export var jump_height: float = 1.0
+## Wie lange nach dem Verlassen einer Kante noch gesprungen werden kann, in Sekunden („Coyote Time“).
+@export var coyote_time: float = 0.12
 ## Faktor auf die Projekt-Schwerkraft. Höher = kürzere Zeit in der Luft bei gleicher Sprunghöhe.
 @export var gravity_scale: float = 1.5
 ## Zusätzlicher Faktor beim Fallen, damit Sprünge nicht schweben.
