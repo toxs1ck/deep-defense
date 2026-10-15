@@ -1,7 +1,8 @@
 class_name PlayerCamera
 extends Node3D
 ## 3rd-Person-Kamera hinter der Spielfigur.
-## Dieser Knoten dreht um die Hochachse (Gier), „Pitch“ neigt, der SpringArm3D verhindert Clipping durch Wände.
+## Dieser Knoten dreht um die Hochachse (Gier), „Pitch“ neigt. Zwei SpringArm3D verhindern Clipping:
+## „ShoulderArm“ prüft den Schulterversatz nach rechts, „BackArm“ den Abstand nach hinten.
 
 @export var distance: float = 4.0
 ## Versatz nach rechts über die Schulter in Metern.
@@ -15,13 +16,14 @@ extends Node3D
 @export var max_pitch: float = 60.0
 
 @onready var _pitch: Node3D = $Pitch
-@onready var _spring_arm: SpringArm3D = $Pitch/SpringArm3D
-@onready var _camera: Camera3D = $Pitch/SpringArm3D/Camera3D
+@onready var _shoulder_arm: SpringArm3D = $Pitch/ShoulderArm
+@onready var _back_arm: SpringArm3D = $Pitch/ShoulderArm/BackArm
+@onready var _camera: Camera3D = $Pitch/ShoulderArm/BackArm/Camera3D
 
 
 func _ready() -> void:
-	_spring_arm.spring_length = distance
-	_camera.h_offset = shoulder_offset
+	_shoulder_arm.spring_length = shoulder_offset
+	_back_arm.spring_length = distance
 	_camera.fov = fov
 	# Bis activate() aufgerufen wird, verarbeitet die Kamera keine Eingaben (z. B. Figuren anderer Spieler).
 	set_process(false)

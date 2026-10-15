@@ -6,8 +6,13 @@ extends Resource
 @export var sprint_speed: float = 7.5
 ## Sprunghöhe in Metern; die Absprunggeschwindigkeit wird daraus berechnet.
 @export var jump_height: float = 1.0
-## Beschleunigung am Boden und in der Luft in m/s².
-@export var acceleration: float = 40.0
-@export var air_acceleration: float = 10.0
+## Faktor auf die Projekt-Schwerkraft. Höher = kürzere Zeit in der Luft bei gleicher Sprunghöhe.
+@export var gravity_scale: float = 2.5
+## Zusätzlicher Faktor beim Fallen, damit Sprünge nicht schweben.
+@export var fall_gravity_multiplier: float = 1.6
+## Beschleunigung beim Loslaufen und Abbremsen am Boden sowie in der Luft, in m/s².
+@export var acceleration: float = 60.0
+@export var deceleration: float = 80.0
+@export var air_acceleration: float = 30.0
 ## Wie schnell sich das Modell in Laufrichtung dreht.
-@export var turn_speed: float = 12.0
+@export var turn_speed: float = 20.0

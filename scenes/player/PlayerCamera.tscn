@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scenes/player/PlayerCamera.gd" id="1_cam"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_arm"]
-radius = 0.25
+radius = 0.3
 
 [node name="PlayerCamera" type="Node3D"]
 script = ExtResource("1_cam")
@@ -11,11 +11,19 @@ script = ExtResource("1_cam")
 [node name="Pitch" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.965926, -0.258819, 0, 0.258819, 0.965926, 0, 0, 0)
 
-[node name="SpringArm3D" type="SpringArm3D" parent="Pitch"]
+[node name="ShoulderArm" type="SpringArm3D" parent="Pitch"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 0)
+collision_mask = 9
+shape = SubResource("SphereShape3D_arm")
+spring_length = 0.6
+margin = 0.15
+
+[node name="BackArm" type="SpringArm3D" parent="Pitch/ShoulderArm"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0, 0, 0.6)
 collision_mask = 9
 shape = SubResource("SphereShape3D_arm")
 spring_length = 4.0
-margin = 0.1
+margin = 0.15
 
-[node name="Camera3D" type="Camera3D" parent="Pitch/SpringArm3D"]
+[node name="Camera3D" type="Camera3D" parent="Pitch/ShoulderArm/BackArm"]
 fov = 75.0
