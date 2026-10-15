@@ -5,6 +5,8 @@ extends Node3D
 
 const PLAYER_SCENE: PackedScene = preload("res://scenes/player/Player.tscn")
 const CHUNK_SCENE: PackedScene = preload("res://scenes/world/OreChunk.tscn")
+## Höchster Drall herausspringender Brocken pro Achse in rad/s.
+const CHUNK_MAX_SPIN: float = 8.0
 const SPAWN_ORIGIN: Vector3 = Vector3(0, 0, 4)
 const SPAWN_SPACING: float = 1.5
 
@@ -134,6 +136,9 @@ func _on_chunk_broken_off(ore: OreData, spawn_position: Vector3, impulse: Vector
 	chunk.sync_position = spawn_position
 	_chunks.add_child(chunk, true)
 	chunk.apply_central_impulse(impulse * chunk.mass)
+	# Zufälliger Drall, damit die Brocken unterschiedlich trudeln und landen.
+	var rng := GameState.rng
+	chunk.angular_velocity = Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1), rng.randf_range(-1, 1)) * CHUNK_MAX_SPIN
 
 
 func _on_player_left(peer_id: int) -> void:

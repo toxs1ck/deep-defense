@@ -10,6 +10,12 @@ signal chunk_broken_off(ore: OreData, spawn_position: Vector3, impulse: Vector3)
 const GROUP: StringName = &"ore_deposits"
 ## Der Host lässt Schläge etwas schneller zu als die Schlagrate, damit Netzwerk-Schwankungen nicht schlucken.
 const HIT_RATE_TOLERANCE: float = 0.85
+## Varianz beim Herausspringen: seitliche Abweichung in Grad, Steigung (Anteil nach oben) und Wucht in m/s.
+const LAUNCH_SPREAD_DEGREES: float = 40.0
+const LAUNCH_LIFT_MIN: float = 1.1
+const LAUNCH_LIFT_MAX: float = 2.0
+const LAUNCH_SPEED_MIN: float = 1.6
+const LAUNCH_SPEED_MAX: float = 2.8
 
 @export var ore: OreData
 
@@ -61,8 +67,17 @@ func _on_interacted(player: Player) -> void:
 		var to_player := player.global_position - global_position
 		to_player.y = 0.0
 		var direction := to_player.normalized() if to_player.length_squared() > 0.01 else Vector3.FORWARD
-		chunk_broken_off.emit(ore, global_position + Vector3.UP * 1.2 + direction * 0.5, (direction + Vector3.UP * 1.5) * 2.0)
+		chunk_broken_off.emit(ore, global_position + Vector3.UP * 1.2 + direction * 0.5, _random_launch_velocity(direction))
 	_on_hit.rpc(_hits, _chunks_left)
+
+
+## Grob in Richtung des Spielers, aber jedes Mal etwas anders. Zufall über GameState.rng, nur auf dem Host.
+func _random_launch_velocity(toward: Vector3) -> Vector3:
+	var rng := GameState.rng
+	var spread := deg_to_rad(rng.randf_range(-LAUNCH_SPREAD_DEGREES, LAUNCH_SPREAD_DEGREES))
+	var horizontal := toward.rotated(Vector3.UP, spread)
+	var lift := rng.randf_range(LAUNCH_LIFT_MIN, LAUNCH_LIFT_MAX)
+	return (horizontal + Vector3.UP * lift) * rng.randf_range(LAUNCH_SPEED_MIN, LAUNCH_SPEED_MAX)
 
 
 ## Später beitretende Spieler bekommen den aktuellen Stand direkt vom Host.
