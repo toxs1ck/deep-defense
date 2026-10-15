@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/world/Stairs.tscn" id="1_stairs"]
 [ext_resource type="PackedScene" path="res://scenes/world/OreDeposit.tscn" id="2_deposit"]
@@ -6,6 +6,7 @@
 [ext_resource type="Resource" path="res://data/ores/iron.tres" id="4_iron"]
 [ext_resource type="Resource" path="res://data/ores/gold.tres" id="5_gold"]
 [ext_resource type="Resource" path="res://data/ores/crystal.tres" id="6_crystal"]
+[ext_resource type="PackedScene" path="res://scenes/world/Elevator.tscn" id="7_elevator"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
 albedo_color = Color(0.32, 0.27, 0.22, 1)
@@ -120,3 +121,6 @@ ore = ExtResource("5_gold")
 [node name="CrystalDeposit" parent="." instance=ExtResource("2_deposit")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, -12)
 ore = ExtResource("6_crystal")
+
+[node name="Elevator" parent="." instance=ExtResource("7_elevator")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12)

@@ -22,6 +22,8 @@ const INTERACTABLE_LAYER: int = 1 << 5
 		collision_layer = INTERACTABLE_LAYER if enabled else 0
 ## Zusätzliche Reichweite zu PlayerData.interaction_range, z. B. für Brocken am Boden, die von Augenhöhe weiter weg sind.
 @export var extra_range: float = 0.0
+## Nur anvisierbar, wenn der Spieler etwas trägt (z. B. „Erz einladen“ am Aufzug).
+@export var requires_carrying: bool = false
 ## Gedrückt halten wiederholt die Interaktion im Takt der Abbaurate des Spielers (z. B. Abbauen).
 @export var allow_hold: bool = false
 

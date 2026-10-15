@@ -169,7 +169,8 @@ func _update_interaction_target() -> void:
 		var candidate := hit["collider"] as InteractableComponent
 		var in_front := (hit_position - eye).dot(forward) > 0.0
 		if candidate and candidate.enabled and in_front and eye.distance_to(hit_position) <= data.interaction_range + candidate.extra_range:
-			target = candidate
+			if carry.is_carrying() or not candidate.requires_carrying:
+				target = candidate
 
 	if target != _interaction_target:
 		_interaction_target = target

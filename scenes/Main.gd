@@ -32,6 +32,7 @@ func _ready() -> void:
 	_menu.quit_requested.connect(get_tree().quit)
 	_pause_menu.leave_requested.connect(_return_to_menu)
 	_pause_menu.quit_requested.connect(get_tree().quit)
+	Economy.money_changed.connect(_hud.set_money)
 	NetworkManager.player_joined.connect(_on_player_joined)
 	NetworkManager.player_left.connect(_on_player_left)
 	NetworkManager.connection_succeeded.connect(_on_session_started)
@@ -107,6 +108,7 @@ func _on_server_disconnected() -> void:
 func _return_to_menu() -> void:
 	NetworkManager.leave_game()
 	GameState.input_blocked = false
+	Economy.reset()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	get_tree().reload_current_scene()
 

@@ -18,9 +18,9 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 [autoload]
 
 GameState="*res://autoload/GameState.gd"
+NetworkManager="*res://autoload/NetworkManager.gd"
 RunManager="*res://autoload/RunManager.gd"
 Economy="*res://autoload/Economy.gd"
-NetworkManager="*res://autoload/NetworkManager.gd"
 
 [debug]
 

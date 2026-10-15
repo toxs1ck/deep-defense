@@ -1,6 +1,6 @@
 class_name HUD
 extends Control
-## Spiel-HUD: Fadenkreuz und Interaktions-Prompt („E: Abbauen“), beim Tragen der Hinweis zum Ablegen/Werfen.
+## Spiel-HUD: Teamkasse, Fadenkreuz und Interaktions-Prompt („E: Abbauen“), beim Tragen der Hinweis zum Ablegen/Werfen.
 ## Die angezeigte Taste kommt aus der Input Map und wechselt zwischen Tastatur und Controller,
 ## je nachdem, was zuletzt benutzt wurde.
 
@@ -17,14 +17,18 @@ const MOUSE_BUTTON_NAMES: Dictionary = {
 }
 
 @onready var _prompt_label: Label = %PromptLabel
+@onready var _money_label: Label = %MoneyLabel
 
 var _target: InteractableComponent = null
 var _carrying: bool = false
+## Zuletzt angezeigter Betrag; -1 = noch keiner, dann ohne Aufleuchten.
+var _money: int = -1
 var _using_gamepad: bool = false
 
 
 func _ready() -> void:
 	_prompt_label.visible = false
+	set_money(Economy.team_money)
 
 
 func _input(event: InputEvent) -> void:
@@ -43,6 +47,17 @@ func _input(event: InputEvent) -> void:
 func show_interaction(target: InteractableComponent) -> void:
 	_target = target
 	_refresh_prompt()
+
+
+func set_money(amount: int) -> void:
+	var changed := _money >= 0 and amount != _money
+	_money = amount
+	_money_label.text = "Teamkasse: %d $" % amount
+	if changed:
+		# Kurzes Aufleuchten, damit man die Auszahlung bemerkt.
+		_money_label.pivot_offset = _money_label.size / 2.0
+		_money_label.scale = Vector2.ONE * 1.25
+		create_tween().tween_property(_money_label, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func set_carrying(carrying: bool) -> void:

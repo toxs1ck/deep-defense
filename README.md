@@ -24,7 +24,7 @@ Hosts eintragen; der Host muss UDP-Port 7777 freigeben.
 | Ordner | Inhalt |
 | --- | --- |
 | `autoload/` | Globale Systeme: `GameState`, `RunManager`, `Economy`, `NetworkManager` |
-| `data/` | Balancing-Werte als `.tres`: `player/`, `ores/`, `buildables/`, `enemies/`, `traits/`, `items/`, `recipes/` |
+| `data/` | Balancing-Werte als `.tres`: `player/`, `elevator/`, `ores/`, `buildables/`, `enemies/`, `traits/`, `items/`, `recipes/` |
 | `scenes/` | `Main.tscn` sowie `player/`, `enemies/`, `buildables/`, `world/`, `ui/` |
 | `components/` | Wiederverwendbare Kind-Nodes: `InteractableComponent`, `CarryComponent`, später Health, Hitbox, Carry, Ability … |
 | `scripts/` | Hilfsklassen und Resource-Klassen (`resources/`), z. B. `WaveGenerator.gd`, `MineGenerator.gd` |
@@ -46,4 +46,5 @@ Zusätzlich (nicht im GDD): `camera_switch_shoulder` – V / rechten Stick drüc
 - [x] 4 – Interaktion
 - [x] 5 – Erzvorkommen & Abbau
 - [x] 6 – Tragen & Ablegen
-- [ ] 7 – Aufzug & Teamkasse
+- [x] 7 – Aufzug & Teamkasse
+- [ ] 8 – Runden-Ablauf
