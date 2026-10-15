@@ -21,6 +21,7 @@ const HIT_RATE_TOLERANCE: float = 0.85
 var _hits: int = 0
 var _chunks_left: int = 0
 var _mesh_scale: Vector3 = Vector3.ONE
+var _scale_tween: Tween = null
 ## Nur Host: Zeitpunkt des letzten angenommenen Schlags pro Spieler (Node-Name → Sekunden).
 var _last_hit_time: Dictionary = {}
 
@@ -60,8 +61,7 @@ func _on_interacted(player: Player) -> void:
 		to_player.y = 0.0
 		var direction := to_player.normalized() if to_player.length_squared() > 0.01 else Vector3.FORWARD
 		chunk_broken_off.emit(ore, global_position + Vector3.UP * 1.2 + direction * 0.5, (direction + Vector3.UP * 1.5) * 2.0)
-	_play_hit_feedback.rpc()
-	_sync_state.rpc(_hits, _chunks_left)
+	_on_hit.rpc(_hits, _chunks_left)
 
 
 ## Später beitretende Spieler bekommen den aktuellen Stand direkt vom Host.
@@ -77,16 +77,22 @@ func _sync_state(hits: int, chunks_left: int) -> void:
 	_apply_state()
 
 
-@rpc("authority", "call_local", "unreliable")
-func _play_hit_feedback() -> void:
+## Zustand und Feedback in einer Nachricht, damit die Wackel-Animation schon auf der neuen Größe endet.
+@rpc("authority", "call_local", "reliable")
+func _on_hit(hits: int, chunks_left: int) -> void:
+	_sync_state(hits, chunks_left)
+	if _chunks_left <= 0:
+		return
 	_sparks.restart()
-	var tween := create_tween()
+	_scale_tween = create_tween()
 	_mesh.scale = _mesh_scale * 1.08
-	tween.tween_property(_mesh, "scale", _mesh_scale, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_scale_tween.tween_property(_mesh, "scale", _mesh_scale, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 ## Das Vorkommen schrumpft mit jedem Brocken und verschwindet, wenn es erschöpft ist.
 func _apply_state() -> void:
+	if _scale_tween:
+		_scale_tween.kill()
 	var depleted := _chunks_left <= 0
 	_mesh.visible = not depleted
 	_collision.disabled = depleted

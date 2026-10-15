@@ -15,5 +15,5 @@ acceleration = 60.0
 deceleration = 80.0
 air_acceleration = 30.0
 turn_speed = 20.0
-interaction_range = 2.5
+interaction_range = 1.25
 mining_rate = 1.5
