@@ -7,9 +7,9 @@ extends Resource
 ## Sprunghöhe in Metern; die Absprunggeschwindigkeit wird daraus berechnet.
 @export var jump_height: float = 1.0
 ## Faktor auf die Projekt-Schwerkraft. Höher = kürzere Zeit in der Luft bei gleicher Sprunghöhe.
-@export var gravity_scale: float = 2.5
+@export var gravity_scale: float = 1.5
 ## Zusätzlicher Faktor beim Fallen, damit Sprünge nicht schweben.
-@export var fall_gravity_multiplier: float = 1.6
+@export var fall_gravity_multiplier: float = 1.3
 ## Beschleunigung beim Loslaufen und Abbremsen am Boden sowie in der Luft, in m/s².
 @export var acceleration: float = 60.0
 @export var deceleration: float = 80.0

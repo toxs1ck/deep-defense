@@ -2,11 +2,15 @@ class_name PlayerCamera
 extends Node3D
 ## 3rd-Person-Kamera hinter der Spielfigur.
 ## Dieser Knoten dreht um die Hochachse (Gier), „Pitch“ neigt. Zwei SpringArm3D verhindern Clipping:
-## „ShoulderArm“ prüft den Schulterversatz nach rechts, „BackArm“ den Abstand nach hinten.
+## „ShoulderArm“ prüft den Schulterversatz zur Seite, „BackArm“ den Abstand nach hinten.
 
 @export var distance: float = 4.0
-## Versatz nach rechts über die Schulter in Metern.
+## Versatz über die Schulter in Metern.
 @export var shoulder_offset: float = 0.6
+## Startseite: true = rechte Schulter. Mit „camera_switch_shoulder“ wechselbar.
+@export var right_shoulder: bool = true
+## Dauer des Schulterwechsels in Sekunden.
+@export var shoulder_switch_time: float = 0.25
 @export var fov: float = 75.0
 ## Grad pro Pixel Mausbewegung.
 @export var mouse_sensitivity: float = 0.15
@@ -20,10 +24,14 @@ extends Node3D
 @onready var _back_arm: SpringArm3D = $Pitch/ShoulderArm/BackArm
 @onready var _camera: Camera3D = $Pitch/ShoulderArm/BackArm/Camera3D
 
+## Aktuelle Schulterseite von -1 (links) bis 1 (rechts); läuft beim Wechsel weich durch 0.
+var _shoulder_side: float = 1.0
+
 
 func _ready() -> void:
-	_shoulder_arm.spring_length = shoulder_offset
 	_back_arm.spring_length = distance
+	_shoulder_side = 1.0 if right_shoulder else -1.0
+	_apply_shoulder()
 	_camera.fov = fov
 	# Bis activate() aufgerufen wird, verarbeitet die Kamera keine Eingaben (z. B. Figuren anderer Spieler).
 	set_process(false)
@@ -44,6 +52,11 @@ func get_yaw_basis() -> Basis:
 
 
 func _process(delta: float) -> void:
+	var target_side := 1.0 if right_shoulder else -1.0
+	if _shoulder_side != target_side:
+		_shoulder_side = move_toward(_shoulder_side, target_side, 2.0 / shoulder_switch_time * delta)
+		_apply_shoulder()
+
 	var look := Input.get_vector("camera_left", "camera_right", "camera_up", "camera_down")
 	if look != Vector2.ZERO:
 		_rotate_view(-look * stick_sensitivity * delta)
@@ -56,6 +69,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 			get_viewport().set_input_as_handled()
 		return
+	if event.is_action_pressed("camera_switch_shoulder"):
+		right_shoulder = not right_shoulder
+		get_viewport().set_input_as_handled()
+		return
 	var motion := event as InputEventMouseMotion
 	if motion:
 		_rotate_view(-motion.screen_relative * mouse_sensitivity)
@@ -64,3 +81,12 @@ func _unhandled_input(event: InputEvent) -> void:
 func _rotate_view(degrees: Vector2) -> void:
 	rotation_degrees.y += degrees.x
 	_pitch.rotation_degrees.x = clampf(_pitch.rotation_degrees.x + degrees.y, min_pitch, max_pitch)
+
+
+## Dreht den Schulterarm zur aktuellen Seite und gleicht den hinteren Arm aus, damit die Kamera nach vorne schaut.
+## Der Seitenwechsel läuft über die Armlänge, die Richtung springt nur bei Länge 0 um.
+func _apply_shoulder() -> void:
+	var side_sign := 1.0 if _shoulder_side >= 0.0 else -1.0
+	_shoulder_arm.basis = Basis(Vector3.UP, side_sign * PI / 2.0)
+	_back_arm.basis = Basis(Vector3.UP, -side_sign * PI / 2.0)
+	_shoulder_arm.spring_length = shoulder_offset * absf(_shoulder_side)

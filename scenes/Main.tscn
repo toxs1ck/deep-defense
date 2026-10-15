@@ -18,7 +18,7 @@ script = ExtResource("1_main")
 environment = SubResource("Environment_main")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.5, -0.866025, 0, 0.866025, 0.5, 0, 10, 0)
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, 0, 10, 0)
 shadow_enabled = true
 
 [node name="TestRoom" parent="." instance=ExtResource("2_room")]
@@ -34,4 +34,4 @@ offset_top = 24.0
 offset_right = 624.0
 offset_bottom = 104.0
 text = "WASD / linker Stick: laufen · Shift: sprinten · Leertaste: springen
-Maus / rechter Stick: Kamera · Esc: beenden"
+Maus / rechter Stick: Kamera · V / R3: Schulter wechseln · Esc: beenden"

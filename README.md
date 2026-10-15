@@ -26,6 +26,8 @@ Alle Aktionen aus der Steuerungstabelle im GDD sind in der Input Map angelegt (M
 `InputEventMouseMotion`), `jump`, `sprint`, `attack`, `aim`, `interact`, `build_mode`,
 `build_rotate_left/right`, `ability`, `ping`, `ready`, `show_info`, `menu`.
 
+Zusätzlich (nicht im GDD): `camera_switch_shoulder` – V / rechten Stick drücken wechselt die Kameraschulter.
+
 ## Fortschritt (Prototyp-Plan)
 
 - [x] 1 – Projektgerüst

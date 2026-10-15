@@ -66,7 +66,7 @@ size = Vector3(1, 4, 1)
 material = SubResource("StandardMaterial3D_wall")
 
 [node name="Ramp" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.939693, 0.34202, 0, -0.34202, 0.939693, 0, 1, -10)
+transform = Transform3D(1, 0, 0, 0, 0.939693, -0.34202, 0, 0.34202, 0.939693, 0, 1, -10)
 use_collision = true
 size = Vector3(3, 0.2, 6)
 material = SubResource("StandardMaterial3D_accent")

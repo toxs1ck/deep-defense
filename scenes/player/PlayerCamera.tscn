@@ -9,17 +9,17 @@ radius = 0.3
 script = ExtResource("1_cam")
 
 [node name="Pitch" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.965926, -0.258819, 0, 0.258819, 0.965926, 0, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0, 0)
 
 [node name="ShoulderArm" type="SpringArm3D" parent="Pitch"]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 0)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0, 0, 0)
 collision_mask = 9
 shape = SubResource("SphereShape3D_arm")
 spring_length = 0.6
 margin = 0.15
 
 [node name="BackArm" type="SpringArm3D" parent="Pitch/ShoulderArm"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0, 0, 0.6)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 0.6)
 collision_mask = 9
 shape = SubResource("SphereShape3D_arm")
 spring_length = 4.0
