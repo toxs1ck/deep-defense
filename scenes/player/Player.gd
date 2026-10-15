@@ -10,6 +10,8 @@ extends CharacterBody3D
 
 ## Restzeit, in der ein Sprung noch erlaubt ist; am Boden immer voll.
 var _coyote_timer: float = 0.0
+## Restzeit, in der ein gedrückter Sprung noch auf Bodenkontakt wartet.
+var _jump_buffer_timer: float = 0.0
 
 
 func _ready() -> void:
@@ -30,9 +32,15 @@ func _physics_process(delta: float) -> void:
 		var falling := velocity.y < 0.0
 		velocity += gravity * (data.fall_gravity_multiplier if falling else 1.0) * delta
 
-	if Input.is_action_just_pressed("jump") and _coyote_timer > 0.0:
+	if Input.is_action_just_pressed("jump"):
+		_jump_buffer_timer = data.jump_buffer_time
+	else:
+		_jump_buffer_timer = maxf(0.0, _jump_buffer_timer - delta)
+
+	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
 		velocity.y = sqrt(2.0 * gravity.length() * data.jump_height)
 		_coyote_timer = 0.0
+		_jump_buffer_timer = 0.0
 
 	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := _camera.get_yaw_basis() * Vector3(input_dir.x, 0.0, input_dir.y)
