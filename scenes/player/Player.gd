@@ -16,6 +16,7 @@ extends CharacterBody3D
 
 @onready var _camera: PlayerCamera = $PlayerCamera
 @onready var _model: Node3D = $Model
+@onready var _body: MeshInstance3D = $Model/Body
 
 ## Restzeit, in der ein Sprung noch erlaubt ist; am Boden immer voll.
 var _coyote_timer: float = 0.0
@@ -34,6 +35,7 @@ func _ready() -> void:
 	# Der Host setzt sync_position vor dem Spawnen; sie kommt auch bei den Clients mit an.
 	global_position = sync_position
 	_model.rotation.y = sync_yaw
+	_apply_player_color()
 	if is_multiplayer_authority():
 		_camera.activate()
 
@@ -91,3 +93,14 @@ func _physics_process(delta: float) -> void:
 
 	sync_position = global_position
 	sync_yaw = _model.rotation.y
+
+
+## Jeder Spieler bekommt eine eigene Farbe aus seiner Peer-ID, damit man Figuren unterscheiden kann.
+## Der Host (ID 1) behält das Orange aus der Szene.
+func _apply_player_color() -> void:
+	var peer_id := get_multiplayer_authority()
+	if peer_id == 1:
+		return
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color.from_hsv(fposmod(peer_id * 0.618034, 1.0), 0.65, 0.85)
+	_body.material_override = material

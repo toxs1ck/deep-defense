@@ -10,11 +10,13 @@ const SPAWN_SPACING: float = 1.5
 @onready var _players: Node3D = $Players
 @onready var _menu: MainMenu = $UI/MainMenu
 @onready var _help: Label = $UI/Help
+@onready var _network_status: Label = $UI/NetworkStatus
 
 
 func _ready() -> void:
 	print("Deep Defense gestartet – Godot %s" % Engine.get_version_info().string)
 	_help.visible = false
+	_network_status.visible = false
 	_menu.host_requested.connect(_on_host_requested)
 	_menu.join_requested.connect(_on_join_requested)
 	NetworkManager.player_joined.connect(_on_player_joined)
@@ -23,6 +25,12 @@ func _ready() -> void:
 	NetworkManager.connection_failed.connect(_on_connection_failed)
 	NetworkManager.server_disconnected.connect(_on_server_disconnected)
 	_apply_command_line()
+
+
+func _process(_delta: float) -> void:
+	if _network_status.visible:
+		var role := "Host" if multiplayer.is_server() else "Client"
+		_network_status.text = "%s · ID %d · Spieler: %d" % [role, multiplayer.get_unique_id(), _players.get_child_count()]
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -64,6 +72,10 @@ func _on_join_requested(address: String) -> void:
 func _on_session_started() -> void:
 	_menu.visible = false
 	_help.visible = true
+	_network_status.visible = true
+	# Hilft beim Testen mit mehreren Fenstern, sie auseinanderzuhalten.
+	var role := "Host" if multiplayer.is_server() else "Client %d" % multiplayer.get_unique_id()
+	get_window().title = "Deep Defense – %s" % role
 
 
 func _on_connection_failed() -> void:

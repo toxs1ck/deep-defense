@@ -43,4 +43,15 @@ offset_bottom = 104.0
 text = "WASD / linker Stick: laufen · Shift: sprinten · Leertaste: springen
 Maus / rechter Stick: Kamera · V / R3: Schulter wechseln · Esc: beenden"
 
+[node name="NetworkStatus" type="Label" parent="UI"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -424.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = 56.0
+grow_horizontal = 0
+horizontal_alignment = 2
+
 [node name="MainMenu" parent="UI" instance=ExtResource("3_menu")]

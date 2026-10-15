@@ -31,6 +31,7 @@ func host_game(port: int = DEFAULT_PORT) -> Error:
 	if error != OK:
 		return error
 	multiplayer.multiplayer_peer = peer
+	print("[Netzwerk] Host gestartet auf Port %d" % port)
 	player_joined.emit(multiplayer.get_unique_id())
 	return OK
 
@@ -41,6 +42,7 @@ func join_game(address: String, port: int = DEFAULT_PORT) -> Error:
 	if error != OK:
 		return error
 	multiplayer.multiplayer_peer = peer
+	print("[Netzwerk] Verbinde mit %s:%d …" % [address, port])
 	return OK
 
 
@@ -50,24 +52,29 @@ func leave_game() -> void:
 
 
 func _on_peer_connected(peer_id: int) -> void:
+	print("[Netzwerk] Peer verbunden: %d" % peer_id)
 	if multiplayer.is_server():
 		player_joined.emit(peer_id)
 
 
 func _on_peer_disconnected(peer_id: int) -> void:
+	print("[Netzwerk] Peer getrennt: %d" % peer_id)
 	if multiplayer.is_server():
 		player_left.emit(peer_id)
 
 
 func _on_connected_to_server() -> void:
+	print("[Netzwerk] Mit Host verbunden, eigene ID: %d" % multiplayer.get_unique_id())
 	connection_succeeded.emit()
 
 
 func _on_connection_failed() -> void:
+	print("[Netzwerk] Verbindung fehlgeschlagen")
 	leave_game()
 	connection_failed.emit()
 
 
 func _on_server_disconnected() -> void:
+	print("[Netzwerk] Verbindung zum Host verloren")
 	leave_game()
 	server_disconnected.emit()
