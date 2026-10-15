@@ -1,5 +1,5 @@
 extends Node3D
-## Einstiegsszene. Lädt vorerst nur einen Testraum; Spieler, Mine und HUD kommen in den folgenden Aufgaben dazu.
+## Einstiegsszene. Lädt vorerst einen Testraum mit einer Spielfigur; Mine, Netzwerk und HUD folgen in den nächsten Aufgaben.
 
 
 func _ready() -> void:

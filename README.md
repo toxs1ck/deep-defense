@@ -7,17 +7,17 @@
 
 1. [Godot 4.7](https://godotengine.org/download) (Standard-Version, kein .NET) installieren.
 2. Im Projektmanager „Importieren“ wählen und `project.godot` in diesem Ordner öffnen.
-3. Mit F5 starten. Die Main-Szene zeigt einen leeren Testraum; Esc beendet.
+3. Mit F5 starten. Die Main-Szene startet im Testraum mit einer Spielfigur; Esc beendet.
 
 ## Ordnerstruktur
 
 | Ordner | Inhalt |
 | --- | --- |
 | `autoload/` | Globale Systeme: `GameState`, `RunManager`, `Economy`, `NetworkManager` |
-| `data/` | Balancing-Werte als `.tres`: `ores/`, `buildables/`, `enemies/`, `traits/`, `items/`, `recipes/` |
+| `data/` | Balancing-Werte als `.tres`: `player/`, `ores/`, `buildables/`, `enemies/`, `traits/`, `items/`, `recipes/` |
 | `scenes/` | `Main.tscn` sowie `player/`, `enemies/`, `buildables/`, `world/`, `ui/` |
 | `components/` | Wiederverwendbare Kind-Nodes (Health, Hitbox, Carry, Ability …) |
-| `scripts/` | Hilfsklassen, z. B. `WaveGenerator.gd`, `MineGenerator.gd` |
+| `scripts/` | Hilfsklassen und Resource-Klassen (`resources/`), z. B. `WaveGenerator.gd`, `MineGenerator.gd` |
 
 ## Input Map
 
@@ -29,5 +29,5 @@ Alle Aktionen aus der Steuerungstabelle im GDD sind in der Input Map angelegt (M
 ## Fortschritt (Prototyp-Plan)
 
 - [x] 1 – Projektgerüst
-- [ ] 2 – Spielfigur & Kamera
+- [x] 2 – Spielfigur & Kamera
 - [ ] 3 – Netzwerk-Basis
