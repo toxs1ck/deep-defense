@@ -48,9 +48,10 @@ fov = 75.0
 offset_left = 24.0
 offset_top = 24.0
 offset_right = 624.0
-offset_bottom = 104.0
+offset_bottom = 130.0
 text = "WASD / linker Stick: laufen · Shift: sprinten · Leertaste: springen
-Maus / rechter Stick: Kamera · V / R3: Schulter wechseln · E / X: interagieren (halten zum Abbauen) · Esc: beenden"
+Maus / rechter Stick: Kamera · V / R3: Schulter wechseln · E / X: interagieren (halten zum Abbauen)
+Beim Tragen: E ablegen · Linksklick / RT werfen · Esc: beenden"
 
 [node name="NetworkStatus" type="Label" parent="UI"]
 anchors_preset = 1

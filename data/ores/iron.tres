@@ -8,5 +8,6 @@ display_name = "Eisen"
 value = 12
 hits_per_chunk = 4
 chunks_per_deposit = 5
-weight = 1
+carry_limit = 1
+carry_speed_multiplier = 1.0
 color = Color(0.62, 0.45, 0.38, 1)

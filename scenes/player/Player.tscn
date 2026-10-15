@@ -1,8 +1,9 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scenes/player/Player.gd" id="1_player"]
 [ext_resource type="Resource" path="res://data/player/default_player.tres" id="2_data"]
 [ext_resource type="PackedScene" path="res://scenes/player/PlayerCamera.tscn" id="3_cam"]
+[ext_resource type="Script" path="res://components/CarryComponent.gd" id="4_carry"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -51,6 +52,10 @@ mesh = SubResource("CapsuleMesh_body")
 [node name="Visor" type="MeshInstance3D" parent="Model"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -0.33)
 mesh = SubResource("BoxMesh_visor")
+
+[node name="CarryComponent" type="Node3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -0.6)
+script = ExtResource("4_carry")
 
 [node name="PlayerCamera" parent="." instance=ExtResource("3_cam")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)

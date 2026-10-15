@@ -8,5 +8,6 @@ display_name = "Kristall"
 value = 60
 hits_per_chunk = 8
 chunks_per_deposit = 3
-weight = 3
+carry_limit = 1
+carry_speed_multiplier = 0.5
 color = Color(0.45, 0.85, 1, 1)

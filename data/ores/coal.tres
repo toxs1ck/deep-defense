@@ -8,5 +8,6 @@ display_name = "Kohle"
 value = 5
 hits_per_chunk = 2
 chunks_per_deposit = 6
-weight = 0
+carry_limit = 2
+carry_speed_multiplier = 1.0
 color = Color(0.15, 0.15, 0.17, 1)

@@ -8,5 +8,6 @@ display_name = "Gold"
 value = 30
 hits_per_chunk = 6
 chunks_per_deposit = 4
-weight = 2
+carry_limit = 1
+carry_speed_multiplier = 0.7
 color = Color(0.95, 0.75, 0.2, 1)

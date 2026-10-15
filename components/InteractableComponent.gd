@@ -10,16 +10,22 @@ signal interacted(player: Player)
 ## Spielraum für die Entfernungsprüfung auf dem Host, weil der Raycast die Oberfläche trifft,
 ## geprüft aber zur Mitte des Objekts wird; dazu kommt Netzwerk-Verzögerung.
 const HOST_RANGE_TOLERANCE: float = 2.0
+const INTERACTABLE_LAYER: int = 1 << 5
 
 ## Text im Prompt, z. B. „Abbauen“ → „E: Abbauen“.
 @export var prompt_text: String = "Benutzen"
-@export var enabled: bool = true
+## Deaktiviert nimmt die Komponente auch die Physik-Ebene weg, damit der Raycast hindurchgeht
+## (z. B. bei getragenen Brocken oder erschöpften Vorkommen).
+@export var enabled: bool = true:
+	set(value):
+		enabled = value
+		collision_layer = INTERACTABLE_LAYER if enabled else 0
 ## Gedrückt halten wiederholt die Interaktion im Takt der Abbaurate des Spielers (z. B. Abbauen).
 @export var allow_hold: bool = false
 
 
 func _ready() -> void:
-	collision_layer = 1 << 5
+	collision_layer = INTERACTABLE_LAYER if enabled else 0
 	collision_mask = 0
 	monitoring = false
 

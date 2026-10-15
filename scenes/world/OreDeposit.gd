@@ -43,7 +43,8 @@ func _ready() -> void:
 
 
 func _on_interacted(player: Player) -> void:
-	if _chunks_left <= 0:
+	# Wer trägt, hat die Hände voll und kann nicht abbauen.
+	if _chunks_left <= 0 or player.carry.is_carrying():
 		return
 	var now := Time.get_ticks_msec() / 1000.0
 	var min_interval := HIT_RATE_TOLERANCE / player.data.mining_rate

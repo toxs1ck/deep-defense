@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scenes/world/OreChunk.gd" id="1_chunk"]
+[ext_resource type="Script" path="res://components/InteractableComponent.gd" id="2_interact"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_chunk"]
 size = Vector3(0.4, 0.35, 0.4)
@@ -10,6 +11,9 @@ radius = 0.24
 height = 0.4
 radial_segments = 5
 rings = 2
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_interact"]
+radius = 0.4
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_chunk"]
 properties/0/path = NodePath(".:ore_path")
@@ -21,6 +25,9 @@ properties/1/replication_mode = 2
 properties/2/path = NodePath(".:sync_rotation")
 properties/2/spawn = true
 properties/2/replication_mode = 2
+properties/3/path = NodePath(".:carrier_id")
+properties/3/spawn = true
+properties/3/replication_mode = 2
 
 [node name="OreChunk" type="RigidBody3D"]
 collision_layer = 16
@@ -33,6 +40,16 @@ shape = SubResource("BoxShape3D_chunk")
 
 [node name="Mesh" type="MeshInstance3D" parent="."]
 mesh = SubResource("SphereMesh_chunk")
+
+[node name="InteractableComponent" type="Area3D" parent="."]
+collision_layer = 32
+collision_mask = 0
+monitoring = false
+script = ExtResource("2_interact")
+prompt_text = "Aufheben"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="InteractableComponent"]
+shape = SubResource("SphereShape3D_interact")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("SceneReplicationConfig_chunk")

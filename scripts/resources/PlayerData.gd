@@ -24,3 +24,5 @@ extends Resource
 @export var interaction_range: float = 1.25
 ## Schläge pro Sekunde mit der Spitzhacke beim Abbauen (GDD: 1,5).
 @export var mining_rate: float = 1.5
+## Wurfgeschwindigkeit für getragene Brocken in m/s.
+@export var throw_speed: float = 8.0
