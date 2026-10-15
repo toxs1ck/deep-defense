@@ -14,8 +14,8 @@ const HIT_RATE_TOLERANCE: float = 0.85
 const LAUNCH_SPREAD_DEGREES: float = 40.0
 const LAUNCH_LIFT_MIN: float = 1.1
 const LAUNCH_LIFT_MAX: float = 2.0
-const LAUNCH_SPEED_MIN: float = 1.6
-const LAUNCH_SPEED_MAX: float = 2.8
+const LAUNCH_SPEED_MIN: float = 1.0
+const LAUNCH_SPEED_MAX: float = 1.8
 
 @export var ore: OreData
 
