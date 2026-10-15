@@ -19,6 +19,8 @@ const EYE_HEIGHT: float = 1.6
 const INTERACTION_MASK: int = (1 << 0) | (1 << 3) | (1 << 5)
 ## Anteil nach oben, der beim Werfen zur Blickrichtung kommt, damit Brocken einen Bogen fliegen.
 const THROW_LIFT: float = 0.25
+## Obergrenze für InteractableComponent.extra_range; so lang wird der Raycast mindestens verlängert.
+const MAX_EXTRA_RANGE: float = 2.0
 
 @export var data: PlayerData
 ## Wie schnell fremde Figuren zur empfangenen Position aufschließen. Höher = direkter, aber ruckeliger.
@@ -86,7 +88,7 @@ func _physics_process(delta: float) -> void:
 		var falling := velocity.y < 0.0
 		velocity += gravity * (data.fall_gravity_multiplier if falling else 1.0) * delta
 
-	if Input.is_action_just_pressed("jump"):
+	if _just_pressed(&"jump"):
 		_jump_buffer_timer = data.jump_buffer_time
 	else:
 		_jump_buffer_timer = maxf(0.0, _jump_buffer_timer - delta)
@@ -96,10 +98,10 @@ func _physics_process(delta: float) -> void:
 		_coyote_timer = 0.0
 		_jump_buffer_timer = 0.0
 
-	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+	var input_dir := _move_input()
 	var direction := _camera.get_yaw_basis() * Vector3(input_dir.x, 0.0, input_dir.y)
 	var is_carrying := carry.is_carrying()
-	var is_sprinting := Input.is_action_pressed("sprint") and input_dir != Vector2.ZERO and not is_carrying
+	var is_sprinting := _pressed(&"sprint") and input_dir != Vector2.ZERO and not is_carrying
 	var speed := data.sprint_speed if is_sprinting else data.walk_speed
 	speed *= carry.get_speed_multiplier()
 	var accel := data.air_acceleration
@@ -123,8 +125,8 @@ func _physics_process(delta: float) -> void:
 	_handle_carry_input()
 	_interact_cooldown = maxf(0.0, _interact_cooldown - delta)
 	if _interaction_target and _interact_cooldown <= 0.0:
-		var held := _interaction_target.allow_hold and Input.is_action_pressed("interact")
-		if held or Input.is_action_just_pressed("interact"):
+		var held := _interaction_target.allow_hold and _pressed(&"interact")
+		if held or _just_pressed(&"interact"):
 			_interaction_target.request_interact()
 			_interact_cooldown = 1.0 / data.mining_rate if _interaction_target.allow_hold else 0.0
 
@@ -144,10 +146,10 @@ func _apply_player_color() -> void:
 func _handle_carry_input() -> void:
 	if not carry.is_carrying():
 		return
-	if Input.is_action_just_pressed("attack"):
+	if _just_pressed(&"attack"):
 		var forward := -_camera.get_view_transform().basis.z
 		carry.request_drop((forward + Vector3.UP * THROW_LIFT).normalized())
-	elif _interaction_target == null and Input.is_action_just_pressed("interact"):
+	elif _interaction_target == null and _just_pressed(&"interact"):
 		carry.request_drop()
 
 
@@ -156,7 +158,7 @@ func _update_interaction_target() -> void:
 	var view := _camera.get_view_transform()
 	var eye := global_position + Vector3.UP * EYE_HEIGHT
 	var forward := -view.basis.z
-	var reach := view.origin.distance_to(eye) + data.interaction_range
+	var reach := view.origin.distance_to(eye) + data.interaction_range + MAX_EXTRA_RANGE
 	var query := PhysicsRayQueryParameters3D.create(view.origin, view.origin + forward * reach, INTERACTION_MASK, [get_rid()])
 	query.collide_with_areas = true
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
@@ -166,9 +168,24 @@ func _update_interaction_target() -> void:
 		var hit_position: Vector3 = hit["position"]
 		var candidate := hit["collider"] as InteractableComponent
 		var in_front := (hit_position - eye).dot(forward) > 0.0
-		if candidate and candidate.enabled and in_front and eye.distance_to(hit_position) <= data.interaction_range:
+		if candidate and candidate.enabled and in_front and eye.distance_to(hit_position) <= data.interaction_range + candidate.extra_range:
 			target = candidate
 
 	if target != _interaction_target:
 		_interaction_target = target
 		interaction_target_changed.emit(target)
+
+
+## Eingabe-Abfragen laufen über diese Helfer, damit ein offenes Menü die Figur sperrt.
+func _pressed(action: StringName) -> bool:
+	return not GameState.input_blocked and Input.is_action_pressed(action)
+
+
+func _just_pressed(action: StringName) -> bool:
+	return not GameState.input_blocked and Input.is_action_just_pressed(action)
+
+
+func _move_input() -> Vector2:
+	if GameState.input_blocked:
+		return Vector2.ZERO
+	return Input.get_vector("move_left", "move_right", "move_forward", "move_back")

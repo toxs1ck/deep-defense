@@ -63,11 +63,13 @@ func _process(delta: float) -> void:
 		_apply_shoulder()
 
 	var look := Input.get_vector("camera_left", "camera_right", "camera_up", "camera_down")
-	if look != Vector2.ZERO:
+	if look != Vector2.ZERO and not GameState.input_blocked:
 		_rotate_view(-look * stick_sensitivity * delta)
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if GameState.input_blocked:
+		return
 	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 		# Nach Alt-Tab o. Ä. fängt ein Klick die Maus wieder ein.
 		if event is InputEventMouseButton and event.is_pressed():

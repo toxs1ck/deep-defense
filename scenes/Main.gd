@@ -13,6 +13,7 @@ const SPAWN_SPACING: float = 1.5
 @onready var _menu: MainMenu = $UI/MainMenu
 @onready var _help: Label = $UI/Help
 @onready var _hud: HUD = $UI/HUD
+@onready var _pause_menu: PauseMenu = $UI/PauseMenu
 @onready var _network_status: Label = $UI/NetworkStatus
 
 
@@ -26,6 +27,9 @@ func _ready() -> void:
 	_network_status.visible = false
 	_menu.host_requested.connect(_on_host_requested)
 	_menu.join_requested.connect(_on_join_requested)
+	_menu.quit_requested.connect(get_tree().quit)
+	_pause_menu.leave_requested.connect(_return_to_menu)
+	_pause_menu.quit_requested.connect(get_tree().quit)
 	NetworkManager.player_joined.connect(_on_player_joined)
 	NetworkManager.player_left.connect(_on_player_left)
 	NetworkManager.connection_succeeded.connect(_on_session_started)
@@ -41,9 +45,10 @@ func _process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# Bis es ein Pausemenü gibt, beendet Esc den Prototyp.
-	if event.is_action_pressed("menu"):
-		get_tree().quit()
+	# Esc öffnet bzw. schließt im Spiel das Pausenmenü; im Startmenü passiert nichts.
+	if event.is_action_pressed("menu") and not _menu.visible:
+		_pause_menu.toggle()
+		get_viewport().set_input_as_handled()
 
 
 func _apply_command_line() -> void:
@@ -92,7 +97,14 @@ func _on_connection_failed() -> void:
 
 
 func _on_server_disconnected() -> void:
-	# Einfachster sauberer Zustand: Szene neu laden, das Menü erscheint wieder.
+	_return_to_menu()
+
+
+## Verbindung trennen und Szene neu laden; das ist der einfachste saubere Zustand, das Menü erscheint wieder.
+## Verlässt der Host das Spiel, landen alle Clients über server_disconnected ebenfalls hier.
+func _return_to_menu() -> void:
+	NetworkManager.leave_game()
+	GameState.input_blocked = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	get_tree().reload_current_scene()
 

@@ -46,7 +46,10 @@ func join_game(address: String, port: int = DEFAULT_PORT) -> Error:
 	return OK
 
 
+## Darf mehrfach aufgerufen werden; ohne aktive Verbindung passiert nichts.
 func leave_game() -> void:
+	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		return
 	multiplayer.multiplayer_peer.close()
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 

@@ -4,17 +4,20 @@ extends Control
 
 signal host_requested
 signal join_requested(address: String)
+signal quit_requested
 
 @onready var _host_button: Button = %HostButton
 @onready var _join_button: Button = %JoinButton
 @onready var _address_edit: LineEdit = %AddressEdit
 @onready var _status_label: Label = %StatusLabel
+@onready var _quit_button: Button = %QuitButton
 
 
 func _ready() -> void:
 	_host_button.pressed.connect(func() -> void: host_requested.emit())
 	_join_button.pressed.connect(_request_join)
 	_address_edit.text_submitted.connect(func(_text: String) -> void: _request_join())
+	_quit_button.pressed.connect(func() -> void: quit_requested.emit())
 	_host_button.grab_focus()
 
 

@@ -60,6 +60,11 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Beitreten"
 
+[node name="QuitButton" type="Button" parent="Center/Panel/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Beenden"
+
 [node name="StatusLabel" type="Label" parent="Center/Panel/Margin/Rows"]
 unique_name_in_owner = true
 layout_mode = 2

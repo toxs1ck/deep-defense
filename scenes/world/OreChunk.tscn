@@ -47,6 +47,7 @@ collision_mask = 0
 monitoring = false
 script = ExtResource("2_interact")
 prompt_text = "Aufheben"
+extra_range = 1.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="InteractableComponent"]
 shape = SubResource("SphereShape3D_interact")

@@ -20,6 +20,8 @@ const INTERACTABLE_LAYER: int = 1 << 5
 	set(value):
 		enabled = value
 		collision_layer = INTERACTABLE_LAYER if enabled else 0
+## Zusätzliche Reichweite zu PlayerData.interaction_range, z. B. für Brocken am Boden, die von Augenhöhe weiter weg sind.
+@export var extra_range: float = 0.0
 ## Gedrückt halten wiederholt die Interaktion im Takt der Abbaurate des Spielers (z. B. Abbauen).
 @export var allow_hold: bool = false
 
@@ -45,7 +47,7 @@ func _interact_on_host() -> void:
 	var player := _find_player(peer_id)
 	if player == null:
 		return
-	var max_distance := player.data.interaction_range + HOST_RANGE_TOLERANCE
+	var max_distance := player.data.interaction_range + extra_range + HOST_RANGE_TOLERANCE
 	if player.global_position.distance_to(global_position) > max_distance:
 		return
 	interacted.emit(player)
