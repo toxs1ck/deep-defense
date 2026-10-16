@@ -42,6 +42,9 @@ Alle Aktionen aus der Steuerungstabelle im GDD sind in der Input Map angelegt (M
 `InputEventMouseMotion`), `jump`, `sprint`, `attack`, `aim`, `interact`, `build_mode`,
 `build_rotate_left/right`, `ability`, `ping`, `ready`, `show_info`, `menu`.
 
+Im Spiel zeigt das Esc-Menü die komplette Belegung (Tastatur & Maus und Controller); sie wird aus der
+Input Map gelesen (`scripts/InputNames.gd`, auch für die HUD-Prompts).
+
 Zusätzlich (nicht im GDD): `camera_switch_shoulder` – V / rechten Stick drücken wechselt die Kameraschulter;
 `purchase_carried` – R / RB halten kauft ein getragenes Shop-Angebot.
 

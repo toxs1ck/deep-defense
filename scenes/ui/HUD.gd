@@ -4,17 +4,8 @@ extends Control
 ## Die angezeigte Taste kommt aus der Input Map und wechselt zwischen Tastatur und Controller,
 ## je nachdem, was zuletzt benutzt wurde.
 
-## Namen der Controller-Tasten nach Xbox-Belegung (SDL-Indizes), wie in der Steuerungstabelle im GDD.
-const JOY_BUTTON_NAMES: Dictionary = {
-	JOY_BUTTON_A: "A", JOY_BUTTON_B: "B", JOY_BUTTON_X: "X", JOY_BUTTON_Y: "Y",
-	JOY_BUTTON_LEFT_SHOULDER: "LB", JOY_BUTTON_RIGHT_SHOULDER: "RB",
-}
 ## Mindestausschlag, ab dem ein Stick als Controller-Nutzung zählt (gegen Stick-Drift).
 const JOY_MOTION_THRESHOLD: float = 0.5
-const JOY_AXIS_NAMES: Dictionary = { JOY_AXIS_TRIGGER_LEFT: "LT", JOY_AXIS_TRIGGER_RIGHT: "RT" }
-const MOUSE_BUTTON_NAMES: Dictionary = {
-	MOUSE_BUTTON_LEFT: "Linksklick", MOUSE_BUTTON_RIGHT: "Rechtsklick", MOUSE_BUTTON_MIDDLE: "Mittelklick",
-}
 
 @onready var _prompt_label: Label = %PromptLabel
 @onready var _money_label: Label = %MoneyLabel
@@ -231,18 +222,4 @@ func _refresh_prompt() -> void:
 
 
 func _action_key_name(action: StringName) -> String:
-	for event in InputMap.action_get_events(action):
-		if _using_gamepad and event is InputEventJoypadButton:
-			var index := (event as InputEventJoypadButton).button_index
-			return str(JOY_BUTTON_NAMES.get(index, "Taste %d" % index))
-		if _using_gamepad and event is InputEventJoypadMotion:
-			var axis := (event as InputEventJoypadMotion).axis
-			return str(JOY_AXIS_NAMES.get(axis, "Achse %d" % axis))
-		if not _using_gamepad and event is InputEventMouseButton:
-			var button := (event as InputEventMouseButton).button_index
-			return str(MOUSE_BUTTON_NAMES.get(button, "Maustaste %d" % button))
-		if not _using_gamepad and event is InputEventKey:
-			var key_event := event as InputEventKey
-			var keycode := DisplayServer.keyboard_get_keycode_from_physical(key_event.physical_keycode)
-			return OS.get_keycode_string(keycode)
-	return "?"
+	return InputNames.first(action, _using_gamepad)

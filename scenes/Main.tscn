@@ -88,11 +88,7 @@ offset_left = 24.0
 offset_top = 24.0
 offset_right = 624.0
 offset_bottom = 156.0
-text = "WASD / linker Stick: laufen · Shift: sprinten · Leertaste: springen · Maus / rechter Stick: Kamera
-Linksklick / RT: Spitzhacke (abbauen, kämpfen; halten schlägt weiter) · E / X: aufheben, einladen
-Beim Tragen: E ablegen · Linksklick / RT werfen · V / R3: Schulter · F: bereit · Esc: Menü
-Shop: Kisten links vor dem Aufzug (E tippen: tragen, E halten: kaufen) · gekaufte Kiste in der Hand = Baumodus
-Bauteil anvisieren und E halten: abbauen und versetzen"
+text = "Esc: Menü & Steuerung"
 
 [node name="NetworkStatus" type="Label" parent="UI"]
 anchors_preset = 1
