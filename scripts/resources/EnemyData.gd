@@ -17,6 +17,10 @@ extends Resource
 @export var flee_time_max: float = 5.0
 ## Wie weit er sich dabei ungefähr entfernt, in Metern.
 @export var flee_distance: float = 10.0
+## Erzdieb: Spielern in diesem Umkreis weicht er im Bogen aus; 0 = gar nicht. Die Stärke gewichtet das Ausweichen
+## gegen die Laufrichtung (1 = gleich stark wie der Weg, wenn der Spieler direkt neben ihm steht).
+@export var player_avoid_radius: float = 0.0
+@export var player_avoid_strength: float = 1.5
 ## Größe des Modells (die Kollision bleibt gleich).
 @export var model_scale: float = 1.0
 @export var max_health: int = 30

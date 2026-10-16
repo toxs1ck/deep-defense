@@ -10,8 +10,8 @@ extends CharacterBody3D
 ## Erreicht der Weg den Aufzug nicht (zugebaut), greift der Gegner das Bauelement am Wegende an (GDD, „Platzierung“).
 ## Erzdiebe (data.steals_ore) suchen stattdessen liegendes Erz, stehlen es und fliehen zum nächsten Eingang; dort
 ## verschwinden sie mit der Beute. Bei jedem Treffer (auch von Verteidigungen) lassen sie das Erz fallen und fliehen
-## einige Sekunden vom Verursacher weg, bevorzugt an einen Platz außer Sicht. Ohne liegendes Erz verhalten sie sich
-## wie die anderen, greifen aber nie Spieler an.
+## einige Sekunden vom Verursacher weg, bevorzugt an einen Platz außer Sicht. Spielern weichen sie unterwegs im Bogen
+## aus. Ohne liegendes Erz verhalten sie sich wie die anderen, greifen aber nie Spieler an.
 ## Jeder Angriff hat eine Ausholphase (data.attack_windup), in der man ausweichen kann. Dabei rückt er mit
 ## verringertem Tempo nach; einmal ausgeholt, schlägt er zu, auch wenn das Ziel schon weg ist. Ein Treffer während
 ## des Ausholens bricht den Angriff ab.
@@ -518,21 +518,46 @@ func _thief_step(delta: float) -> Vector3:
 		if _horizontal_distance_to(_flee_point) <= WAYPOINT_REACHED:
 			# Im Versteck: abwarten, bis die Fluchtzeit um ist.
 			return Vector3.ZERO
-		return _move_direction(delta) * data.speed
+		return _avoid_players(_move_direction(delta)) * data.speed
 	if not loot_path.is_empty():
 		if _horizontal_distance_to(_nearest_entrance()) <= ESCAPE_RANGE:
 			# Entkommen: Die Beute ist verloren.
 			_dying = true
 			queue_free()
 			return Vector3.ZERO
-		return _move_direction(delta) * data.speed * data.loot_speed_multiplier
+		return _avoid_players(_move_direction(delta)) * data.speed * data.loot_speed_multiplier
 	if _horizontal_distance_to(_target_chunk.global_position) <= STEAL_RANGE:
 		loot_path = _target_chunk.ore_path
 		_target_chunk.queue_free()
 		_target_chunk = null
 		_repath_timer = 0.0
 		return Vector3.ZERO
-	return _move_direction(delta) * data.speed
+	return _avoid_players(_move_direction(delta)) * data.speed
+
+
+## Biegt die Laufrichtung von nahen Spielern weg: Jeder Spieler im Umkreis drückt umso stärker, je näher er ist.
+## Der Weg gibt die grobe Richtung vor, so entsteht ein Bogen um den Spieler statt eines Umkehrens.
+func _avoid_players(direction: Vector3) -> Vector3:
+	if data.player_avoid_radius <= 0.0 or direction == Vector3.ZERO:
+		return direction
+	var push := Vector3.ZERO
+	for node in get_tree().get_nodes_in_group(Player.GROUP):
+		var player := node as Player
+		if player.is_downed():
+			continue
+		var away := global_position - player.global_position
+		away.y = 0.0
+		var distance := away.length()
+		if distance < 0.001 or distance > data.player_avoid_radius:
+			continue
+		var closeness := 1.0 - distance / data.player_avoid_radius
+		push += away / distance * closeness * data.player_avoid_strength
+	var steered := direction + push
+	steered.y = 0.0
+	# Heben sich Weg und Ausweichen fast auf, zur Seite statt stehen zu bleiben.
+	if steered.length_squared() < 0.01:
+		steered = direction.cross(Vector3.UP)
+	return steered.normalized()
 
 
 ## Nächster frei liegender Brocken (nicht getragen, nicht schon von einem anderen Dieb anvisiert).
