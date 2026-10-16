@@ -11,6 +11,13 @@ const GROUP: StringName = &"enemies"
 const REPATH_INTERVAL: float = 0.5
 ## Ab dieser Entfernung zur Mitte des Aufzugs greift der Gegner an.
 const ATTACK_RANGE: float = 2.8
+## Wer angreift, hört erst auf, wenn er so viel weiter weg gedrückt wird (gegen Flackern an der Grenze).
+const ATTACK_HYSTERESIS: float = 0.6
+## Wie schnell sich die Geschwindigkeit an die gewünschte anpasst, in m/s². Glättet Richtungswechsel
+## von Avoidance, Wegpunkten und Schieben, die sonst gegeneinander arbeiten und ruckeln.
+const ACCELERATION: float = 18.0
+## Erst ab diesem Tempo dreht sich das Modell mit, damit es im Stehen nicht zittert.
+const MIN_FACING_SPEED: float = 0.6
 ## Abstand der Angriffspunkte zur Mitte des Aufzugs (knapp außerhalb der Korbwände).
 const ATTACK_POINT_RADIUS: float = 2.3
 ## Radien für das Wegschieben durch Spieler: Gegner (Kollision) und Spieler (Kapsel) plus etwas Spielraum.
@@ -43,6 +50,7 @@ var _body_rest_position: Vector3 = Vector3.ZERO
 ## Nur Host: eigener Angriffspunkt als Winkel um den Aufzug und die von der Avoidance berechnete Geschwindigkeit.
 var _attack_angle: float = 0.0
 var _safe_velocity: Vector3 = Vector3.ZERO
+var _attacking: bool = false
 
 
 func _enter_tree() -> void:
@@ -81,20 +89,29 @@ func _physics_process(delta: float) -> void:
 
 	var desired := Vector3.ZERO
 	if _elevator and not health.is_dead():
-		if global_position.distance_to(_elevator.global_position) <= ATTACK_RANGE:
+		var distance := global_position.distance_to(_elevator.global_position)
+		if _attacking:
+			_attacking = distance <= ATTACK_RANGE + ATTACK_HYSTERESIS
+		else:
+			_attacking = distance <= ATTACK_RANGE
+		if _attacking:
 			_attack(delta)
 		else:
 			desired = _move_direction(delta) * data.speed
 	# Die Avoidance liefert ihr Ergebnis per Signal; verwendet wird das aus dem letzten Tick.
 	_agent.velocity = desired
-	var horizontal := _safe_velocity if desired != Vector3.ZERO else Vector3.ZERO
-	horizontal.y = 0.0
-	var facing := horizontal
-	horizontal += _player_push()
+	var steering := _safe_velocity if desired != Vector3.ZERO else Vector3.ZERO
+	steering.y = 0.0
+	var target := steering + _player_push()
+	var horizontal := Vector3(velocity.x, 0.0, velocity.z).move_toward(target, ACCELERATION * delta)
 	velocity.x = horizontal.x
 	velocity.z = horizontal.z
 	move_and_slide()
 
+	# Laufrichtung nur, solange er läuft; beim Angreifen schaut er zum Aufzug.
+	var facing := horizontal if horizontal.length() > MIN_FACING_SPEED else Vector3.ZERO
+	if _attacking:
+		facing = _elevator.global_position - global_position
 	if facing.length_squared() > 0.01:
 		var target_yaw := atan2(-facing.x, -facing.z)
 		_model.rotation.y = lerp_angle(_model.rotation.y, target_yaw, minf(1.0, TURN_SPEED * delta))
@@ -108,9 +125,9 @@ func _move_direction(delta: float) -> Vector3:
 		_repath_timer = REPATH_INTERVAL
 		var around := Vector3(sin(_attack_angle), 0.0, cos(_attack_angle)) * ATTACK_POINT_RADIUS
 		_agent.target_position = _elevator.global_position + around
-	if _agent.is_navigation_finished():
-		return Vector3.ZERO
-	var to_next := _agent.get_next_path_position() - global_position
+	# Am Wegende, aber noch nicht in Reichweite (z. B. Angriffspunkt in einer engen Ecke): direkt darauf zu.
+	var next := _agent.target_position if _agent.is_navigation_finished() else _agent.get_next_path_position()
+	var to_next := next - global_position
 	to_next.y = 0.0
 	return to_next.normalized() if to_next.length_squared() > 0.0001 else Vector3.ZERO
 
