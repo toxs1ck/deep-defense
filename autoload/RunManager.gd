@@ -25,6 +25,9 @@ var victory: bool = false
 
 ## Nur Host: verbundene Peers (inkl. Host) → bereit ja/nein.
 var _players: Dictionary = {}
+## Zuletzt gemeldete Phase. Der Host setzt „phase“ schon vor dem Broadcast, daher wird der Wechsel hiergegen
+## erkannt und nicht gegen „phase“, sonst würde phase_changed auf dem Host nie gesendet.
+var _announced_phase: Phase = Phase.LOBBY
 
 
 func _ready() -> void:
@@ -156,7 +159,8 @@ func _sync_state(new_phase: int, round_number: int, ready_list: PackedInt32Array
 
 func _apply_state(new_phase: Phase, round_number: int, ready_list: PackedInt32Array, players: int, time_left: float,
 		won: bool, round_began: bool) -> void:
-	var phase_differs := new_phase != phase
+	var phase_differs := new_phase != _announced_phase
+	_announced_phase = new_phase
 	phase = new_phase
 	victory = won
 	current_round = round_number

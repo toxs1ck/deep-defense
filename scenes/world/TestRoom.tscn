@@ -19,13 +19,15 @@ albedo_color = Color(0.42, 0.4, 0.38, 1)
 albedo_color = Color(0.55, 0.42, 0.25, 1)
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_room"]
+geometry_parsed_geometry_type = 1
+geometry_collision_mask = 1
 geometry_source_geometry_mode = 1
 geometry_source_group_name = &"nav_source"
 cell_size = 0.25
 cell_height = 0.25
 agent_height = 1.0
-agent_radius = 0.4
-agent_max_climb = 0.3
+agent_radius = 0.5
+agent_max_climb = 0.25
 agent_max_slope = 45.0
 
 [node name="TestRoom" type="Node3D" groups=["nav_source"]]

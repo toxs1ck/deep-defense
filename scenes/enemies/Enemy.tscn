@@ -60,7 +60,7 @@ mesh = SubResource("SphereMesh_eye")
 [node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
 path_desired_distance = 0.6
 target_desired_distance = 0.6
-radius = 0.4
+radius = 0.5
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("2_health")
