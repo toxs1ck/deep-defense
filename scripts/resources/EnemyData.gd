@@ -12,6 +12,8 @@ extends Resource
 @export var attack_interval: float = 1.0
 ## Ausholphase vor jedem Schlag in Sekunden: Der Gegner zeigt den Angriff an, man kann ausweichen.
 @export var attack_windup: float = 0.6
+## Tempo während des Ausholens, als Anteil von speed: Er rückt weiter nach, man muss also aktiv ausweichen.
+@export var windup_speed_multiplier: float = 0.5
 ## Beim Zuschlagen trifft er Spieler noch bis player_attack_range plus diesen Spielraum.
 @export var attack_hit_margin: float = 0.3
 ## So lange braucht er nach einem Treffer, der sein Ausholen unterbricht, bis er neu ansetzt.

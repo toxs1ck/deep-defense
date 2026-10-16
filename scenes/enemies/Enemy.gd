@@ -6,8 +6,9 @@ extends CharacterBody3D
 ## (Avoidance), damit sich keine Schlange bildet. Spieler, die einen Gegner berühren, schieben ihn weg.
 ## Kommt ein Spieler näher als data.aggro_range (oder trifft ihn), greift der Gegner stattdessen ihn an,
 ## bis er gefallen ist oder sich weiter als aggro_range + aggro_leash entfernt.
-## Jeder Angriff hat eine Ausholphase (data.attack_windup), in der man ausweichen kann. Einmal ausgeholt, schlägt er
-## zu, auch wenn das Ziel schon weg ist; ein Treffer während des Ausholens bricht den Angriff ab.
+## Jeder Angriff hat eine Ausholphase (data.attack_windup), in der man ausweichen kann. Dabei rückt er mit
+## verringertem Tempo nach; einmal ausgeholt, schlägt er zu, auch wenn das Ziel schon weg ist. Ein Treffer während
+## des Ausholens bricht den Angriff ab.
 ## Clients bekommen Position und Blickrichtung über den MultiplayerSynchronizer und glätten sie.
 
 const GROUP: StringName = &"enemies"
@@ -116,8 +117,10 @@ func _physics_process(delta: float) -> void:
 	var desired := Vector3.ZERO
 	_update_target_player()
 	if _windup_left > 0.0 and not _dying:
-		# Beim Ausholen bleibt er stehen und bringt den Schlag zu Ende.
+		# Beim Ausholen bringt er den Schlag zu Ende und rückt langsamer nach; dicht am Spieler bleibt er stehen.
 		_attack(delta)
+		if _target_player and _horizontal_distance_to(_target_player.global_position) > data.player_attack_range * 0.8:
+			desired = _move_direction(delta) * data.speed * data.windup_speed_multiplier
 	elif _elevator and not _dying:
 		# Spieler: Abstand Mitte zu Mitte, waagerecht. Aufzug: Abstand zur Mitte des Korbs.
 		var distance := global_position.distance_to(_elevator.global_position)
@@ -151,9 +154,6 @@ func _physics_process(delta: float) -> void:
 	if _attacking and _windup_left <= 0.0:
 		facing = (_target_player.global_position if _target_player else _elevator.global_position) - global_position
 		facing.y = 0.0
-	elif _windup_left > 0.0:
-		# Beim Ausholen ist die Richtung festgelegt; man kann seitlich ausweichen.
-		facing = Vector3.ZERO
 	if facing.length_squared() > 0.01:
 		var target_yaw := atan2(-facing.x, -facing.z)
 		_model.rotation.y = lerp_angle(_model.rotation.y, target_yaw, minf(1.0, TURN_SPEED * delta))
