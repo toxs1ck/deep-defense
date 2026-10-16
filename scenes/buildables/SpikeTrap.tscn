@@ -1,7 +1,9 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scenes/buildables/SpikeTrap.gd" id="1_trap"]
 [ext_resource type="Script" path="res://components/HealthComponent.gd" id="2_health"]
+
+[ext_resource type="Script" path="res://components/InteractableComponent.gd" id="3_dismantle"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_body"]
 size = Vector3(1.9, 0.1, 1.9)
@@ -27,6 +29,9 @@ rings = 1
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_trigger"]
 size = Vector3(1.8, 1.0, 1.8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_dismantle"]
+size = Vector3(1.9, 0.5, 1.9)
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_build"]
 properties/0/path = NodePath(".:sync_position")
@@ -103,6 +108,22 @@ shape = SubResource("BoxShape3D_trigger")
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("2_health")
+
+[node name="DismantleInteractable" type="Area3D" parent="."]
+collision_layer = 32
+collision_mask = 0
+monitoring = false
+script = ExtResource("3_dismantle")
+prompt_text = "Bauteil"
+extra_range = 1.0
+requires_empty_hands = true
+tap_enabled = false
+hold_seconds = 1.0
+hold_prompt = "Abbauen"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DismantleInteractable"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+shape = SubResource("BoxShape3D_dismantle")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("SceneReplicationConfig_build")

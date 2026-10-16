@@ -1,8 +1,8 @@
 class_name BuildComponent
 extends Node
-## Baumodus des lokalen Spielers. Mit einer Blaupausen-Kiste in der Hand: Vorschau ihres Bauelements auf dem Raster
-## (grün = frei, rot = belegt), drehen, aufbauen. Immer: anvisiertes Bauelement abbauen (wird wieder zur Kiste).
-## Prüft lokal für die Vorschau; aufgebaut und abgebaut wird über den BuildManager auf dem Host.
+## Baumodus des lokalen Spielers, aktiv solange eine gekaufte Blaupausen-Kiste in der Hand liegt: Vorschau ihres
+## Bauelements auf dem Raster (grün = frei, rot = belegt), drehen, aufbauen. Prüft lokal für die Vorschau;
+## aufgebaut wird über den BuildManager auf dem Host. Abgebaut wird am Bauelement selbst (E halten).
 
 signal active_changed(is_active: bool)
 ## Das Bauelement der getragenen Kiste hat gewechselt (null = keine Kiste).
@@ -25,7 +25,6 @@ var _crate: BlueprintCrate = null
 var _rotation_steps: int = 0
 var _cell: Vector2i = Vector2i.ZERO
 var _valid: bool = false
-var _aimed_buildable: Buildable = null
 var _ghost: MeshInstance3D = null
 var _ghost_material: StandardMaterial3D = null
 
@@ -55,13 +54,11 @@ func update_aim(view: Transform3D, player_position: Vector3) -> void:
 	var from := view.origin
 	var to := from - view.basis.z * AIM_DISTANCE
 	var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(from, to, AIM_MASK))
-	_aimed_buildable = null
 	_valid = false
 	if hit.is_empty():
 		if _ghost:
 			_ghost.visible = false
 		return
-	_aimed_buildable = hit["collider"] as Buildable
 	if selected == null:
 		return
 	var hit_position: Vector3 = hit["position"]
@@ -80,10 +77,8 @@ func try_place() -> void:
 		_manager().request_place(_crate, _cell, _rotation_steps)
 
 
-## Baut das anvisierte Bauelement ab; es liegt danach als Kiste an seiner Stelle.
-func try_remove() -> void:
-	if active and is_instance_valid(_aimed_buildable):
-		_manager().request_remove(_aimed_buildable)
+func has_crate() -> bool:
+	return _carried_crate() != null
 
 
 func _carried_crate() -> BlueprintCrate:

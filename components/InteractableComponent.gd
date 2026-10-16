@@ -24,8 +24,11 @@ const INTERACTABLE_LAYER: int = 1 << 5
 		collision_layer = INTERACTABLE_LAYER if enabled else 0
 ## Zusätzliche Reichweite zu PlayerData.interaction_range, z. B. für Brocken am Boden, die von Augenhöhe weiter weg sind.
 @export var extra_range: float = 0.0
-## Nur anvisierbar, wenn der Spieler etwas trägt (z. B. „Erz einladen“ am Aufzug).
+## Nur anvisierbar, wenn der Spieler etwas trägt (z. B. „Erz einladen“ am Aufzug) bzw. nichts trägt (Abbauen).
 @export var requires_carrying: bool = false
+@export var requires_empty_hands: bool = false
+## false: Nur Halten tut etwas (z. B. Abbauen); der Prompt zeigt dann nur die Halte-Aktion.
+@export var tap_enabled: bool = true
 ## > 0: Halten löst nach so vielen Sekunden hold_completed aus; kurzes Tippen löst weiterhin interacted aus.
 @export var hold_seconds: float = 0.0
 ## Text für das Halten, z. B. „Kaufen (60 $)“ → „E halten: Kaufen (60 $)“.

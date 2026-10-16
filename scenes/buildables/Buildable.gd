@@ -23,6 +23,7 @@ var data: BuildableData
 
 @onready var health: HealthComponent = $HealthComponent
 @onready var _mesh: MeshInstance3D = $Mesh
+@onready var _dismantle: InteractableComponent = $DismantleInteractable
 
 var _material: StandardMaterial3D = null
 var _base_color: Color = Color.WHITE
@@ -46,6 +47,9 @@ func _ready() -> void:
 	health.health_changed.connect(_on_health_changed)
 	health.died.connect(_on_died)
 	_on_health_changed(health.current_health, health.max_health)
+	_dismantle.prompt_text = data.display_name
+	_dismantle.hold_prompt = "%s abbauen (in Kiste packen)" % data.display_name
+	_dismantle.hold_completed.connect(_on_dismantle)
 
 
 ## Nur Host: Zustand, der beim Versetzen erhalten bleibt.
@@ -62,6 +66,12 @@ func _on_health_changed(current: int, maximum: int) -> void:
 	var fraction := float(current) / float(maximum)
 	_material.albedo_color = _base_color * lerpf(DAMAGED_BRIGHTNESS, 1.0, fraction)
 	_material.albedo_color.a = 1.0
+
+
+## Nur Host: E lange genug gehalten.
+func _on_dismantle(player: Player) -> void:
+	var manager := get_tree().get_first_node_in_group(BuildManager.GROUP) as BuildManager
+	manager.dismantle(self, player)
 
 
 func _on_died() -> void:

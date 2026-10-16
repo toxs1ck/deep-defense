@@ -33,6 +33,8 @@ const INTERACTION_MASK: int = (1 << 0) | (1 << 3) | (1 << 5)
 const THROW_LIFT: float = 0.25
 ## Obergrenze für InteractableComponent.extra_range; so lang wird der Raycast mindestens verlängert.
 const MAX_EXTRA_RANGE: float = 2.0
+## Wie viele unpassende Interaktionsflächen der Strahl höchstens durchdringt.
+const MAX_INTERACTION_LAYERS: int = 3
 ## Treffer zählen in diesem Kegel vor der Figur (Skalarprodukt mit der Blickrichtung) …
 const ATTACK_CONE_DOT: float = 0.3
 ## … oder wenn der Gegner ganz nah ist, egal in welcher Richtung.
@@ -177,8 +179,8 @@ func _physics_process(delta: float) -> void:
 	_update_interaction_target()
 	_handle_carry_input()
 	_handle_interact_input(delta)
-	if _just_pressed(&"build_mode"):
-		build.set_active(not build.active)
+	# Baumodus genau dann, wenn eine gekaufte Kiste in der Hand liegt.
+	build.set_active(build.has_crate())
 	_swing_cooldown = maxf(0.0, _swing_cooldown - delta)
 	if build.active:
 		_handle_build_input()
@@ -187,7 +189,7 @@ func _physics_process(delta: float) -> void:
 		_swing()
 
 
-## Baumodus: Linksklick baut die getragene Kiste auf, Rechtsklick baut ab, R / Mausrad dreht.
+## Baumodus (mit Kiste in der Hand): Linksklick baut auf, R / Mausrad dreht, E ohne Ziel legt die Kiste ab.
 func _handle_build_input() -> void:
 	build.update_aim(_camera.get_view_transform(), global_position)
 	if _just_pressed(&"build_rotate_left"):
@@ -196,8 +198,6 @@ func _handle_build_input() -> void:
 		build.rotate_selection(1)
 	if _just_pressed(&"attack"):
 		build.try_place()
-	elif _just_pressed(&"aim"):
-		build.try_remove()
 
 
 func _on_build_selection_changed(selection: BuildableData) -> void:
@@ -222,7 +222,7 @@ func _handle_interact_input(delta: float) -> void:
 	if _hold_target == null:
 		return
 	if _hold_target != target or not _pressed(&"interact"):
-		if _hold_target == target and _hold_time < TAP_TIME:
+		if _hold_target == target and _hold_time < TAP_TIME and _hold_target.tap_enabled:
 			_hold_target.request_interact()
 		_hold_target = null
 		hold_progress_changed.emit(0.0)
@@ -391,11 +391,11 @@ func _apply_player_color() -> void:
 	_body.material_override = material
 
 
-## Beim Tragen: Angreifen wirft in Blickrichtung, Interagieren ohne Ziel legt ab.
+## Beim Tragen: Angreifen wirft in Blickrichtung (nicht im Baumodus, dort baut es auf), Interagieren ohne Ziel legt ab.
 func _handle_carry_input() -> void:
-	if not carry.is_carrying() or build.active:
+	if not carry.is_carrying():
 		return
-	if _just_pressed(&"attack"):
+	if _just_pressed(&"attack") and not build.active:
 		var forward := -_camera.get_view_transform().basis.z
 		carry.request_drop((forward + Vector3.UP * THROW_LIFT).normalized())
 	elif _interaction_target == null and _just_pressed(&"interact"):
@@ -408,18 +408,30 @@ func _update_interaction_target() -> void:
 	var eye := global_position + Vector3.UP * EYE_HEIGHT
 	var forward := -view.basis.z
 	var reach := view.origin.distance_to(eye) + data.interaction_range + MAX_EXTRA_RANGE
-	var query := PhysicsRayQueryParameters3D.create(view.origin, view.origin + forward * reach, INTERACTION_MASK, [get_rid()])
-	query.collide_with_areas = true
-	var hit := get_world_3d().direct_space_state.intersect_ray(query)
-
+	var exclude: Array[RID] = [get_rid()]
 	var target: InteractableComponent = null
-	if not hit.is_empty() and not _downed:
+	# Trifft der Strahl eine Fläche, die gerade nicht passt (z. B. „Abbauen“ mit Erz in der Hand), sucht er dahinter
+	# weiter; so können sich zwei Flächen am selben Objekt nicht gegenseitig verdecken.
+	for attempt in MAX_INTERACTION_LAYERS:
+		if _downed:
+			break
+		var query := PhysicsRayQueryParameters3D.create(view.origin, view.origin + forward * reach, INTERACTION_MASK, exclude)
+		query.collide_with_areas = true
+		var hit := get_world_3d().direct_space_state.intersect_ray(query)
+		if hit.is_empty():
+			break
 		var hit_position: Vector3 = hit["position"]
 		var candidate := hit["collider"] as InteractableComponent
+		if candidate == null:
+			break
 		var in_front := (hit_position - eye).dot(forward) > 0.0
-		if candidate and candidate.enabled and in_front and eye.distance_to(hit_position) <= data.interaction_range + candidate.extra_range:
-			if carry.is_carrying() or not candidate.requires_carrying:
-				target = candidate
+		var in_reach := eye.distance_to(hit_position) <= data.interaction_range + candidate.extra_range
+		var hands_ok := not (candidate.requires_carrying and not carry.is_carrying()) \
+				and not (candidate.requires_empty_hands and carry.is_carrying())
+		if candidate.enabled and in_front and in_reach and hands_ok:
+			target = candidate
+			break
+		exclude.append(candidate.get_rid())
 
 	if target != _interaction_target:
 		_interaction_target = target

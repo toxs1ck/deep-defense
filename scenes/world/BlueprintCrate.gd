@@ -6,7 +6,7 @@ extends Carryable
 
 const OFFER_GROUP: StringName = &"shop_offers"
 ## So lange muss man E halten, um ein Angebot zu kaufen.
-const BUY_HOLD_SECONDS: float = 3.0
+const BUY_HOLD_SECONDS: float = 2.0
 ## Getragene Kisten bremsen etwas, Sprinten geht beim Tragen ohnehin nicht.
 const CARRY_SPEED_MULTIPLIER: float = 0.85
 const OFFER_COLOR: Color = Color(0.85, 0.7, 0.3)

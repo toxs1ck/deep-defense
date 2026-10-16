@@ -71,11 +71,6 @@ func request_place(crate: BlueprintCrate, cell: Vector2i, rotation_steps: int) -
 	_place_on_host.rpc_id(1, String(crate.name), cell, rotation_steps)
 
 
-## Vom lokalen Spieler: das getroffene Bauelement abbauen, es wird wieder zur Kiste.
-func request_remove(buildable: Buildable) -> void:
-	_remove_on_host.rpc_id(1, String(buildable.name))
-
-
 @rpc("any_peer", "call_local", "reliable")
 func _place_on_host(crate_name: String, cell: Vector2i, rotation_steps: int) -> void:
 	if not multiplayer.is_server():
@@ -103,17 +98,11 @@ func _place_on_host(crate_name: String, cell: Vector2i, rotation_steps: int) -> 
 	layout_changed.emit()
 
 
-@rpc("any_peer", "call_local", "reliable")
-func _remove_on_host(buildable_name: String) -> void:
-	if not multiplayer.is_server():
+## Nur Host: vom Bauelement aufgerufen, wenn ein Spieler E lange genug gehalten hat. Das Bauelement wird samt
+## Zustand zur Kiste in den Händen des Spielers (sind sie voll, liegt sie an seiner Stelle).
+func dismantle(buildable: Buildable, player: Player) -> void:
+	if not multiplayer.is_server() or player.is_downed() or buildable.get_parent() != buildables:
 		return
-	var player := _sender_player()
-	var buildable := buildables.get_node_or_null(buildable_name) as Buildable
-	if player == null or buildable == null:
-		return
-	if buildable.global_position.distance_to(player.global_position) > MAX_BUILD_DISTANCE:
-		return
-	# Mit freien Händen landet die Kiste direkt beim Spieler, sonst liegt sie an der Stelle des Bauelements.
 	var carrier := player.get_multiplayer_authority() if not player.carry.is_carrying() else 0
 	crate_requested.emit(buildable.data, buildable.global_position + Vector3.UP * 0.8, buildable.get_state(), carrier)
 	destroy(buildable)

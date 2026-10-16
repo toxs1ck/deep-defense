@@ -180,21 +180,19 @@ func set_carrying(carrying: bool) -> void:
 func _refresh_prompt() -> void:
 	_prompt_label.visible = (_target != null or _carrying or _build_mode) and _respawn_left <= 0.0
 	if _build_mode:
-		if _build_selection.is_empty():
-			_prompt_label.text = "Baumodus · keine Kiste in der Hand\n%s: abbauen (wird zur Kiste) · %s: beenden" % [
-				_action_key_name(&"aim"), _action_key_name(&"build_mode")]
-		else:
-			_prompt_label.text = "Baumodus: %s\n%s: aufbauen · %s: drehen · %s: abbauen · %s: beenden" % [
-				_build_selection, _action_key_name(&"attack"), _action_key_name(&"build_rotate_right"),
-				_action_key_name(&"aim"), _action_key_name(&"build_mode")]
+		_prompt_label.text = "Baumodus: %s\n%s: aufbauen · %s: drehen · %s: ablegen" % [
+			_build_selection, _action_key_name(&"attack"), _action_key_name(&"build_rotate_right"),
+			_action_key_name(&"interact")]
 	elif _target:
 		var key := _action_key_name(_target.action)
-		_prompt_label.text = "%s: %s" % [key, _target.prompt_text]
-		if _target.hold_seconds > 0.0:
-			_prompt_label.text += " · %s halten: %s" % [key, _target.hold_prompt]
+		if not _target.tap_enabled:
+			_prompt_label.text = "%s halten: %s" % [key, _target.hold_prompt]
+		else:
+			_prompt_label.text = "%s: %s" % [key, _target.prompt_text]
+			if _target.hold_seconds > 0.0:
+				_prompt_label.text += " · %s halten: %s" % [key, _target.hold_prompt]
 	elif _carrying:
-		_prompt_label.text = "%s: Ablegen · %s: Werfen · %s: Baumodus (Kisten aufbauen)" % [
-			_action_key_name(&"interact"), _action_key_name(&"attack"), _action_key_name(&"build_mode")]
+		_prompt_label.text = "%s: Ablegen · %s: Werfen" % [_action_key_name(&"interact"), _action_key_name(&"attack")]
 
 
 func _action_key_name(action: StringName) -> String:
