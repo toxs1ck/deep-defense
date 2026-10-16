@@ -42,7 +42,7 @@ collision_mask = 0
 monitoring = false
 script = ExtResource("2_interact")
 prompt_text = "Abbauen"
-allow_hold = true
+action = &"attack"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="InteractableComponent"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)

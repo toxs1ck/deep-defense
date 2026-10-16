@@ -19,11 +19,16 @@ extends Node3D
 @export var min_pitch: float = -70.0
 @export var max_pitch: float = 60.0
 
+## Wie schnell das Wackeln abklingt, in Metern pro Sekunde.
+const SHAKE_DECAY: float = 0.6
+
 @onready var _pitch: Node3D = $Pitch
 @onready var _shoulder_arm: SpringArm3D = $Pitch/ShoulderArm
 @onready var _back_arm: SpringArm3D = $Pitch/ShoulderArm/BackArm
 @onready var _camera: Camera3D = $Pitch/ShoulderArm/BackArm/Camera3D
 
+## Aktuelle Stärke des Kamerawackelns in Metern; klingt von selbst ab.
+var _shake: float = 0.0
 ## Fortschritt des Schulterwechsels von -1 (links) bis 1 (rechts); läuft linear, angezeigt wird er mit Easing.
 var _shoulder_side: float = 1.0
 
@@ -56,7 +61,16 @@ func get_yaw_basis() -> Basis:
 	return Basis(Vector3.UP, global_rotation.y)
 
 
+## Kurzes Wackeln, z. B. bei eigenen Treffern oder erlittenem Schaden.
+func shake(strength: float) -> void:
+	_shake = maxf(_shake, strength)
+
+
 func _process(delta: float) -> void:
+	if _shake > 0.0:
+		_shake = move_toward(_shake, 0.0, SHAKE_DECAY * delta)
+		_camera.h_offset = randf_range(-_shake, _shake)
+		_camera.v_offset = randf_range(-_shake, _shake)
 	var target_side := 1.0 if right_shoulder else -1.0
 	if _shoulder_side != target_side:
 		_shoulder_side = move_toward(_shoulder_side, target_side, 2.0 / shoulder_switch_time * delta)

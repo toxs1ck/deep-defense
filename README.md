@@ -49,4 +49,5 @@ Zusätzlich (nicht im GDD): `camera_switch_shoulder` – V / rechten Stick drüc
 - [x] 7 – Aufzug & Teamkasse
 - [x] 8 – Runden-Ablauf
 - [x] 9 – Gegner-Basis
-- [ ] 10 – Spieler-Kampf
+- [x] 10 – Spieler-Kampf
+- [ ] 11 – Bausystem

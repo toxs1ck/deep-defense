@@ -136,6 +136,8 @@ func _on_player_added(node: Node) -> void:
 	if player and player.is_multiplayer_authority():
 		player.interaction_target_changed.connect(_hud.show_interaction)
 		player.carrying_changed.connect(_hud.set_carrying)
+		player.health_changed.connect(_hud.set_player_health)
+		player.downed_changed.connect(_hud.set_downed)
 
 
 ## Nur auf dem Host: Brocken spawnen, der ChunkSpawner repliziert sie zu den Clients.

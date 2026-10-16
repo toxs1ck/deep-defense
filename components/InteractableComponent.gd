@@ -24,8 +24,9 @@ const INTERACTABLE_LAYER: int = 1 << 5
 @export var extra_range: float = 0.0
 ## Nur anvisierbar, wenn der Spieler etwas trägt (z. B. „Erz einladen“ am Aufzug).
 @export var requires_carrying: bool = false
-## Gedrückt halten wiederholt die Interaktion im Takt der Abbaurate des Spielers (z. B. Abbauen).
-@export var allow_hold: bool = false
+## Mit welcher Aktion interagiert wird. „interact“ (E) für Aufheben, Einladen usw.; „attack“ (Linksklick) für
+## Abbauen: Dann löst jeder Schlag mit der Spitzhacke die Interaktion aus, Halten schlägt im Takt weiter.
+@export var action: StringName = &"interact"
 
 
 func _ready() -> void:

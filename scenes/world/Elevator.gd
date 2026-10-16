@@ -5,6 +5,8 @@ extends Node3D
 ## (RunManager.round_started) in die Teamkasse aus. Fällt seine Lebenspunkte auf 0, ist der Run verloren.
 
 const GROUP: StringName = &"elevator"
+## Hier erscheinen gefallene Spieler wieder: vor der offenen Seite des Korbs (lokal).
+const RESPAWN_POINT: Vector3 = Vector3(0, 0, -3.0)
 
 @export var data: ElevatorData
 
@@ -62,6 +64,10 @@ func _on_health_changed(current: int, maximum: int) -> void:
 func _on_died() -> void:
 	if multiplayer.is_server():
 		RunManager.fail_run()
+
+
+func get_respawn_point() -> Vector3:
+	return to_global(RESPAWN_POINT)
 
 
 ## Schichtbeginn: Der Aufzug fährt hoch und zahlt aus (GDD, „Ablauf einer Schicht“).

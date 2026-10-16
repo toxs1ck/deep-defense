@@ -1,9 +1,10 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scenes/player/Player.gd" id="1_player"]
 [ext_resource type="Resource" path="res://data/player/default_player.tres" id="2_data"]
 [ext_resource type="PackedScene" path="res://scenes/player/PlayerCamera.tscn" id="3_cam"]
 [ext_resource type="Script" path="res://components/CarryComponent.gd" id="4_carry"]
+[ext_resource type="Script" path="res://components/HealthComponent.gd" id="5_health"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -23,6 +24,20 @@ albedo_color = Color(0.1, 0.12, 0.15, 1)
 [sub_resource type="BoxMesh" id="BoxMesh_visor"]
 material = SubResource("StandardMaterial3D_visor")
 size = Vector3(0.5, 0.2, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_handle"]
+albedo_color = Color(0.45, 0.3, 0.18, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_handle"]
+material = SubResource("StandardMaterial3D_handle")
+size = Vector3(0.06, 0.7, 0.06)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_head"]
+albedo_color = Color(0.6, 0.62, 0.65, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_head"]
+material = SubResource("StandardMaterial3D_head")
+size = Vector3(0.08, 0.08, 0.45)
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_player"]
 properties/0/path = NodePath(".:sync_position")
@@ -56,6 +71,21 @@ mesh = SubResource("BoxMesh_visor")
 [node name="CarryComponent" type="Node3D" parent="Model"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -0.6)
 script = ExtResource("4_carry")
+
+[node name="Pickaxe" type="Node3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.45, 1.05, -0.1)
+
+[node name="Handle" type="MeshInstance3D" parent="Model/Pickaxe"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+mesh = SubResource("BoxMesh_handle")
+
+[node name="Head" type="MeshInstance3D" parent="Model/Pickaxe"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, -0.05)
+mesh = SubResource("BoxMesh_head")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("5_health")
+max_health = 100
 
 [node name="PlayerCamera" parent="." instance=ExtResource("3_cam")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)

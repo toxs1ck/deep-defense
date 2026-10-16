@@ -20,6 +20,8 @@ const MOUSE_BUTTON_NAMES: Dictionary = {
 @onready var _money_label: Label = %MoneyLabel
 @onready var _run_label: Label = %RunLabel
 @onready var _elevator_label: Label = %ElevatorLabel
+@onready var _health_label: Label = %HealthLabel
+@onready var _downed_label: Label = %DownedLabel
 @onready var _banner_label: Label = %BannerLabel
 
 var _target: InteractableComponent = null
@@ -27,6 +29,8 @@ var _carrying: bool = false
 ## Zuletzt angezeigter Betrag; -1 = noch keiner, dann ohne Aufleuchten.
 var _money: int = -1
 var _banner_tween: Tween = null
+## Restzeit bis zum Respawn; > 0 heißt gefallen.
+var _respawn_left: float = 0.0
 var _using_gamepad: bool = false
 
 
@@ -34,15 +38,19 @@ func _ready() -> void:
 	_prompt_label.visible = false
 	set_money(Economy.team_money)
 	_banner_label.visible = false
+	_downed_label.visible = false
 	RunManager.phase_changed.connect(_on_phase_changed)
 	RunManager.ready_changed.connect(func(_peers: PackedInt32Array, _count: int) -> void: _refresh_run_label())
 	_refresh_run_label()
 
 
-func _process(_delta: float) -> void:
-	# Countdown der Kampfphase läuft lokal.
+func _process(delta: float) -> void:
+	# Countdowns der Kampfphase und bis zum Respawn laufen lokal.
 	if RunManager.phase == RunManager.Phase.COMBAT:
 		_refresh_run_label()
+	if _respawn_left > 0.0:
+		_respawn_left = maxf(0.0, _respawn_left - delta)
+		_downed_label.text = "Gefallen – zurück am Aufzug in %d s" % ceili(_respawn_left)
 
 
 func _input(event: InputEvent) -> void:
@@ -124,15 +132,26 @@ func set_elevator_health(current: int, maximum: int) -> void:
 	_elevator_label.modulate = Color(1, 0.35, 0.3) if current * 3 < maximum else Color.WHITE
 
 
+func set_player_health(current: int, maximum: int) -> void:
+	_health_label.text = "LP %d/%d" % [current, maximum]
+	_health_label.modulate = Color(1, 0.35, 0.3) if current * 3 < maximum else Color.WHITE
+
+
+func set_downed(downed: bool, respawn_seconds: float) -> void:
+	_downed_label.visible = downed
+	_respawn_left = respawn_seconds if downed else 0.0
+	_refresh_prompt()
+
+
 func set_carrying(carrying: bool) -> void:
 	_carrying = carrying
 	_refresh_prompt()
 
 
 func _refresh_prompt() -> void:
-	_prompt_label.visible = _target != null or _carrying
+	_prompt_label.visible = (_target != null or _carrying) and _respawn_left <= 0.0
 	if _target:
-		_prompt_label.text = "%s: %s" % [_action_key_name(&"interact"), _target.prompt_text]
+		_prompt_label.text = "%s: %s" % [_action_key_name(_target.action), _target.prompt_text]
 	elif _carrying:
 		_prompt_label.text = "%s: Ablegen · %s: Werfen" % [_action_key_name(&"interact"), _action_key_name(&"attack")]
 

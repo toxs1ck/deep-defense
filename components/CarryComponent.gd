@@ -76,6 +76,12 @@ func _drop_on_host(throw_direction: Vector3) -> void:
 	_release_all(velocity)
 
 
+## Nur Host: alles an Ort und Stelle fallen lassen, z. B. wenn der Spieler fällt.
+func drop_all() -> void:
+	if multiplayer.is_server():
+		_release_all(Vector3.ZERO)
+
+
 ## Läuft auf dem Host, wenn ein Spieler das Spiel verlässt: Was er trägt, fällt an Ort und Stelle herunter.
 func _exit_tree() -> void:
 	# Offline heißt: Szene wird gerade abgebaut (z. B. zurück ins Menü), dann gibt es nichts zu retten.

@@ -22,7 +22,16 @@ extends Resource
 @export var turn_speed: float = 20.0
 ## Reichweite für Interaktionen in Metern, gemessen ab Augenhöhe.
 @export var interaction_range: float = 1.25
-## Schläge pro Sekunde mit der Spitzhacke beim Abbauen (GDD: 1,5).
-@export var mining_rate: float = 1.5
+## Schläge pro Sekunde mit der Spitzhacke, beim Abbauen wie im Kampf (GDD: 1,5).
+@export var swing_rate: float = 1.5
+## Schaden der Spitzhacke pro Treffer (GDD: 15).
+@export var attack_damage: int = 15
+## Reichweite eines Schlags in Metern, gemessen von der Mitte der Figur.
+@export var attack_range: float = 1.8
+## Wie stark getroffene Gegner zurückgestoßen werden, in m/s.
+@export var attack_knockback: float = 6.0
+@export var max_health: int = 100
+## Sekunden bis zum Respawn am Aufzug (GDD: 10).
+@export var respawn_time: float = 10.0
 ## Wurfgeschwindigkeit für getragene Brocken in m/s.
 @export var throw_speed: float = 8.0

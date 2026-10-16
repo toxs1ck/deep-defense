@@ -4,6 +4,8 @@ extends CharacterBody3D
 ## Die KI läuft nur auf dem Host: per Navigationsnetz zum Aufzug laufen, dort in Abständen angreifen.
 ## Jeder Gegner sucht sich einen eigenen Angriffspunkt rund um den Aufzug, und die Agenten weichen einander aus
 ## (Avoidance), damit sich keine Schlange bildet. Spieler, die einen Gegner berühren, schieben ihn weg.
+## Kommt ein Spieler näher als data.aggro_range (oder trifft ihn), greift der Gegner stattdessen ihn an,
+## bis er gefallen ist oder sich weiter als aggro_range + aggro_leash entfernt.
 ## Clients bekommen Position und Blickrichtung über den MultiplayerSynchronizer und glätten sie.
 
 const GROUP: StringName = &"enemies"
@@ -23,6 +25,9 @@ const ACCELERATION: float = 18.0
 const MIN_FACING_SPEED: float = 0.6
 ## Kommt so lange kein Ergebnis der Avoidance, läuft der Gegner ohne Ausweichen weiter, statt stehen zu bleiben.
 const AVOIDANCE_TIMEOUT: float = 0.2
+const HIT_FLASH_TIME: float = 0.18
+## So lange schrumpft ein besiegter Gegner, bevor er verschwindet.
+const DEATH_TIME: float = 0.25
 ## Abstand der Angriffspunkte zur Mitte des Aufzugs (knapp außerhalb der Korbwände).
 const ATTACK_POINT_RADIUS: float = 2.3
 ## Radien für das Wegschieben durch Spieler: Gegner (Kollision) und Spieler (Kapsel) plus etwas Spielraum.
@@ -61,6 +66,9 @@ var _safe_velocity: Vector3 = Vector3.ZERO
 ## Sekunden seit dem letzten Ergebnis der Avoidance.
 var _since_safe_velocity: float = INF
 var _attacking: bool = false
+## Nur Host: aktuell verfolgter Spieler, null = Aufzug.
+var _target_player: Player = null
+var _dying: bool = false
 
 
 func _enter_tree() -> void:
@@ -98,12 +106,18 @@ func _physics_process(delta: float) -> void:
 		_elevator = get_tree().get_first_node_in_group(Elevator.GROUP) as Elevator
 
 	var desired := Vector3.ZERO
-	if _elevator and not health.is_dead():
+	_update_target_player()
+	if _elevator and not _dying:
+		# Spieler: Abstand Mitte zu Mitte, waagerecht. Aufzug: Abstand zur Mitte des Korbs.
 		var distance := global_position.distance_to(_elevator.global_position)
+		var attack_range := ATTACK_RANGE
+		if _target_player:
+			distance = _horizontal_distance_to(_target_player.global_position)
+			attack_range = data.player_attack_range
 		if _attacking:
-			_attacking = distance <= ATTACK_RANGE + ATTACK_HYSTERESIS
+			_attacking = distance <= attack_range + ATTACK_HYSTERESIS
 		else:
-			_attacking = distance <= ATTACK_RANGE
+			_attacking = distance <= attack_range
 		if _attacking:
 			_attack(delta)
 		else:
@@ -124,7 +138,8 @@ func _physics_process(delta: float) -> void:
 	# Laufrichtung nur, solange er läuft; beim Angreifen schaut er zum Aufzug.
 	var facing := horizontal if horizontal.length() > MIN_FACING_SPEED else Vector3.ZERO
 	if _attacking:
-		facing = _elevator.global_position - global_position
+		facing = (_target_player.global_position if _target_player else _elevator.global_position) - global_position
+		facing.y = 0.0
 	if facing.length_squared() > 0.01:
 		var target_yaw := atan2(-facing.x, -facing.z)
 		_model.rotation.y = lerp_angle(_model.rotation.y, target_yaw, minf(1.0, TURN_SPEED * delta))
@@ -136,7 +151,7 @@ func _physics_process(delta: float) -> void:
 ## den Weg holt und verfolgt der Gegner selbst.
 func _move_direction(delta: float) -> Vector3:
 	var around := Vector3(sin(_attack_angle), 0.0, cos(_attack_angle)) * ATTACK_POINT_RADIUS
-	var target := _elevator.global_position + around
+	var target := _target_player.global_position if _target_player else _elevator.global_position + around
 	_repath_timer -= delta
 	if _repath_timer <= 0.0:
 		_repath_timer = REPATH_INTERVAL
@@ -182,8 +197,62 @@ func _attack(delta: float) -> void:
 	if _attack_timer > 0.0:
 		return
 	_attack_timer = data.attack_interval
-	_elevator.health.damage(data.elevator_damage)
+	if _target_player:
+		_target_player.health.damage(data.player_damage)
+	else:
+		_elevator.health.damage(data.elevator_damage)
 	_play_attack.rpc()
+
+
+## Nur Host: Spieler in der Nähe haben Vorrang vor dem Aufzug. Ein Ziel wird erst aufgegeben, wenn es fällt
+## oder weit genug weg ist, damit der Gegner nicht zwischen zwei Zielen hin und her springt.
+func _update_target_player() -> void:
+	if _target_player:
+		var lost := not is_instance_valid(_target_player) or _target_player.is_downed()
+		if lost or _horizontal_distance_to(_target_player.global_position) > data.aggro_range + data.aggro_leash:
+			_set_target_player(null)
+		return
+	var nearest: Player = null
+	var nearest_distance := data.aggro_range
+	for node in get_tree().get_nodes_in_group(Player.GROUP):
+		var player := node as Player
+		if player.is_downed():
+			continue
+		var distance := _horizontal_distance_to(player.global_position)
+		if distance <= nearest_distance:
+			nearest = player
+			nearest_distance = distance
+	if nearest:
+		_set_target_player(nearest)
+
+
+func _set_target_player(player: Player) -> void:
+	if player == _target_player:
+		return
+	_target_player = player
+	_attacking = false
+	# Neues Ziel: Weg sofort neu berechnen.
+	_repath_timer = 0.0
+
+
+## Nur Host: von einem Spieler getroffen. Rückstoß, und der Gegner wendet sich dem Angreifer zu.
+func take_hit(amount: int, knockback: Vector3, attacker: Player) -> void:
+	if not multiplayer.is_server() or _dying:
+		return
+	velocity += knockback
+	_set_target_player(attacker)
+	_play_hit.rpc()
+	health.damage(amount)
+
+
+## Aufblitzen und kurz zusammenzucken, damit Treffer wuchtig wirken.
+@rpc("authority", "call_local", "unreliable")
+func _play_hit() -> void:
+	var material := _body.material_override as StandardMaterial3D
+	material.albedo_color = Color.WHITE
+	create_tween().tween_property(material, "albedo_color", data.color, HIT_FLASH_TIME)
+	_body.scale = Vector3(1.25, 0.75, 1.25)
+	create_tween().tween_property(_body, "scale", Vector3.ONE, HIT_FLASH_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 ## Kurzer Ruck nach vorne, damit man sieht, wer gerade angreift.
@@ -195,7 +264,17 @@ func _play_attack() -> void:
 	tween.tween_property(_body, "position", _body_rest_position, 0.15)
 
 
-## Nur der Host entfernt den Gegner; der EnemySpawner entfernt ihn dann auch bei den Clients.
+## Nur der Host entfernt den Gegner, nach einer kurzen Todesanimation bei allen; der EnemySpawner entfernt ihn
+## dann auch bei den Clients. Bis dahin greift er nicht mehr an und blockiert nichts.
 func _on_died() -> void:
-	if multiplayer.is_server():
-		queue_free()
+	if not multiplayer.is_server():
+		return
+	_dying = true
+	collision_layer = 0
+	_play_death.rpc()
+	get_tree().create_timer(DEATH_TIME).timeout.connect(queue_free)
+
+
+@rpc("authority", "call_local", "reliable")
+func _play_death() -> void:
+	create_tween().tween_property(_model, "scale", Vector3(1.3, 0.05, 1.3), DEATH_TIME).set_ease(Tween.EASE_IN)

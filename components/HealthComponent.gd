@@ -38,6 +38,12 @@ func damage(amount: int) -> void:
 	_set_health.rpc(maxi(0, current_health - amount))
 
 
+## Nur Host: voll heilen, z. B. beim Respawn.
+func revive() -> void:
+	if multiplayer.is_server():
+		_set_health.rpc(max_health)
+
+
 func _on_player_joined(peer_id: int) -> void:
 	if multiplayer.is_server() and peer_id != multiplayer.get_unique_id():
 		_set_health.rpc_id(peer_id, current_health)
