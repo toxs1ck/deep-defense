@@ -3,7 +3,14 @@ extends NavigationRegion3D
 ## Die Geometrie wird selbst gesammelt, und zwar aus Kollisionen auf den Ebenen navigation_mesh.geometry_collision_mask:
 ## - CSG-Formen über bake_collision_shape() (Godots eigener Parser liest CSG über die GPU aus, das bremst),
 ## - Kollisionsformen von StaticBody3D über CPU-seitig erzeugte Mesh-Daten.
+## Zwei Gruppen steuern das Backen:
+## - „navigation_ignore“: Knoten samt Kindern wird übersprungen (z. B. Treppen, die Gegner nicht nutzen sollen),
+## - „navigation_blocker“: Kollisionsform zählt als Hindernis, egal auf welcher Physik-Ebene (auch Ebene 0,
+##   also ohne Wirkung auf die Spielphysik).
 ## Später (Aufgabe 11) wird nach dem Bauen neu gebacken.
+
+const IGNORE_GROUP: StringName = &"navigation_ignore"
+const BLOCKER_GROUP: StringName = &"navigation_blocker"
 
 
 func _ready() -> void:
@@ -23,8 +30,13 @@ func bake() -> void:
 
 
 func _collect(node: Node, source: NavigationMeshSourceGeometryData3D) -> void:
+	if node.is_in_group(IGNORE_GROUP):
+		return
 	var mask := navigation_mesh.geometry_collision_mask
-	if node is CSGShape3D:
+	if node is CollisionShape3D and node.is_in_group(BLOCKER_GROUP):
+		var blocker := node as CollisionShape3D
+		_add_shape(blocker.shape, blocker.global_transform, source)
+	elif node is CSGShape3D:
 		var csg := node as CSGShape3D
 		if csg.is_root_shape() and csg.use_collision and (csg.collision_layer & mask) != 0:
 			var shape := csg.bake_collision_shape()
