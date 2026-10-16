@@ -4,8 +4,9 @@ extends CharacterBody3D
 ## Die KI läuft nur auf dem Host: per Navigationsnetz zum Aufzug laufen, dort in Abständen angreifen.
 ## Jeder Gegner sucht sich einen eigenen Angriffspunkt rund um den Aufzug, und die Agenten weichen einander aus
 ## (Avoidance), damit sich keine Schlange bildet. Spieler, die einen Gegner berühren, schieben ihn weg.
-## Kommt ein Spieler näher als data.aggro_range (oder trifft ihn), greift der Gegner stattdessen ihn an,
-## bis er gefallen ist oder sich weiter als aggro_range + aggro_leash entfernt.
+## Kommt ein Spieler auf dem Weg näher als data.aggro_range, greift der Gegner stattdessen ihn an, bis er gefallen
+## ist oder sich weiter als aggro_range + aggro_leash entfernt. Hat der Gegner schon ein Angriffsziel (Aufzug,
+## Bauelement, anderer Spieler), wechselt er nur, wenn ihn ein Spieler trifft.
 ## Erreicht der Weg den Aufzug nicht (zugebaut), greift der Gegner das Bauelement am Wegende an (GDD, „Platzierung“).
 ## Jeder Angriff hat eine Ausholphase (data.attack_windup), in der man ausweichen kann. Dabei rückt er mit
 ## verringertem Tempo nach; einmal ausgeholt, schlägt er zu, auch wenn das Ziel schon weg ist. Ein Treffer während
@@ -283,13 +284,17 @@ func _strike() -> void:
 	_play_attack.rpc()
 
 
-## Nur Host: Spieler in der Nähe haben Vorrang vor dem Aufzug. Ein Ziel wird erst aufgegeben, wenn es fällt
-## oder weit genug weg ist, damit der Gegner nicht zwischen zwei Zielen hin und her springt.
+## Nur Host: Spieler in der Nähe haben Vorrang vor dem Aufzug, solange der Gegner noch unterwegs ist. Ein Ziel wird
+## erst aufgegeben, wenn es fällt oder weit genug weg ist, damit der Gegner nicht zwischen Zielen hin und her springt.
 func _update_target_player() -> void:
 	if _target_player != null:
 		var lost := not is_instance_valid(_target_player) or _target_player.is_downed()
 		if lost or _horizontal_distance_to(_target_player.global_position) > data.aggro_range + data.aggro_leash:
 			_set_target_player(null)
+		return
+	# Wer schon angreift (Aufzug oder versperrendes Bauelement), lässt sich durch Nähe nicht ablenken,
+	# nur durch einen Treffer (take_hit).
+	if _attacking or _windup_left > 0.0 or _target_buildable != null:
 		return
 	var nearest: Player = null
 	var nearest_distance := data.aggro_range
