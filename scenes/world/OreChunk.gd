@@ -20,7 +20,7 @@ func _setup_item() -> void:
 	assert(ore != null, "OreChunk: ungültiger ore_path '%s'" % ore_path)
 	var material := StandardMaterial3D.new()
 	material.albedo_color = ore.color
-	_mesh.material_override = material
+	mesh.material_override = material
 
 
 func get_display_name() -> String:

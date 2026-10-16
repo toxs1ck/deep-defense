@@ -62,12 +62,12 @@ properties/1/replication_mode = 0
 properties/2/path = NodePath(".:data_path")
 properties/2/spawn = true
 properties/2/replication_mode = 0
-properties/4/path = NodePath(".:initial_health")
-properties/4/spawn = true
-properties/4/replication_mode = 0
-properties/3/path = NodePath(".:ammo")
+properties/3/path = NodePath(".:initial_health")
 properties/3/spawn = true
-properties/3/replication_mode = 2
+properties/3/replication_mode = 0
+properties/4/path = NodePath(".:ammo")
+properties/4/spawn = true
+properties/4/replication_mode = 2
 
 [node name="Turret" type="StaticBody3D"]
 collision_layer = 8

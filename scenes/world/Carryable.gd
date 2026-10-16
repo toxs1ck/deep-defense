@@ -23,7 +23,7 @@ const ITEM_LAYER: int = 1 << 4
 ## Aufgelöster Träger; wird erst gesucht, wenn er da ist (später Beitretende bekommen Items evtl. vor der Figur).
 var _carrier: Player = null
 
-@onready var _mesh: MeshInstance3D = $Mesh
+@onready var mesh: MeshInstance3D = $Mesh
 @onready var _interactable: InteractableComponent = $InteractableComponent
 
 

@@ -36,8 +36,8 @@ var _material: StandardMaterial3D
 func _setup_item() -> void:
 	buildable = load(buildable_path) as BuildableData
 	assert(buildable != null, "BlueprintCrate: ungültiger buildable_path '%s'" % buildable_path)
-	_material = (_mesh.mesh as BoxMesh).material.duplicate() as StandardMaterial3D
-	_mesh.material_override = _material
+	_material = (mesh.mesh as BoxMesh).material.duplicate() as StandardMaterial3D
+	mesh.material_override = _material
 	_interactable.hold_completed.connect(_on_hold_completed)
 	_update_offer_state()
 
