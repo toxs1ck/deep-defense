@@ -21,6 +21,8 @@ const ATTACK_HYSTERESIS: float = 0.6
 const ACCELERATION: float = 18.0
 ## Erst ab diesem Tempo dreht sich das Modell mit, damit es im Stehen nicht zittert.
 const MIN_FACING_SPEED: float = 0.6
+## Kommt so lange kein Ergebnis der Avoidance, läuft der Gegner ohne Ausweichen weiter, statt stehen zu bleiben.
+const AVOIDANCE_TIMEOUT: float = 0.2
 ## Abstand der Angriffspunkte zur Mitte des Aufzugs (knapp außerhalb der Korbwände).
 const ATTACK_POINT_RADIUS: float = 2.3
 ## Radien für das Wegschieben durch Spieler: Gegner (Kollision) und Spieler (Kapsel) plus etwas Spielraum.
@@ -56,6 +58,8 @@ var _body_rest_position: Vector3 = Vector3.ZERO
 ## Nur Host: eigener Angriffspunkt als Winkel um den Aufzug und die von der Avoidance berechnete Geschwindigkeit.
 var _attack_angle: float = 0.0
 var _safe_velocity: Vector3 = Vector3.ZERO
+## Sekunden seit dem letzten Ergebnis der Avoidance.
+var _since_safe_velocity: float = INF
 var _attacking: bool = false
 
 
@@ -78,7 +82,7 @@ func _ready() -> void:
 		_attack_angle = GameState.rng.randf_range(0.0, TAU)
 		_agent.max_speed = data.speed
 		_agent.avoidance_enabled = true
-		_agent.velocity_computed.connect(func(safe_velocity: Vector3) -> void: _safe_velocity = safe_velocity)
+		_agent.velocity_computed.connect(_on_velocity_computed)
 
 
 func _physics_process(delta: float) -> void:
@@ -106,7 +110,10 @@ func _physics_process(delta: float) -> void:
 			desired = _move_direction(delta) * data.speed
 	# Die Avoidance liefert ihr Ergebnis per Signal; verwendet wird das aus dem letzten Tick.
 	_agent.velocity = desired
-	var steering := _safe_velocity if desired != Vector3.ZERO else Vector3.ZERO
+	_since_safe_velocity += delta
+	var steering := Vector3.ZERO
+	if desired != Vector3.ZERO:
+		steering = _safe_velocity if _since_safe_velocity < AVOIDANCE_TIMEOUT else desired
 	steering.y = 0.0
 	var target := steering + _player_push()
 	var horizontal := Vector3(velocity.x, 0.0, velocity.z).move_toward(target, ACCELERATION * delta)
@@ -125,7 +132,8 @@ func _physics_process(delta: float) -> void:
 	sync_yaw = _model.rotation.y
 
 
-## Der NavigationAgent3D dient nur noch dem Ausweichen; den Weg holt und verfolgt der Gegner selbst.
+## Der NavigationAgent3D dient nur dem Ausweichen (er bekommt das Ziel trotzdem, sonst rechnet er nicht);
+## den Weg holt und verfolgt der Gegner selbst.
 func _move_direction(delta: float) -> Vector3:
 	var around := Vector3(sin(_attack_angle), 0.0, cos(_attack_angle)) * ATTACK_POINT_RADIUS
 	var target := _elevator.global_position + around
@@ -134,6 +142,8 @@ func _move_direction(delta: float) -> Vector3:
 		_repath_timer = REPATH_INTERVAL
 		_path = NavigationServer3D.map_get_path(get_world_3d().navigation_map, global_position, target, true)
 		_path_index = 0
+		# Der Agent braucht ein Ziel, sonst reicht er die Geschwindigkeit nicht an die Avoidance weiter.
+		_agent.target_position = target
 	while _path_index < _path.size() and _horizontal_distance_to(_path[_path_index]) < WAYPOINT_REACHED:
 		_path_index += 1
 	# Ohne Weg (Netz noch nicht fertig) oder am Wegende, aber noch nicht in Reichweite: direkt aufs Ziel zu.
@@ -141,6 +151,11 @@ func _move_direction(delta: float) -> Vector3:
 	var to_next := next - global_position
 	to_next.y = 0.0
 	return to_next.normalized() if to_next.length_squared() > 0.0001 else Vector3.ZERO
+
+
+func _on_velocity_computed(safe_velocity: Vector3) -> void:
+	_safe_velocity = safe_velocity
+	_since_safe_velocity = 0.0
 
 
 func _horizontal_distance_to(point: Vector3) -> float:
