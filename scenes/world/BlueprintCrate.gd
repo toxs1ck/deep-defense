@@ -1,7 +1,7 @@
 class_name BlueprintCrate
 extends Carryable
 ## Blaupausen-Kiste (wie in PlateUp). Als Shop-Angebot (is_offer) steht sie mit Preis auf einem Stellplatz:
-## E tippen trägt sie herum, E halten kauft sie aus der Teamkasse. Nicht gekaufte Angebote verschwinden, wenn die
+## E tippen trägt sie herum, E halten kauft sie aus der Teamkasse, in der Hand kauft R halten. Nicht gekaufte Angebote verschwinden, wenn die
 ## Kampfphase beginnt. Gekauft baut man sie im Baumodus auf; abgebaute Bauelemente werden wieder zu solchen Kisten.
 
 const OFFER_GROUP: StringName = &"shop_offers"
@@ -54,10 +54,32 @@ func get_carry_speed_multiplier() -> float:
 	return CARRY_SPEED_MULTIPLIER
 
 
-## Nur Host: lange genug gehalten, also kaufen, sofern Bauphase und genug Geld. Mit freien Händen landet die Kiste
-## direkt beim Käufer (und damit im Baumodus).
+## Vom lokalen Spieler, der die Kiste trägt und R lange genug gehalten hat.
+func request_purchase() -> void:
+	_purchase_carried_on_host.rpc_id(1)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _purchase_carried_on_host() -> void:
+	if not multiplayer.is_server():
+		return
+	var sender := multiplayer.get_remote_sender_id()
+	if sender == 0:
+		sender = multiplayer.get_unique_id()
+	# Nur wer die Kiste trägt, kauft sie so.
+	if sender == carrier_id:
+		_try_purchase(_find_player(sender))
+
+
+## Nur Host: am Stellplatz lange genug E gehalten.
 func _on_hold_completed(player: Player) -> void:
-	if not is_offer or RunManager.phase != RunManager.Phase.BUILD:
+	_try_purchase(player)
+
+
+## Nur Host: kaufen, sofern Bauphase und genug Geld. Mit freien Händen landet die Kiste direkt beim Käufer
+## (und damit im Baumodus).
+func _try_purchase(player: Player) -> void:
+	if player == null or not is_offer or RunManager.phase != RunManager.Phase.BUILD:
 		return
 	if not Economy.try_spend(buildable.price):
 		return

@@ -18,8 +18,10 @@ signal health_changed(current: int, maximum: int)
 signal build_mode_changed(is_active: bool)
 ## Im Baumodus ein anderes Bauelement gewählt.
 signal build_selection_changed(display_name: String)
-## Fortschritt beim Halten von E (0–1); 0 = nicht am Halten.
+## Fortschritt beim Halten von E bzw. R (0–1); 0 = nicht am Halten.
 signal hold_progress_changed(fraction: float)
+## Preis des getragenen, noch nicht gekauften Angebots; 0 = keins in der Hand.
+signal carried_offer_changed(price: int)
 ## Gefallen bzw. wieder da; respawn_seconds ist die Wartezeit bis zum Respawn.
 signal downed_changed(is_downed: bool, respawn_seconds: float)
 
@@ -87,6 +89,9 @@ var _pickaxe_tween: Tween = null
 ## Objekt, auf dem E gerade gehalten wird, und wie lange schon.
 var _hold_target: InteractableComponent = null
 var _hold_time: float = 0.0
+## Kaufen eines getragenen Angebots mit R: wie lange schon gehalten, und welcher Preis zuletzt gemeldet wurde.
+var _purchase_hold_time: float = 0.0
+var _carried_offer_price: int = 0
 
 ## Restzeit, in der ein Sprung noch erlaubt ist; am Boden immer voll.
 var _coyote_timer: float = 0.0
@@ -179,6 +184,7 @@ func _physics_process(delta: float) -> void:
 	_update_interaction_target()
 	_handle_carry_input()
 	_handle_interact_input(delta)
+	_handle_purchase_input(delta)
 	# Baumodus genau dann, wenn eine gekaufte Kiste in der Hand liegt.
 	build.set_active(build.has_crate())
 	_swing_cooldown = maxf(0.0, _swing_cooldown - delta)
@@ -232,6 +238,30 @@ func _handle_interact_input(delta: float) -> void:
 	if _hold_time >= _hold_target.hold_seconds:
 		_hold_target.request_hold()
 		_hold_target = null
+		hold_progress_changed.emit(0.0)
+
+
+## Mit einem Angebot in der Hand: R lange genug halten kauft es (BlueprintCrate.BUY_HOLD_SECONDS).
+func _handle_purchase_input(delta: float) -> void:
+	var offer: BlueprintCrate = null
+	for item in carry.carried:
+		var crate := item as BlueprintCrate
+		if crate and crate.is_offer:
+			offer = crate
+	var price := offer.buildable.price if offer else 0
+	if price != _carried_offer_price:
+		_carried_offer_price = price
+		carried_offer_changed.emit(price)
+	if offer == null or not _pressed(&"purchase_carried"):
+		if _purchase_hold_time > 0.0:
+			_purchase_hold_time = 0.0
+			hold_progress_changed.emit(0.0)
+		return
+	_purchase_hold_time += delta
+	hold_progress_changed.emit(minf(1.0, _purchase_hold_time / BlueprintCrate.BUY_HOLD_SECONDS))
+	if _purchase_hold_time >= BlueprintCrate.BUY_HOLD_SECONDS:
+		offer.request_purchase()
+		_purchase_hold_time = 0.0
 		hold_progress_changed.emit(0.0)
 
 

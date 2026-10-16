@@ -157,6 +157,7 @@ func _on_player_added(node: Node) -> void:
 		player.build_mode_changed.connect(_hud.set_build_mode)
 		player.build_selection_changed.connect(_hud.set_build_selection)
 		player.hold_progress_changed.connect(_hud.set_hold_progress)
+		player.carried_offer_changed.connect(_hud.set_carried_offer)
 
 
 ## Nur auf dem Host: Brocken spawnen, der ChunkSpawner repliziert sie zu den Clients.

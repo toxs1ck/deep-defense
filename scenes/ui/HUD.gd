@@ -27,6 +27,8 @@ const MOUSE_BUTTON_NAMES: Dictionary = {
 
 var _target: InteractableComponent = null
 var _carrying: bool = false
+## Preis des getragenen Angebots, 0 = keins.
+var _carried_offer_price: int = 0
 var _build_mode: bool = false
 var _build_selection: String = ""
 ## Vorschau der nächsten Welle (GDD: Typen und Eingänge, nicht die Anzahl).
@@ -172,6 +174,11 @@ func set_build_mode(active: bool) -> void:
 	_refresh_prompt()
 
 
+func set_carried_offer(price: int) -> void:
+	_carried_offer_price = price
+	_refresh_prompt()
+
+
 func set_carrying(carrying: bool) -> void:
 	_carrying = carrying
 	_refresh_prompt()
@@ -193,6 +200,8 @@ func _refresh_prompt() -> void:
 				_prompt_label.text += " · %s halten: %s" % [key, _target.hold_prompt]
 	elif _carrying:
 		_prompt_label.text = "%s: Ablegen · %s: Werfen" % [_action_key_name(&"interact"), _action_key_name(&"attack")]
+		if _carried_offer_price > 0:
+			_prompt_label.text += " · %s halten: Kaufen (%d $)" % [_action_key_name(&"purchase_carried"), _carried_offer_price]
 
 
 func _action_key_name(action: StringName) -> String:
