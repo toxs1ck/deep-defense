@@ -9,6 +9,7 @@ cost = 6
 first_round = 2
 steals_ore = true
 loot_speed_multiplier = 0.8
+steal_cooldown = 1.5
 model_scale = 0.8
 max_health = 25
 speed = 5.0

@@ -9,8 +9,9 @@ extends CharacterBody3D
 ## Bauelement, anderer Spieler), wechselt er nur, wenn ihn ein Spieler trifft.
 ## Erreicht der Weg den Aufzug nicht (zugebaut), greift der Gegner das Bauelement am Wegende an (GDD, „Platzierung“).
 ## Erzdiebe (data.steals_ore) suchen stattdessen liegendes Erz, stehlen es und fliehen zum nächsten Eingang; dort
-## verschwinden sie mit der Beute. Besiegt lassen sie das Erz fallen. Ohne liegendes Erz verhalten sie sich wie die
-## anderen, greifen aber nie Spieler an.
+## verschwinden sie mit der Beute. Bei jedem Treffer (auch von Verteidigungen) lassen sie das Erz fallen und können
+## erst nach data.steal_cooldown wieder stehlen. Ohne liegendes Erz verhalten sie sich wie die anderen, greifen aber
+## nie Spieler an.
 ## Jeder Angriff hat eine Ausholphase (data.attack_windup), in der man ausweichen kann. Dabei rückt er mit
 ## verringertem Tempo nach; einmal ausgeholt, schlägt er zu, auch wenn das Ziel schon weg ist. Ein Treffer während
 ## des Ausholens bricht den Angriff ab.
@@ -108,6 +109,8 @@ var _target_buildable: Buildable = null
 var _dying: bool = false
 ## Nur Host, Erzdieb: Brocken, den er gerade holen will.
 var _target_chunk: OreChunk = null
+## Nur Host, Erzdieb: Restzeit, bis er nach einem Treffer wieder stehlen darf.
+var _steal_cooldown: float = 0.0
 
 
 func _enter_tree() -> void:
@@ -360,6 +363,7 @@ func take_hit(amount: int, knockback: Vector3, attacker: Player) -> void:
 	if not multiplayer.is_server() or _dying:
 		return
 	velocity += knockback
+	_drop_loot()
 	if attacker and not data.steals_ore:
 		_set_target_player(attacker)
 	if attacker and _windup_left > 0.0:
@@ -428,10 +432,7 @@ func _on_died() -> void:
 		return
 	_dying = true
 	collision_layer = 0
-	if not loot_path.is_empty():
-		var ore := load(loot_path) as OreData
-		ore_dropped.emit(ore, global_position + Vector3.UP * 0.8, Vector3.UP * 2.0)
-		loot_path = ""
+	_drop_loot()
 	_play_death.rpc()
 	get_tree().create_timer(DEATH_TIME).timeout.connect(queue_free)
 
@@ -442,10 +443,26 @@ func _play_death() -> void:
 	create_tween().tween_property(_model, "scale", Vector3(1.3, 0.05, 1.3), DEATH_TIME).set_ease(Tween.EASE_IN)
 
 
+## Nur Host, Erzdieb: Beute fallen lassen (getroffen oder besiegt) und kurz nicht mehr stehlen.
+func _drop_loot() -> void:
+	if loot_path.is_empty():
+		return
+	var ore := load(loot_path) as OreData
+	ore_dropped.emit(ore, global_position + Vector3.UP * 0.8, Vector3.UP * 2.0)
+	loot_path = ""
+	_target_chunk = null
+	_steal_cooldown = data.steal_cooldown
+	_repath_timer = 0.0
+
+
 ## Erzdieb: hat er Beute oder ein erreichbares Ziel-Erz? Sonst verhält er sich wie die anderen Gegner.
 func _thief_has_goal() -> bool:
 	if not loot_path.is_empty():
 		return true
+	if _steal_cooldown > 0.0:
+		_steal_cooldown -= get_physics_process_delta_time()
+		_target_chunk = null
+		return false
 	if _target_chunk == null or not is_instance_valid(_target_chunk) or _target_chunk.carrier_id != 0:
 		var previous := _target_chunk
 		_target_chunk = _find_loot()
