@@ -54,12 +54,16 @@ func get_carry_speed_multiplier() -> float:
 	return CARRY_SPEED_MULTIPLIER
 
 
-## Nur Host: lange genug gehalten, also kaufen, sofern Bauphase und genug Geld.
-func _on_hold_completed(_player: Player) -> void:
+## Nur Host: lange genug gehalten, also kaufen, sofern Bauphase und genug Geld. Mit freien Händen landet die Kiste
+## direkt beim Käufer (und damit im Baumodus).
+func _on_hold_completed(player: Player) -> void:
 	if not is_offer or RunManager.phase != RunManager.Phase.BUILD:
 		return
-	if Economy.try_spend(buildable.price):
-		is_offer = false
+	if not Economy.try_spend(buildable.price):
+		return
+	is_offer = false
+	if carrier_id == 0 and not player.carry.is_carrying():
+		carrier_id = player.get_multiplayer_authority()
 
 
 func _update_offer_state() -> void:
