@@ -24,6 +24,7 @@ const MOUSE_BUTTON_NAMES: Dictionary = {
 @onready var _downed_label: Label = %DownedLabel
 @onready var _hold_bar: ProgressBar = %HoldBar
 @onready var _banner_label: Label = %BannerLabel
+@onready var _announcement_label: Label = %AnnouncementLabel
 
 var _target: InteractableComponent = null
 var _carrying: bool = false
@@ -36,6 +37,7 @@ var _wave_preview: String = ""
 ## Zuletzt angezeigter Betrag; -1 = noch keiner, dann ohne Aufleuchten.
 var _money: int = -1
 var _banner_tween: Tween = null
+var _announcement_tween: Tween = null
 ## Restzeit bis zum Respawn; > 0 heißt gefallen.
 var _respawn_left: float = 0.0
 var _using_gamepad: bool = false
@@ -45,6 +47,7 @@ func _ready() -> void:
 	_prompt_label.visible = false
 	set_money(Economy.team_money)
 	_banner_label.visible = false
+	_announcement_label.visible = false
 	_downed_label.visible = false
 	_hold_bar.visible = false
 	RunManager.phase_changed.connect(_on_phase_changed)
@@ -122,6 +125,19 @@ func _refresh_run_label() -> void:
 				_run_label.text = "Run verloren in Schicht %d · Esc: Spiel verlassen" % run.current_round
 		_:
 			_run_label.text = ""
+
+
+## Kleinere Ansage unter dem Banner, z. B. vom OreSpawner („Neue Adern brechen auf!“).
+func show_announcement(text: String) -> void:
+	if _announcement_tween:
+		_announcement_tween.kill()
+	_announcement_label.text = text
+	_announcement_label.visible = true
+	_announcement_label.modulate.a = 1.0
+	_announcement_tween = create_tween()
+	_announcement_tween.tween_interval(3.0)
+	_announcement_tween.tween_property(_announcement_label, "modulate:a", 0.0, 0.8)
+	_announcement_tween.tween_callback(func() -> void: _announcement_label.visible = false)
 
 
 func _show_banner(text: String) -> void:

@@ -14,6 +14,9 @@ extends NavigationRegion3D
 ## Nach dem Bauen ruft der BuildManager (über Main) request_bake() auf. Neu gebacken wird im Hintergrund;
 ## kommen währenddessen weitere Änderungen, folgt danach genau ein weiterer Durchgang.
 
+## Nach jedem fertigen Backen; das erste Mal noch ohne Bauteile und Vorkommen (z. B. für die Erz-Tiefen).
+signal baked
+
 const IGNORE_GROUP: StringName = &"navigation_ignore"
 const BLOCKER_GROUP: StringName = &"navigation_blocker"
 
@@ -38,13 +41,14 @@ func request_bake() -> void:
 	for root in get_tree().get_nodes_in_group(navigation_mesh.geometry_source_group_name):
 		_collect(root, source)
 	# Eine Kopie backen und zuweisen, damit die Region das neue Netz sicher übernimmt.
-	var baked := navigation_mesh.duplicate() as NavigationMesh
-	NavigationServer3D.bake_from_source_geometry_data_async(baked, source, _on_bake_finished.bind(baked))
+	var baked_mesh := navigation_mesh.duplicate() as NavigationMesh
+	NavigationServer3D.bake_from_source_geometry_data_async(baked_mesh, source, _on_bake_finished.bind(baked_mesh))
 
 
-func _on_bake_finished(baked: NavigationMesh) -> void:
-	navigation_mesh = baked
+func _on_bake_finished(result: NavigationMesh) -> void:
+	navigation_mesh = result
 	_baking = false
+	baked.emit()
 	if _dirty:
 		request_bake()
 

@@ -1,10 +1,5 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=10 format=3]
 
-[ext_resource type="PackedScene" path="res://scenes/world/OreDeposit.tscn" id="1_deposit"]
-[ext_resource type="Resource" path="res://data/ores/coal.tres" id="2_coal"]
-[ext_resource type="Resource" path="res://data/ores/iron.tres" id="3_iron"]
-[ext_resource type="Resource" path="res://data/ores/gold.tres" id="4_gold"]
-[ext_resource type="Resource" path="res://data/ores/crystal.tres" id="5_crystal"]
 [ext_resource type="PackedScene" path="res://scenes/world/Elevator.tscn" id="6_elevator"]
 [ext_resource type="Script" path="res://scenes/world/NavigationBaker.gd" id="7_nav"]
 [ext_resource type="PackedScene" path="res://scenes/world/ShopTerminal.tscn" id="8_shop"]
@@ -158,45 +153,71 @@ use_collision = true
 size = Vector3(3, 2, 3)
 material = SubResource("StandardMaterial3D_accent")
 
-[node name="HallCoal" parent="." instance=ExtResource("1_deposit")]
+[node name="OreSpot01" type="Marker3D" parent="." groups=["ore_spawn_points"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 6)
-ore = ExtResource("2_coal")
 
-[node name="WestCoalA" parent="." instance=ExtResource("1_deposit")]
+[node name="OreSpot02" type="Marker3D" parent="." groups=["ore_spawn_points"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, -6)
+
+[node name="OreSpot03" type="Marker3D" parent="." groups=["ore_spawn_points"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, -9)
+
+[node name="OreSpot04" type="Marker3D" parent="." groups=["ore_spawn_points"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, -2)
+
+[node name="OreSpot05" type="Marker3D" parent="." groups=["ore_spawn_points"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 0, -1.2)
+
+[node name="OreSpot06" type="Marker3D" parent="." groups=["ore_spawn_points"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -33, 0, -3)
-ore = ExtResource("2_coal")
 
-[node name="WestCoalB" parent="." instance=ExtResource("1_deposit")]
+[node name="OreSpot07" type="Marker3D" parent="." groups=["ore_spawn_points"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30.5, 0, 3)
-ore = ExtResource("2_coal")
 
-[node name="WestIron" parent="." instance=ExtResource("1_deposit")]
+[node name="OreSpot08" type="Marker3D" parent="." groups=["ore_spawn_points"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36, 0, 2.5)
-ore = ExtResource("3_iron")
 
-[node name="EastIron" parent="." instance=ExtResource("1_deposit")]
+[node name="OreSpot09" type="Marker3D" parent="." groups=["ore_spawn_points"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35.5, 0, -4)
+
+[node name="OreSpot10" type="Marker3D" parent="." groups=["ore_spawn_points"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -44, 0, 1.2)
+
+[node name="OreSpot11" type="Marker3D" parent="." groups=["ore_spawn_points"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 1.2)
+
+[node name="OreSpot12" type="Marker3D" parent="." groups=["ore_spawn_points"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31, 0, -3)
-ore = ExtResource("3_iron")
 
-[node name="EastCoal" parent="." instance=ExtResource("1_deposit")]
+[node name="OreSpot13" type="Marker3D" parent="." groups=["ore_spawn_points"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.5, 0, 3.5)
-ore = ExtResource("2_coal")
 
-[node name="EastGold" parent="." instance=ExtResource("1_deposit")]
+[node name="OreSpot14" type="Marker3D" parent="." groups=["ore_spawn_points"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36, 0, 2.5)
-ore = ExtResource("4_gold")
 
-[node name="NorthGold" parent="." instance=ExtResource("1_deposit")]
+[node name="OreSpot15" type="Marker3D" parent="." groups=["ore_spawn_points"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34, 0, -4.5)
+
+[node name="OreSpot16" type="Marker3D" parent="." groups=["ore_spawn_points"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44, 0, -1.2)
+
+[node name="OreSpot17" type="Marker3D" parent="." groups=["ore_spawn_points"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, 0, -20)
+
+[node name="OreSpot18" type="Marker3D" parent="." groups=["ore_spawn_points"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, -33)
-ore = ExtResource("4_gold")
 
-[node name="NorthCrystalA" parent="." instance=ExtResource("1_deposit")]
+[node name="OreSpot19" type="Marker3D" parent="." groups=["ore_spawn_points"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, -35)
-ore = ExtResource("5_crystal")
 
-[node name="NorthCrystalB" parent="." instance=ExtResource("1_deposit")]
+[node name="OreSpot20" type="Marker3D" parent="." groups=["ore_spawn_points"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0, -30.5)
-ore = ExtResource("5_crystal")
+
+[node name="OreSpot21" type="Marker3D" parent="." groups=["ore_spawn_points"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, -36)
+
+[node name="OreSpot22" type="Marker3D" parent="." groups=["ore_spawn_points"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2, 0, -44)
 
 [node name="EnemySpawnWest" type="Marker3D" parent="." groups=["enemy_spawns"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -53.5, 0, 0)

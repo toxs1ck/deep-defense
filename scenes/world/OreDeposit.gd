@@ -3,6 +3,8 @@ extends StaticBody3D
 ## Erzvorkommen: Nach ore.hits_per_chunk Schlägen fällt ein Brocken heraus, nach ore.chunks_per_deposit
 ## Brocken ist es erschöpft. Der Host zählt und verteilt den Stand; jeder Treffer gibt Feedback bei allen.
 ## Brocken spawnt das Vorkommen nicht selbst, es meldet sie per Signal nach oben.
+## Vorkommen werden meist vom OreSpawner zu Beginn der Kampfphase gespawnt (ore_path, sync_position) und stürzen am
+## Ende wieder ein (collapse). Fest in eine Szene gesetzte Vorkommen mit ore funktionieren weiterhin.
 
 ## Nur auf dem Host: ein Brocken ist abgebrochen und soll an spawn_position mit impulse erscheinen.
 signal chunk_broken_off(ore: OreData, spawn_position: Vector3, impulse: Vector3)
@@ -18,6 +20,11 @@ const LAUNCH_SPEED_MIN: float = 1.0
 const LAUNCH_SPEED_MAX: float = 1.8
 
 @export var ore: OreData
+## Beim Spawnen gesetzt und mitgeschickt; leer = fest in der Szene gesetztes Vorkommen.
+@export var ore_path: String = ""
+@export var sync_position: Vector3
+
+const COLLAPSE_TIME: float = 2.5
 
 @onready var _mesh: MeshInstance3D = $Mesh
 @onready var _collision: CollisionShape3D = $CollisionShape3D
@@ -37,6 +44,9 @@ func _enter_tree() -> void:
 
 
 func _ready() -> void:
+	if not ore_path.is_empty():
+		ore = load(ore_path) as OreData
+		global_position = sync_position
 	assert(ore != null, "OreDeposit braucht eine OreData-Resource")
 	_chunks_left = ore.chunks_per_deposit
 	var material := StandardMaterial3D.new()
@@ -116,3 +126,24 @@ func _apply_state() -> void:
 	var fullness := float(_chunks_left) / float(ore.chunks_per_deposit)
 	_mesh_scale = Vector3.ONE * lerpf(0.6, 1.0, fullness)
 	_mesh.scale = _mesh_scale
+
+
+## Nur Host: Die Ader stürzt ein (Ende der Kampfphase). Alle sehen sie zerbröckeln, danach entfernt der Host sie;
+## bis dahin lässt sie sich nicht mehr abbauen.
+func collapse() -> void:
+	if not multiplayer.is_server() or is_queued_for_deletion():
+		return
+	_play_collapse.rpc()
+	get_tree().create_timer(COLLAPSE_TIME).timeout.connect(queue_free)
+
+
+@rpc("authority", "call_local", "reliable")
+func _play_collapse() -> void:
+	_interactable.enabled = false
+	if _scale_tween:
+		_scale_tween.kill()
+	_sparks.restart()
+	var tween := create_tween().set_parallel()
+	tween.tween_property(_mesh, "scale", Vector3(_mesh_scale.x * 1.2, 0.05, _mesh_scale.z * 1.2), COLLAPSE_TIME) \
+			.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(_mesh, "position:y", 0.05, COLLAPSE_TIME).set_ease(Tween.EASE_IN)

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="RunData" load_steps=10 format=3]
+[gd_resource type="Resource" script_class="RunData" load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/RunData.gd" id="1_data"]
 [ext_resource type="Resource" path="res://data/enemies/cave_crawler.tres" id="2_crawler"]
@@ -9,6 +9,7 @@
 [ext_resource type="Resource" path="res://data/buildables/spike_trap.tres" id="7_trap"]
 [ext_resource type="Resource" path="res://data/buildables/blade_whirl.tres" id="8_blade"]
 [ext_resource type="Resource" path="res://data/buildables/turret.tres" id="9_turret"]
+[ext_resource type="Resource" path="res://data/run/ore_spawn.tres" id="10_ore_spawn"]
 
 [resource]
 script = ExtResource("1_data")
@@ -20,11 +21,13 @@ shop_pool = Array[ExtResource("5_buildable_data")]([ExtResource("6_wall"), ExtRe
 shop_offer_count = 4
 reroll_base_cost = 20
 reroll_cost_step = 10
-wave_budget_base = 20.0
+wave_budget_base = 30.0
 wave_budget_exponent = 1.2
 enemy_types = Array[ExtResource("4_enemy_data")]([ExtResource("2_crawler"), ExtResource("3_thief")])
 max_main_types = 2
 max_entrances = 3
-spawn_interval = 0.8
+spawn_spread = 0.8
+min_spawn_interval = 0.6
+ore_spawn = ExtResource("10_ore_spawn")
 count_multiplier_by_players = Array[float]([1.0, 1.5, 2.0, 2.5])
 health_multiplier_by_players = Array[float]([1.0, 1.15, 1.3, 1.45])

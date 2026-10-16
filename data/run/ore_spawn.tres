@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="OreSpawnData" load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/OreSpawnData.gd" id="1_data"]
+[ext_resource type="Script" path="res://scripts/resources/OreSpawnRule.gd" id="2_rule"]
+[ext_resource type="Resource" path="res://data/ores/coal.tres" id="3_coal"]
+[ext_resource type="Resource" path="res://data/ores/iron.tres" id="4_iron"]
+[ext_resource type="Resource" path="res://data/ores/gold.tres" id="5_gold"]
+[ext_resource type="Resource" path="res://data/ores/crystal.tres" id="6_crystal"]
+
+[sub_resource type="Resource" id="Resource_coal"]
+script = ExtResource("2_rule")
+ore = ExtResource("3_coal")
+min_depth = 0.0
+max_depth = 1.0
+weight = 3.0
+first_round = 1
+
+[sub_resource type="Resource" id="Resource_iron"]
+script = ExtResource("2_rule")
+ore = ExtResource("4_iron")
+min_depth = 0.15
+max_depth = 1.0
+weight = 2.0
+first_round = 1
+
+[sub_resource type="Resource" id="Resource_gold"]
+script = ExtResource("2_rule")
+ore = ExtResource("5_gold")
+min_depth = 0.45
+max_depth = 1.0
+weight = 1.5
+first_round = 2
+
+[sub_resource type="Resource" id="Resource_crystal"]
+script = ExtResource("2_rule")
+ore = ExtResource("6_crystal")
+min_depth = 0.7
+max_depth = 1.0
+weight = 1.0
+first_round = 6
+
+[resource]
+script = ExtResource("1_data")
+rules = Array[ExtResource("2_rule")]([SubResource("Resource_coal"), SubResource("Resource_iron"), SubResource("Resource_gold"), SubResource("Resource_crystal")])
+occupancy_start = 0.4
+occupancy_per_round = 0.06
+occupancy_max = 1.0
+special_chance = 0.2
+special_from_round = 3
+rich_occupancy_bonus = 0.3
+rich_depth_bonus = 0.25
+barren_occupancy_malus = 0.25

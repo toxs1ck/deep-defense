@@ -2,13 +2,16 @@ class_name WaveSpawner
 extends Node
 ## Nur Host: plant zu Beginn jeder Bauphase die nächste Welle aus einem Punkte-Budget (GDD, „Wellen-Design“),
 ## zeigt allen die Vorschau (Typen und Eingänge, nicht die Anzahl) und spawnt sie in der Kampfphase.
-## Die Kampfphase endet, sobald alle Gegner gespawnt und besiegt (oder entkommen) sind.
+## Die Gegner verteilen sich über den größten Teil der Kampfphase (RunData.spawn_spread), damit Verteidigen und
+## Schürfen gleichzeitig nötig sind. Die Kampfphase endet, sobald alle gespawnt und besiegt (oder entkommen) sind.
 ## Zufall über GameState.rng, damit ein Run mit demselben Seed gleich abläuft.
 
 ## Nur Host: ein Gegner hat Erz fallen lassen (z. B. ein besiegter Erzdieb); Main spawnt den Brocken.
 signal ore_dropped(ore: OreData, drop_position: Vector3, impulse: Vector3)
 ## Auf allen Peers: Vorschau der nächsten Welle.
 signal preview_changed(enemy_names: PackedStringArray, entrance_names: PackedStringArray)
+## Nur Host: Der letzte Gegner der Welle ist gespawnt.
+signal all_spawned
 
 const ENEMY_SCENE: PackedScene = preload("res://scenes/enemies/Enemy.tscn")
 const SPAWN_GROUP: StringName = &"enemy_spawns"
@@ -25,6 +28,8 @@ var _queue: Array[EnemyData] = []
 var _entrances: Array[Node3D] = []
 var _spawn_timer: float = 0.0
 var _spawn_index: int = 0
+## Abstand zwischen zwei Gegnern dieser Welle, beim Start der Kampfphase berechnet.
+var _interval: float = 1.0
 
 
 func _ready() -> void:
@@ -40,6 +45,8 @@ func _on_phase_changed(phase: int) -> void:
 			_plan_wave(RunManager.current_round)
 		RunManager.Phase.COMBAT:
 			_spawn_timer = 0.0
+			var run := RunManager.data
+			_interval = maxf(run.min_spawn_interval, run.combat_duration * run.spawn_spread / maxf(1.0, _queue.size()))
 		_:
 			_queue.clear()
 			_clear_enemies()
@@ -104,8 +111,10 @@ func _physics_process(delta: float) -> void:
 	if not _queue.is_empty():
 		_spawn_timer -= delta
 		if _spawn_timer <= 0.0:
-			_spawn_timer = RunManager.data.spawn_interval
+			_spawn_timer = _interval
 			_spawn(_queue.pop_front() as EnemyData)
+			if _queue.is_empty():
+				all_spawned.emit()
 	elif _alive_enemy_count() == 0:
 		RunManager.end_combat()
 

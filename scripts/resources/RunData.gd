@@ -28,8 +28,13 @@ extends Resource
 @export var max_main_types: int = 2
 ## Aus wie vielen Eingängen eine Welle höchstens kommt (GDD: 1–3).
 @export var max_entrances: int = 3
-## Sekunden zwischen zwei Gegnern einer Welle.
-@export var spawn_interval: float = 0.8
+## Gegner einer Welle verteilen sich über diesen Anteil der Kampfdauer, damit nicht erst gekämpft und dann in
+## Ruhe geschürft wird; mindestens min_spawn_interval Sekunden zwischen zwei Gegnern.
+@export_range(0.1, 1.0) var spawn_spread: float = 0.8
+@export var min_spawn_interval: float = 0.6
+
+@export_group("Erz")
+@export var ore_spawn: OreSpawnData
 
 @export_group("Skalierung nach Spielerzahl")
 ## Index = Spielerzahl - 1 (GDD-Tabelle): Faktor auf die Gegner-Anzahl (über das Budget) und auf die Gegner-LP.

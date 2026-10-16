@@ -22,6 +22,8 @@ const SPAWN_SPACING: float = 1.5
 @onready var _build_manager: BuildManager = $BuildManager
 @onready var _wave_spawner: WaveSpawner = $WaveSpawner
 @onready var _shop_manager: ShopManager = $ShopManager
+@onready var _ore_spawner: OreSpawner = $OreSpawner
+@onready var _deposits: Node3D = $Deposits
 @onready var _reroll_station: InteractableComponent = $World/ShopTerminal/InteractableComponent
 @onready var _navigation: NavigationBaker = $World/NavigationRegion3D
 @onready var _network_status: Label = $UI/NetworkStatus
@@ -34,6 +36,12 @@ func _ready() -> void:
 	_players.child_entered_tree.connect(_on_player_added)
 	for deposit: OreDeposit in get_tree().get_nodes_in_group(OreDeposit.GROUP):
 		deposit.chunk_broken_off.connect(_on_chunk_broken_off)
+	# Vorkommen kommen in der Kampfphase dazu (OreSpawner); auch ihre Brocken spawnt Main.
+	_deposits.child_entered_tree.connect(_on_deposit_added)
+	_navigation.baked.connect(_ore_spawner.measure_when_ready, CONNECT_ONE_SHOT)
+	_ore_spawner.layout_changed.connect(_navigation.request_bake)
+	_ore_spawner.announced.connect(_hud.show_announcement)
+	_wave_spawner.all_spawned.connect(_ore_spawner.warn_unstable)
 	# Besiegte Erzdiebe lassen ihre Beute fallen; gespawnt wird wie bei abgebauten Brocken.
 	_wave_spawner.ore_dropped.connect(_on_chunk_broken_off)
 	_wave_spawner.preview_changed.connect(_hud.set_wave_preview)
@@ -160,6 +168,12 @@ func _on_player_added(node: Node) -> void:
 		player.build_selection_changed.connect(_hud.set_build_selection)
 		player.hold_progress_changed.connect(_hud.set_hold_progress)
 		player.carried_offer_changed.connect(_hud.set_carried_offer)
+
+
+func _on_deposit_added(node: Node) -> void:
+	var deposit := node as OreDeposit
+	if deposit:
+		deposit.chunk_broken_off.connect(_on_chunk_broken_off)
 
 
 ## Nur auf dem Host: Brocken spawnen, der ChunkSpawner repliziert sie zu den Clients.

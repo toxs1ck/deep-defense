@@ -10,7 +10,9 @@
 3. Mit F5 starten. Im Startmenü „Spiel hosten“ wählen (gilt auch für Solo); Esc beendet.
 
 Gespielt wird in der Testmine (`scenes/world/TestMine.tscn`): Halle mit Aufzug und Shop, drei Schächte nach
-Westen, Osten und Norden mit je einem Erzraum und einem Gegner-Eingang am Ende. Der alte Testraum
+Westen, Osten und Norden mit je einem Erzraum und einem Gegner-Eingang am Ende. Erz gibt es nur in der Kampfphase:
+Zu ihrem Beginn brechen auf den Erzstellen (Marker in der Gruppe `ore_spawn_points`) neue Adern auf, am Ende stürzen
+sie ein. Was wo erscheint, steht in `data/run/ore_spawn.tres`. Der alte Testraum
 (`TestRoom.tscn`) lässt sich in `Main.tscn` als Instanz für „World“ wieder einsetzen.
 
 ## Multiplayer auf einem PC testen

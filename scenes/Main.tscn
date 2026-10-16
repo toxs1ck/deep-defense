@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scenes/Main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/world/TestMine.tscn" id="2_room"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scenes/world/WaveSpawner.gd" id="6_waves"]
 [ext_resource type="Script" path="res://scenes/world/BuildManager.gd" id="7_build"]
 [ext_resource type="Script" path="res://scenes/world/ShopManager.gd" id="8_shop"]
+[ext_resource type="Script" path="res://scenes/world/OreSpawner.gd" id="10_ore"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -63,6 +64,16 @@ items = NodePath("../Chunks")
 
 [node name="ShopManager" type="Node" parent="."]
 script = ExtResource("8_shop")
+
+[node name="Deposits" type="Node3D" parent="." groups=["nav_source"]]
+
+[node name="DepositSpawner" type="MultiplayerSpawner" parent="."]
+_spawnable_scenes = PackedStringArray("res://scenes/world/OreDeposit.tscn")
+spawn_path = NodePath("../Deposits")
+
+[node name="OreSpawner" type="Node" parent="." node_paths=PackedStringArray("deposits")]
+script = ExtResource("10_ore")
+deposits = NodePath("../Deposits")
 
 [node name="MenuCamera" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.857167, 0.515038, 0, -0.515038, 0.857167, 0, 5, 11)
