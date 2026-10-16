@@ -1,6 +1,8 @@
+class_name NavigationBaker
 extends NavigationRegion3D
 ## Backt das Navigationsnetz beim Laden aus allen Knoten der Gruppe navigation_mesh.geometry_source_group_name.
-## Die Geometrie wird selbst gesammelt, und zwar aus Kollisionen auf den Ebenen navigation_mesh.geometry_collision_mask:
+## Die Geometrie wird selbst gesammelt, und zwar aus Kollisionen auf den Ebenen navigation_mesh.geometry_collision_mask
+## (Welt und Bauelemente):
 ## - CSG-Formen über bake_collision_shape() (Godots eigener Parser liest CSG über die GPU aus, das bremst),
 ## - Kollisionsformen von StaticBody3D über CPU-seitig erzeugte Mesh-Daten.
 ## Zellhöhe 0,1 m (genauso im Projekt unter navigation/3d/default_cell_height), damit das Netz auf Rampen und
@@ -9,26 +11,42 @@ extends NavigationRegion3D
 ## - „navigation_ignore“: Knoten samt Kindern wird übersprungen (z. B. Deko, die Gegner nicht beachten sollen),
 ## - „navigation_blocker“: Kollisionsform zählt als Hindernis, egal auf welcher Physik-Ebene (auch Ebene 0,
 ##   also ohne Wirkung auf die Spielphysik).
-## Später (Aufgabe 11) wird nach dem Bauen neu gebacken.
+## Nach dem Bauen ruft der BuildManager (über Main) request_bake() auf. Neu gebacken wird im Hintergrund;
+## kommen währenddessen weitere Änderungen, folgt danach genau ein weiterer Durchgang.
 
 const IGNORE_GROUP: StringName = &"navigation_ignore"
 const BLOCKER_GROUP: StringName = &"navigation_blocker"
 
 
+var _baking: bool = false
+var _dirty: bool = false
+
+
 func _ready() -> void:
 	# CSG-Formen bauen ihre Geometrie erst verzögert auf; einen Frame warten, sonst ist das Netz leer.
 	await get_tree().process_frame
-	bake()
+	request_bake()
 
 
-func bake() -> void:
+func request_bake() -> void:
+	if _baking:
+		_dirty = true
+		return
+	_baking = true
+	_dirty = false
 	var source := NavigationMeshSourceGeometryData3D.new()
 	for root in get_tree().get_nodes_in_group(navigation_mesh.geometry_source_group_name):
 		_collect(root, source)
 	# Eine Kopie backen und zuweisen, damit die Region das neue Netz sicher übernimmt.
 	var baked := navigation_mesh.duplicate() as NavigationMesh
-	NavigationServer3D.bake_from_source_geometry_data(baked, source)
+	NavigationServer3D.bake_from_source_geometry_data_async(baked, source, _on_bake_finished.bind(baked))
+
+
+func _on_bake_finished(baked: NavigationMesh) -> void:
 	navigation_mesh = baked
+	_baking = false
+	if _dirty:
+		request_bake()
 
 
 func _collect(node: Node, source: NavigationMeshSourceGeometryData3D) -> void:

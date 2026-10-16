@@ -14,6 +14,8 @@ signal interaction_target_changed(target: InteractableComponent)
 signal carrying_changed(is_carrying: bool)
 ## Reicht HealthComponent.health_changed weiter (aus demselben Grund wie carrying_changed).
 signal health_changed(current: int, maximum: int)
+## Baumodus an bzw. aus.
+signal build_mode_changed(is_active: bool)
 ## Gefallen bzw. wieder da; respawn_seconds ist die Wartezeit bis zum Respawn.
 signal downed_changed(is_downed: bool, respawn_seconds: float)
 
@@ -53,6 +55,7 @@ const PHYSICS_LAYER: int = 1 << 1
 
 @onready var carry: CarryComponent = $Model/CarryComponent
 @onready var health: HealthComponent = $HealthComponent
+@onready var build: BuildComponent = $BuildComponent
 @onready var _pickaxe: Node3D = $Model/Pickaxe
 @onready var _camera: PlayerCamera = $PlayerCamera
 @onready var _model: Node3D = $Model
@@ -92,6 +95,7 @@ func _ready() -> void:
 	health.health_changed.connect(_on_health_changed)
 	health.died.connect(_on_died)
 	_pickaxe.rotation_degrees.x = PICKAXE_REST_DEGREES
+	build.active_changed.connect(_on_build_mode_changed)
 	if is_multiplayer_authority():
 		_camera.activate()
 
@@ -156,10 +160,32 @@ func _physics_process(delta: float) -> void:
 	_handle_carry_input()
 	if _interaction_target and _interaction_target.action == &"interact" and _just_pressed(&"interact"):
 		_interaction_target.request_interact()
-	# Schlagen: Linksklick, Halten schlägt im Takt weiter. Mit Erz in der Hand wird stattdessen geworfen.
+	if _just_pressed(&"build_mode"):
+		build.set_active(not build.active)
 	_swing_cooldown = maxf(0.0, _swing_cooldown - delta)
-	if _pressed(&"attack") and _swing_cooldown <= 0.0 and not carry.is_carrying():
+	if build.active:
+		_handle_build_input()
+	# Schlagen: Linksklick, Halten schlägt im Takt weiter. Mit Erz in der Hand wird stattdessen geworfen.
+	elif _pressed(&"attack") and _swing_cooldown <= 0.0 and not carry.is_carrying():
 		_swing()
+
+
+## Baumodus: Linksklick platziert, Rechtsklick entfernt, R / Mausrad dreht.
+func _handle_build_input() -> void:
+	build.update_aim(_camera.get_view_transform(), global_position)
+	if _just_pressed(&"build_rotate_left"):
+		build.rotate_selection(-1)
+	if _just_pressed(&"build_rotate_right"):
+		build.rotate_selection(1)
+	if _just_pressed(&"attack"):
+		build.try_place()
+	elif _just_pressed(&"aim"):
+		build.try_remove()
+
+
+func _on_build_mode_changed(is_active: bool) -> void:
+	_camera.set_build_view(is_active)
+	build_mode_changed.emit(is_active)
 
 
 func is_downed() -> bool:
@@ -277,6 +303,8 @@ func _respawned(spawn: Vector3) -> void:
 
 func _set_downed(downed: bool) -> void:
 	_downed = downed
+	if downed:
+		build.set_active(false)
 	_model.visible = not downed
 	# Gefallene Figuren sind für Gegner und Kollisionen nicht da.
 	collision_layer = 0 if downed else PHYSICS_LAYER
@@ -304,7 +332,7 @@ func _apply_player_color() -> void:
 
 ## Beim Tragen: Angreifen wirft in Blickrichtung, Interagieren ohne Ziel legt ab.
 func _handle_carry_input() -> void:
-	if not carry.is_carrying():
+	if not carry.is_carrying() or build.active:
 		return
 	if _just_pressed(&"attack"):
 		var forward := -_camera.get_view_transform().basis.z

@@ -16,6 +16,8 @@ const SPAWN_SPACING: float = 1.5
 @onready var _help: Label = $UI/Help
 @onready var _hud: HUD = $UI/HUD
 @onready var _pause_menu: PauseMenu = $UI/PauseMenu
+@onready var _build_manager: BuildManager = $BuildManager
+@onready var _navigation: NavigationBaker = $TestRoom/NavigationRegion3D
 @onready var _network_status: Label = $UI/NetworkStatus
 
 
@@ -33,6 +35,8 @@ func _ready() -> void:
 	_pause_menu.leave_requested.connect(_return_to_menu)
 	_pause_menu.quit_requested.connect(get_tree().quit)
 	Economy.money_changed.connect(_hud.set_money)
+	# Nach dem Bauen weichen Gegner neuen Mauern aus; das Netz braucht nur der Host.
+	_build_manager.layout_changed.connect(_navigation.request_bake)
 	var elevator := get_tree().get_first_node_in_group(Elevator.GROUP) as Elevator
 	elevator.health.health_changed.connect(_hud.set_elevator_health)
 	_hud.set_elevator_health(elevator.health.current_health, elevator.health.max_health)
@@ -138,6 +142,7 @@ func _on_player_added(node: Node) -> void:
 		player.carrying_changed.connect(_hud.set_carrying)
 		player.health_changed.connect(_hud.set_player_health)
 		player.downed_changed.connect(_hud.set_downed)
+		player.build_mode_changed.connect(_hud.set_build_mode)
 
 
 ## Nur auf dem Host: Brocken spawnen, der ChunkSpawner repliziert sie zu den Clients.

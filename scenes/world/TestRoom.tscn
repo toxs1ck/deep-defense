@@ -20,7 +20,7 @@ albedo_color = Color(0.55, 0.42, 0.25, 1)
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_room"]
 geometry_parsed_geometry_type = 1
-geometry_collision_mask = 1
+geometry_collision_mask = 9
 geometry_source_geometry_mode = 1
 geometry_source_group_name = &"nav_source"
 cell_size = 0.25

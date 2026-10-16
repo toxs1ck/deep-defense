@@ -5,6 +5,8 @@ extends Node3D
 ## „ShoulderArm“ prüft den Schulterversatz zur Seite, „BackArm“ den Abstand nach hinten.
 
 @export var distance: float = 3.0
+## Abstand im Baumodus (GDD: 7 m), damit man den Bauplatz überblickt.
+@export var build_distance: float = 7.0
 ## Versatz über die Schulter in Metern.
 @export var shoulder_offset: float = 0.6
 ## Startseite: true = rechte Schulter. Mit „camera_switch_shoulder“ wechselbar.
@@ -59,6 +61,11 @@ func get_view_transform() -> Transform3D:
 ## Basis nur mit der Gier der Kamera, um Eingaben relativ zur Blickrichtung umzurechnen.
 func get_yaw_basis() -> Basis:
 	return Basis(Vector3.UP, global_rotation.y)
+
+
+func set_build_view(enabled: bool) -> void:
+	var target := build_distance if enabled else distance
+	create_tween().tween_property(_back_arm, "spring_length", target, 0.3).set_trans(Tween.TRANS_SINE)
 
 
 ## Kurzes Wackeln, z. B. bei eigenen Treffern oder erlittenem Schaden.

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="BuildableData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/BuildableData.gd" id="1_data"]
+[ext_resource type="PackedScene" path="res://scenes/buildables/Wall.tscn" id="2_scene"]
+
+[resource]
+script = ExtResource("1_data")
+display_name = "Mauer"
+scene = ExtResource("2_scene")
+size = Vector3(2, 2, 0.5)

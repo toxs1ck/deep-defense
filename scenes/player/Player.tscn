@@ -1,10 +1,11 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://scenes/player/Player.gd" id="1_player"]
 [ext_resource type="Resource" path="res://data/player/default_player.tres" id="2_data"]
 [ext_resource type="PackedScene" path="res://scenes/player/PlayerCamera.tscn" id="3_cam"]
 [ext_resource type="Script" path="res://components/CarryComponent.gd" id="4_carry"]
 [ext_resource type="Script" path="res://components/HealthComponent.gd" id="5_health"]
+[ext_resource type="Script" path="res://components/BuildComponent.gd" id="6_build"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -86,6 +87,9 @@ mesh = SubResource("BoxMesh_head")
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("5_health")
 max_health = 100
+
+[node name="BuildComponent" type="Node" parent="."]
+script = ExtResource("6_build")
 
 [node name="PlayerCamera" parent="." instance=ExtResource("3_cam")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
