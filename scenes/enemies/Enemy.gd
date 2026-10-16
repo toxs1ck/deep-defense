@@ -8,7 +8,7 @@ const GROUP: StringName = &"enemies"
 ## So oft wird der Weg neu berechnet (GDD: KI in festen Ticks statt jeden Frame).
 const REPATH_INTERVAL: float = 0.5
 ## Ab dieser Entfernung zur Mitte des Aufzugs greift der Gegner an.
-const ATTACK_RANGE: float = 2.6
+const ATTACK_RANGE: float = 3.0
 const TURN_SPEED: float = 10.0
 
 ## Pfad zur EnemyData-Resource; wird beim Spawnen mitgeschickt.

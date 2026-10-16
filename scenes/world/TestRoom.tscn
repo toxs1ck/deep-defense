@@ -26,7 +26,7 @@ geometry_source_group_name = &"nav_source"
 cell_size = 0.25
 cell_height = 0.25
 agent_height = 1.0
-agent_radius = 0.5
+agent_radius = 0.75
 agent_max_climb = 0.25
 agent_max_slope = 45.0
 
