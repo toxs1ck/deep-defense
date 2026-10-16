@@ -28,9 +28,16 @@ extends Resource
 @export var max_main_types: int = 2
 ## Aus wie vielen Eingängen eine Welle höchstens kommt (GDD: 1–3).
 @export var max_entrances: int = 3
-## Gegner einer Welle verteilen sich über diesen Anteil der Kampfdauer, damit nicht erst gekämpft und dann in
-## Ruhe geschürft wird; mindestens min_spawn_interval Sekunden zwischen zwei Gegnern.
+## Zum Beginn der Kampfphase kommt ein Pulk: dieser Anteil der Welle (mindestens burst_min_count Gegner),
+## im Abstand von burst_interval Sekunden.
+@export_range(0.0, 1.0) var burst_fraction: float = 0.3
+@export var burst_min_count: int = 3
+@export var burst_interval: float = 0.4
+## Die übrigen Gegner kommen als Nachzügler, verteilt über diesen Anteil der Kampfdauer. Jeder Abstand wird zufällig
+## zwischen straggler_jitter_min- und straggler_jitter_max-fachem Mittelwert gewürfelt, mindestens min_spawn_interval.
 @export_range(0.1, 1.0) var spawn_spread: float = 0.8
+@export var straggler_jitter_min: float = 0.4
+@export var straggler_jitter_max: float = 1.6
 @export var min_spawn_interval: float = 0.6
 
 @export_group("Erz")

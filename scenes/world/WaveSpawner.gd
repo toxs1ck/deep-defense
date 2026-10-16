@@ -2,8 +2,9 @@ class_name WaveSpawner
 extends Node
 ## Nur Host: plant zu Beginn jeder Bauphase die nächste Welle aus einem Punkte-Budget (GDD, „Wellen-Design“),
 ## zeigt allen die Vorschau (Typen und Eingänge, nicht die Anzahl) und spawnt sie in der Kampfphase.
-## Die Gegner verteilen sich über den größten Teil der Kampfphase (RunData.spawn_spread), damit Verteidigen und
-## Schürfen gleichzeitig nötig sind. Die Kampfphase endet, sobald alle gespawnt und besiegt (oder entkommen) sind.
+## Zum Kampfbeginn kommt ein Pulk, danach Nachzügler in zufälligen Abständen über den größten Teil der Kampfphase
+## (RunData.burst_*, spawn_spread, straggler_jitter_*), damit Verteidigen und Schürfen gleichzeitig nötig sind.
+## Die Kampfphase endet, sobald alle gespawnt und besiegt (oder entkommen) sind.
 ## Zufall über GameState.rng, damit ein Run mit demselben Seed gleich abläuft.
 
 ## Nur Host: ein Gegner hat Erz fallen lassen (z. B. ein besiegter Erzdieb); Main spawnt den Brocken.
@@ -28,8 +29,9 @@ var _queue: Array[EnemyData] = []
 var _entrances: Array[Node3D] = []
 var _spawn_timer: float = 0.0
 var _spawn_index: int = 0
-## Abstand zwischen zwei Gegnern dieser Welle, beim Start der Kampfphase berechnet.
-var _interval: float = 1.0
+## Wie viele Gegner des Pulks noch kommen, und der mittlere Abstand der Nachzügler (beim Kampfbeginn berechnet).
+var _burst_left: int = 0
+var _straggler_interval: float = 1.0
 
 
 func _ready() -> void:
@@ -46,7 +48,9 @@ func _on_phase_changed(phase: int) -> void:
 		RunManager.Phase.COMBAT:
 			_spawn_timer = 0.0
 			var run := RunManager.data
-			_interval = maxf(run.min_spawn_interval, run.combat_duration * run.spawn_spread / maxf(1.0, _queue.size()))
+			_burst_left = mini(_queue.size(), maxi(run.burst_min_count, roundi(_queue.size() * run.burst_fraction)))
+			var stragglers := _queue.size() - _burst_left
+			_straggler_interval = run.combat_duration * run.spawn_spread / maxf(1.0, stragglers)
 		_:
 			_queue.clear()
 			_clear_enemies()
@@ -111,12 +115,23 @@ func _physics_process(delta: float) -> void:
 	if not _queue.is_empty():
 		_spawn_timer -= delta
 		if _spawn_timer <= 0.0:
-			_spawn_timer = _interval
+			_spawn_timer = _next_spawn_delay()
 			_spawn(_queue.pop_front() as EnemyData)
 			if _queue.is_empty():
 				all_spawned.emit()
 	elif _alive_enemy_count() == 0:
 		RunManager.end_combat()
+
+
+## Erst der Pulk in kurzen Abständen, dann Nachzügler mit zufälligem Abstand um den Mittelwert.
+func _next_spawn_delay() -> float:
+	var run := RunManager.data
+	if _burst_left > 0:
+		_burst_left -= 1
+		if _burst_left > 0:
+			return run.burst_interval
+	var jitter := GameState.rng.randf_range(run.straggler_jitter_min, run.straggler_jitter_max)
+	return maxf(run.min_spawn_interval, _straggler_interval * jitter)
 
 
 func _spawn(enemy_data: EnemyData) -> void:
