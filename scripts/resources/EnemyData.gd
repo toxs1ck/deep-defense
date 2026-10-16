@@ -8,8 +8,14 @@ extends Resource
 @export var speed: float = 4.0
 ## Schaden pro Angriff am Aufzug.
 @export var elevator_damage: int = 5
-## Sekunden zwischen zwei Angriffen am Aufzug.
+## Sekunden zwischen zwei Angriffen (nach dem Zuschlagen bis zum nächsten Ausholen).
 @export var attack_interval: float = 1.0
+## Ausholphase vor jedem Schlag in Sekunden: Der Gegner zeigt den Angriff an, man kann ausweichen.
+@export var attack_windup: float = 0.6
+## Beim Zuschlagen trifft er Spieler noch bis player_attack_range plus diesen Spielraum.
+@export var attack_hit_margin: float = 0.3
+## So lange braucht er nach einem Treffer, der sein Ausholen unterbricht, bis er neu ansetzt.
+@export var stagger_time: float = 0.4
 ## Schaden pro Angriff an Spielern.
 @export var player_damage: int = 5
 ## Kommt ein Spieler näher, greift der Gegner ihn statt des Aufzugs an.

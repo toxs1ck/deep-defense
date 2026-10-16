@@ -6,6 +6,8 @@ extends CharacterBody3D
 ## (Avoidance), damit sich keine Schlange bildet. Spieler, die einen Gegner berühren, schieben ihn weg.
 ## Kommt ein Spieler näher als data.aggro_range (oder trifft ihn), greift der Gegner stattdessen ihn an,
 ## bis er gefallen ist oder sich weiter als aggro_range + aggro_leash entfernt.
+## Jeder Angriff hat eine Ausholphase (data.attack_windup), in der man ausweichen kann. Einmal ausgeholt, schlägt er
+## zu, auch wenn das Ziel schon weg ist; ein Treffer während des Ausholens bricht den Angriff ab.
 ## Clients bekommen Position und Blickrichtung über den MultiplayerSynchronizer und glätten sie.
 
 const GROUP: StringName = &"enemies"
@@ -26,6 +28,9 @@ const MIN_FACING_SPEED: float = 0.6
 ## Kommt so lange kein Ergebnis der Avoidance, läuft der Gegner ohne Ausweichen weiter, statt stehen zu bleiben.
 const AVOIDANCE_TIMEOUT: float = 0.2
 const HIT_FLASH_TIME: float = 0.18
+## Aussehen beim Ausholen: breiter und flacher, Warnfarbe.
+const WINDUP_SCALE: Vector3 = Vector3(1.2, 0.85, 1.2)
+const WINDUP_COLOR: Color = Color(1.0, 0.55, 0.1)
 ## So lange schrumpft ein besiegter Gegner, bevor er verschwindet.
 const DEATH_TIME: float = 0.25
 ## Abstand der Angriffspunkte zur Mitte des Aufzugs (knapp außerhalb der Korbwände).
@@ -60,12 +65,15 @@ var _path: PackedVector3Array = PackedVector3Array()
 var _path_index: int = 0
 var _attack_timer: float = 0.0
 var _body_rest_position: Vector3 = Vector3.ZERO
+var _attack_tween: Tween = null
 ## Nur Host: eigener Angriffspunkt als Winkel um den Aufzug und die von der Avoidance berechnete Geschwindigkeit.
 var _attack_angle: float = 0.0
 var _safe_velocity: Vector3 = Vector3.ZERO
 ## Sekunden seit dem letzten Ergebnis der Avoidance.
 var _since_safe_velocity: float = INF
 var _attacking: bool = false
+## Restzeit des Ausholens; > 0 heißt, der Schlag kommt gleich.
+var _windup_left: float = 0.0
 ## Nur Host: aktuell verfolgter Spieler, null = Aufzug.
 var _target_player: Player = null
 var _dying: bool = false
@@ -107,7 +115,10 @@ func _physics_process(delta: float) -> void:
 
 	var desired := Vector3.ZERO
 	_update_target_player()
-	if _elevator and not _dying:
+	if _windup_left > 0.0 and not _dying:
+		# Beim Ausholen bleibt er stehen und bringt den Schlag zu Ende.
+		_attack(delta)
+	elif _elevator and not _dying:
 		# Spieler: Abstand Mitte zu Mitte, waagerecht. Aufzug: Abstand zur Mitte des Korbs.
 		var distance := global_position.distance_to(_elevator.global_position)
 		var attack_range := ATTACK_RANGE
@@ -137,9 +148,12 @@ func _physics_process(delta: float) -> void:
 
 	# Laufrichtung nur, solange er läuft; beim Angreifen schaut er zum Aufzug.
 	var facing := horizontal if horizontal.length() > MIN_FACING_SPEED else Vector3.ZERO
-	if _attacking:
+	if _attacking and _windup_left <= 0.0:
 		facing = (_target_player.global_position if _target_player else _elevator.global_position) - global_position
 		facing.y = 0.0
+	elif _windup_left > 0.0:
+		# Beim Ausholen ist die Richtung festgelegt; man kann seitlich ausweichen.
+		facing = Vector3.ZERO
 	if facing.length_squared() > 0.01:
 		var target_yaw := atan2(-facing.x, -facing.z)
 		_model.rotation.y = lerp_angle(_model.rotation.y, target_yaw, minf(1.0, TURN_SPEED * delta))
@@ -193,13 +207,28 @@ func _player_push() -> Vector3:
 
 
 func _attack(delta: float) -> void:
+	if _windup_left > 0.0:
+		_windup_left -= delta
+		if _windup_left <= 0.0:
+			_strike()
+		return
 	_attack_timer -= delta
 	if _attack_timer > 0.0:
 		return
+	_windup_left = data.attack_windup
+	_play_windup.rpc(data.attack_windup)
+
+
+## Nur Host: Schlag ausführen. Spieler werden nur getroffen, wenn sie noch nah genug sind.
+func _strike() -> void:
+	_windup_left = 0.0
 	_attack_timer = data.attack_interval
 	if _target_player:
-		_target_player.health.damage(data.player_damage)
-	else:
+		var still_valid := is_instance_valid(_target_player) and not _target_player.is_downed()
+		var reach := data.player_attack_range + data.attack_hit_margin
+		if still_valid and _horizontal_distance_to(_target_player.global_position) <= reach:
+			_target_player.health.damage(data.player_damage)
+	elif _elevator:
 		_elevator.health.damage(data.elevator_damage)
 	_play_attack.rpc()
 
@@ -241,6 +270,11 @@ func take_hit(amount: int, knockback: Vector3, attacker: Player) -> void:
 		return
 	velocity += knockback
 	_set_target_player(attacker)
+	if _windup_left > 0.0:
+		# Unterbrochen: kein Schlag, kurz taumeln.
+		_windup_left = 0.0
+		_attack_timer = data.stagger_time
+		_play_windup_cancel.rpc()
 	_play_hit.rpc()
 	health.damage(amount)
 
@@ -255,13 +289,44 @@ func _play_hit() -> void:
 	create_tween().tween_property(_body, "scale", Vector3.ONE, HIT_FLASH_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
-## Kurzer Ruck nach vorne, damit man sieht, wer gerade angreift.
-@rpc("authority", "call_local", "unreliable")
+## Ausholen: nach hinten ducken, breiter werden und orange aufglühen, damit man den Schlag kommen sieht.
+@rpc("authority", "call_local", "reliable")
+func _play_windup(duration: float) -> void:
+	_kill_attack_tween()
+	_attack_tween = create_tween().set_parallel()
+	_attack_tween.tween_property(_body, "position", _body_rest_position + Vector3.BACK * 0.25, duration) \
+			.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	_attack_tween.tween_property(_model, "scale", WINDUP_SCALE, duration)
+	var material := _body.material_override as StandardMaterial3D
+	_attack_tween.tween_property(material, "albedo_color", WINDUP_COLOR, duration)
+
+
+## Zuschlagen: kräftiger Ruck nach vorne, dann zurück in die Ruhelage.
+## Zuverlässig gesendet, sonst bliebe der Gegner bei verlorenem Paket in der Ausholpose stehen.
+@rpc("authority", "call_local", "reliable")
 func _play_attack() -> void:
-	_body.position = _body_rest_position
-	var tween := create_tween()
-	tween.tween_property(_body, "position", _body_rest_position + Vector3.FORWARD * 0.3, 0.08)
-	tween.tween_property(_body, "position", _body_rest_position, 0.15)
+	_kill_attack_tween()
+	var material := _body.material_override as StandardMaterial3D
+	material.albedo_color = data.color
+	_model.scale = Vector3.ONE
+	_attack_tween = create_tween()
+	_attack_tween.tween_property(_body, "position", _body_rest_position + Vector3.FORWARD * 0.45, 0.06)
+	_attack_tween.tween_property(_body, "position", _body_rest_position, 0.18)
+
+
+@rpc("authority", "call_local", "reliable")
+func _play_windup_cancel() -> void:
+	_kill_attack_tween()
+	var material := _body.material_override as StandardMaterial3D
+	material.albedo_color = data.color
+	_attack_tween = create_tween().set_parallel()
+	_attack_tween.tween_property(_body, "position", _body_rest_position, 0.15)
+	_attack_tween.tween_property(_model, "scale", Vector3.ONE, 0.15)
+
+
+func _kill_attack_tween() -> void:
+	if _attack_tween:
+		_attack_tween.kill()
 
 
 ## Nur der Host entfernt den Gegner, nach einer kurzen Todesanimation bei allen; der EnemySpawner entfernt ihn
@@ -277,4 +342,5 @@ func _on_died() -> void:
 
 @rpc("authority", "call_local", "reliable")
 func _play_death() -> void:
+	_kill_attack_tween()
 	create_tween().tween_property(_model, "scale", Vector3(1.3, 0.05, 1.3), DEATH_TIME).set_ease(Tween.EASE_IN)
