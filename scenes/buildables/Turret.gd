@@ -62,6 +62,17 @@ func _physics_process(delta: float) -> void:
 	_play_shot.rpc(aim, loaded)
 
 
+func get_state() -> Dictionary:
+	var state := super()
+	state["ammo"] = ammo
+	return state
+
+
+func apply_state(state: Dictionary) -> void:
+	super(state)
+	ammo = state.get("ammo", 0)
+
+
 func _find_target() -> Enemy:
 	var space := get_world_3d().direct_space_state
 	var from := _muzzle.global_position

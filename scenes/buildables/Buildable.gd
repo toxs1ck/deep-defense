@@ -4,6 +4,9 @@ extends StaticBody3D
 ## überträgt sie einmalig an alle (Bauelemente bewegen sich nicht).
 ## Hat Lebenspunkte: Gegner greifen Bauelemente an, wenn der Weg zum Aufzug zugebaut ist. Mit sinkenden LP wird
 ## das Bauelement dunkler; bei 0 LP entfernt es der BuildManager.
+## Beim Versetzen packt der BuildManager es in eine Kiste: get_state() liefert alles, was erhalten bleiben soll,
+## apply_state() setzt es vor dem nächsten Spawnen wieder (wird dann mit den Spawn-Eigenschaften verteilt).
+## Unterklassen mit eigenem Zustand (z. B. Munition) ergänzen beide Funktionen.
 
 const GROUP: StringName = &"buildables"
 ## Farbanteil, der bei 0 LP noch übrig ist.
@@ -13,6 +16,8 @@ const DAMAGED_BRIGHTNESS: float = 0.35
 @export var sync_position: Vector3
 ## Drehung in 90°-Schritten um die Hochachse (0–3).
 @export var rotation_steps: int = 0
+## Lebenspunkte beim Spawnen, 0 = voll. Für versetzte Bauelemente; wird beim Spawnen mitgeschickt.
+@export var initial_health: int = 0
 
 var data: BuildableData
 
@@ -37,9 +42,20 @@ func _ready() -> void:
 	_material = mesh_material.duplicate() as StandardMaterial3D
 	_base_color = _material.albedo_color
 	_mesh.material_override = _material
-	health.setup(data.max_health)
+	health.setup(data.max_health, initial_health)
 	health.health_changed.connect(_on_health_changed)
 	health.died.connect(_on_died)
+	_on_health_changed(health.current_health, health.max_health)
+
+
+## Nur Host: Zustand, der beim Versetzen erhalten bleibt.
+func get_state() -> Dictionary:
+	return { "health": health.current_health }
+
+
+## Nur Host, vor dem Spawnen: Zustand aus der Kiste übernehmen.
+func apply_state(state: Dictionary) -> void:
+	initial_health = state.get("health", 0)
 
 
 func _on_health_changed(current: int, maximum: int) -> void:

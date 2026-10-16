@@ -26,6 +26,8 @@ const OWNED_COLOR: Color = Color(0.62, 0.45, 0.25)
 			_update_offer_state()
 
 var buildable: BuildableData
+## Nur Host: Zustand eines versetzten Bauelements (Lebenspunkte, Munition …), leer bei neu gekauften Kisten.
+var stored_state: Dictionary = {}
 
 @onready var _label: Label3D = $Label3D
 var _material: StandardMaterial3D

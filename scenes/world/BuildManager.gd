@@ -3,13 +3,14 @@ extends Node
 ## Raster und Platzierung der Bauelemente (GDD: 2-m-Zellen). can_place() läuft auf jedem Peer, damit die
 ## Vorschau sofort grün oder rot zeigt; platziert und entfernt wird nur auf dem Host, der dabei erneut prüft.
 ## Aufgebaut wird aus einer getragenen Blaupausen-Kiste, die dabei verbraucht wird; abgebaut wird ein Bauelement
-## wieder zur Kiste (so lässt es sich versetzen). Nach jeder Änderung meldet layout_changed, dass die Navigation neu
+## wieder zur Kiste, samt Zustand (Lebenspunkte, Munition), so lässt es sich versetzen. Nach jeder Änderung meldet layout_changed, dass die Navigation neu
 ## gebacken werden muss.
 
 ## Nur auf dem Host: Bauelemente wurden hinzugefügt oder entfernt.
 signal layout_changed
-## Nur Host: abgebautes Bauelement als Kiste an dieser Stelle hinlegen (Main spawnt sie).
-signal crate_requested(buildable: BuildableData, at: Vector3)
+## Nur Host: abgebautes Bauelement als Kiste spawnen (Main), mit seinem Zustand. carrier_peer ≠ 0: Die Kiste
+## landet direkt in den Händen dieses Spielers.
+signal crate_requested(buildable: BuildableData, at: Vector3, state: Dictionary, carrier_peer: int)
 
 const GROUP: StringName = &"build_manager"
 const CELL_SIZE: float = 2.0
@@ -95,6 +96,8 @@ func _place_on_host(crate_name: String, cell: Vector2i, rotation_steps: int) -> 
 	buildable.data_path = data.resource_path
 	buildable.sync_position = position
 	buildable.rotation_steps = posmod(rotation_steps, 4)
+	if not crate.stored_state.is_empty():
+		buildable.apply_state(crate.stored_state)
 	buildables.add_child(buildable, true)
 	crate.queue_free()
 	layout_changed.emit()
@@ -110,7 +113,9 @@ func _remove_on_host(buildable_name: String) -> void:
 		return
 	if buildable.global_position.distance_to(player.global_position) > MAX_BUILD_DISTANCE:
 		return
-	crate_requested.emit(buildable.data, buildable.global_position + Vector3.UP * 0.8)
+	# Mit freien Händen landet die Kiste direkt beim Spieler, sonst liegt sie an der Stelle des Bauelements.
+	var carrier := player.get_multiplayer_authority() if not player.carry.is_carrying() else 0
+	crate_requested.emit(buildable.data, buildable.global_position + Vector3.UP * 0.8, buildable.get_state(), carrier)
 	destroy(buildable)
 
 

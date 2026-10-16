@@ -23,9 +23,10 @@ func _ready() -> void:
 
 
 ## Maximum setzen und voll heilen, z. B. aus einer Daten-Resource. Lokal auf jedem Peer aufrufen.
-func setup(maximum: int) -> void:
+## current > 0 setzt einen anderen Startwert, z. B. für ein versetztes, beschädigtes Bauelement.
+func setup(maximum: int, current: int = 0) -> void:
 	max_health = maximum
-	current_health = maximum
+	current_health = clampi(current, 1, maximum) if current > 0 else maximum
 	health_changed.emit(current_health, max_health)
 
 

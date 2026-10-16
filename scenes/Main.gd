@@ -173,17 +173,19 @@ func _on_chunk_broken_off(ore: OreData, spawn_position: Vector3, impulse: Vector
 
 
 ## Nur auf dem Host: Blaupausen-Kiste spawnen (abgebautes Bauelement bzw. Shop-Angebot).
-func _spawn_crate(buildable: BuildableData, at: Vector3, offer: bool = false) -> void:
+func _spawn_crate(buildable: BuildableData, at: Vector3, state: Dictionary = {}, carrier_peer: int = 0, offer: bool = false) -> void:
 	var crate := CRATE_SCENE.instantiate() as BlueprintCrate
 	crate.buildable_path = buildable.resource_path
 	crate.is_offer = offer
+	crate.stored_state = state
+	crate.carrier_id = carrier_peer
 	crate.position = at
 	crate.sync_position = at
 	_chunks.add_child(crate, true)
 
 
 func _spawn_offer_crate(buildable: BuildableData, at: Vector3) -> void:
-	_spawn_crate(buildable, at, true)
+	_spawn_crate(buildable, at, {}, 0, true)
 
 
 func _on_reroll_cost_changed(cost: int) -> void:
