@@ -1,6 +1,8 @@
 class_name HealthComponent
 extends Node
 ## Lebenspunkte. Nur der Host verursacht Schaden; der neue Stand geht per RPC an alle.
+## Der RPC ist bewusst „any_peer“ mit eigener Absenderprüfung: Bei Spielfiguren gehört der Knoten dem Client,
+## mit „authority“ dürfte der Host die Lebenspunkte dort gar nicht setzen.
 ## sync_on_join: für Objekte, die fest in der Szene stehen (z. B. Aufzug), bekommen später Beitretende den Stand.
 ## Gespawnte Objekte (Gegner) brauchen das nicht, sie sind ohnehin kurzlebig.
 
@@ -49,8 +51,11 @@ func _on_player_joined(peer_id: int) -> void:
 		_set_health.rpc_id(peer_id, current_health)
 
 
-@rpc("authority", "call_local", "reliable")
+@rpc("any_peer", "call_local", "reliable")
 func _set_health(value: int) -> void:
+	var sender := multiplayer.get_remote_sender_id()
+	if sender != 0 and sender != 1:
+		return
 	var was_alive := current_health > 0
 	current_health = value
 	health_changed.emit(current_health, max_health)
