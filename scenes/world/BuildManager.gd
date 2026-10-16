@@ -79,6 +79,7 @@ func _place_on_host(data_path: String, cell: Vector2i, rotation_steps: int) -> v
 	if not check["ok"] or position.distance_to(player.global_position) > MAX_BUILD_DISTANCE:
 		return
 	var buildable := data.scene.instantiate() as Buildable
+	buildable.data_path = data.resource_path
 	buildable.sync_position = position
 	buildable.rotation_steps = posmod(rotation_steps, 4)
 	buildables.add_child(buildable, true)
@@ -95,7 +96,14 @@ func _remove_on_host(buildable_name: String) -> void:
 		return
 	if buildable.global_position.distance_to(player.global_position) > MAX_BUILD_DISTANCE:
 		return
-	# Erst aus dem Baum nehmen, damit das Neu-Backen die Mauer schon nicht mehr sieht.
+	destroy(buildable)
+
+
+## Nur Host: Bauelement entfernen, z. B. wenn Gegner es zerstört haben.
+func destroy(buildable: Buildable) -> void:
+	if not multiplayer.is_server() or buildable.get_parent() != buildables:
+		return
+	# Erst aus dem Baum nehmen, damit das Neu-Backen das Bauelement schon nicht mehr sieht.
 	buildables.remove_child(buildable)
 	buildable.queue_free()
 	layout_changed.emit()

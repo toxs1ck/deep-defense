@@ -6,6 +6,7 @@ extends CharacterBody3D
 ## (Avoidance), damit sich keine Schlange bildet. Spieler, die einen Gegner berühren, schieben ihn weg.
 ## Kommt ein Spieler näher als data.aggro_range (oder trifft ihn), greift der Gegner stattdessen ihn an,
 ## bis er gefallen ist oder sich weiter als aggro_range + aggro_leash entfernt.
+## Erreicht der Weg den Aufzug nicht (zugebaut), greift der Gegner das Bauelement am Wegende an (GDD, „Platzierung“).
 ## Jeder Angriff hat eine Ausholphase (data.attack_windup), in der man ausweichen kann. Dabei rückt er mit
 ## verringertem Tempo nach; einmal ausgeholt, schlägt er zu, auch wenn das Ziel schon weg ist. Ein Treffer während
 ## des Ausholens bricht den Angriff ab.
@@ -17,6 +18,10 @@ const REPATH_INTERVAL: float = 0.5
 ## Ein Wegpunkt gilt als erreicht, wenn er waagerecht so nah ist. Bewusst ohne Höhe: Auf Rampen liegt das Netz
 ## etwas über oder unter dem Boden, mit 3D-Abstand würde der Punkt nie „erreicht“ und der Gegner pendeln.
 const WAYPOINT_REACHED: float = 0.5
+## Ab dieser Entfernung (Mitte zu Mitte, waagerecht) schlägt der Gegner ein Bauelement.
+const BUILDABLE_ATTACK_RANGE: float = 1.9
+## Um das Wegende herum wird so weit nach dem Bauelement gesucht, das den Weg versperrt.
+const BLOCKER_SEARCH_RADIUS: float = 3.5
 ## Ab dieser Entfernung zur Mitte des Aufzugs greift der Gegner an.
 const ATTACK_RANGE: float = 2.8
 ## Wer angreift, hört erst auf, wenn er so viel weiter weg gedrückt wird (gegen Flackern an der Grenze).
@@ -77,6 +82,8 @@ var _attacking: bool = false
 var _windup_left: float = 0.0
 ## Nur Host: aktuell verfolgter Spieler, null = Aufzug.
 var _target_player: Player = null
+## Nur Host: Bauelement, das den Weg zum Aufzug versperrt und deshalb angegriffen wird.
+var _target_buildable: Buildable = null
 var _dying: bool = false
 
 
@@ -116,6 +123,11 @@ func _physics_process(delta: float) -> void:
 
 	var desired := Vector3.ZERO
 	_update_target_player()
+	if _target_buildable != null and not is_instance_valid(_target_buildable):
+		# Zerstört: weiter zum Aufzug, Weg gleich neu berechnen.
+		_target_buildable = null
+		_attacking = false
+		_repath_timer = 0.0
 	if _windup_left > 0.0 and not _dying:
 		# Beim Ausholen bringt er den Schlag zu Ende und rückt langsamer nach; dicht am Spieler bleibt er stehen.
 		_attack(delta)
@@ -128,6 +140,9 @@ func _physics_process(delta: float) -> void:
 		if _target_player:
 			distance = _horizontal_distance_to(_target_player.global_position)
 			attack_range = data.player_attack_range
+		elif _target_buildable:
+			distance = _horizontal_distance_to(_target_buildable.global_position)
+			attack_range = BUILDABLE_ATTACK_RANGE
 		if _attacking:
 			_attacking = distance <= attack_range + ATTACK_HYSTERESIS
 		else:
@@ -152,7 +167,7 @@ func _physics_process(delta: float) -> void:
 	# Laufrichtung nur, solange er läuft; beim Angreifen schaut er zum Aufzug.
 	var facing := horizontal if horizontal.length() > MIN_FACING_SPEED else Vector3.ZERO
 	if _attacking and _windup_left <= 0.0:
-		facing = (_target_player.global_position if _target_player else _elevator.global_position) - global_position
+		facing = _goal_position() - global_position
 		facing.y = 0.0
 	if facing.length_squared() > 0.01:
 		var target_yaw := atan2(-facing.x, -facing.z)
@@ -164,8 +179,7 @@ func _physics_process(delta: float) -> void:
 ## Der NavigationAgent3D dient nur dem Ausweichen (er bekommt das Ziel trotzdem, sonst rechnet er nicht);
 ## den Weg holt und verfolgt der Gegner selbst.
 func _move_direction(delta: float) -> Vector3:
-	var around := Vector3(sin(_attack_angle), 0.0, cos(_attack_angle)) * ATTACK_POINT_RADIUS
-	var target := _target_player.global_position if _target_player else _elevator.global_position + around
+	var target := _goal_position()
 	_repath_timer -= delta
 	if _repath_timer <= 0.0:
 		_repath_timer = REPATH_INTERVAL
@@ -173,6 +187,8 @@ func _move_direction(delta: float) -> Vector3:
 		_path_index = 0
 		# Der Agent braucht ein Ziel, sonst reicht er die Geschwindigkeit nicht an die Avoidance weiter.
 		_agent.target_position = target
+		if _target_player == null and _target_buildable == null:
+			_check_path_blocked()
 	while _path_index < _path.size() and _horizontal_distance_to(_path[_path_index]) < WAYPOINT_REACHED:
 		_path_index += 1
 	# Ohne Weg (Netz noch nicht fertig) oder am Wegende, aber noch nicht in Reichweite: direkt aufs Ziel zu.
@@ -180,6 +196,36 @@ func _move_direction(delta: float) -> Vector3:
 	var to_next := next - global_position
 	to_next.y = 0.0
 	return to_next.normalized() if to_next.length_squared() > 0.0001 else Vector3.ZERO
+
+
+## Wohin der Gegner gerade will: Spieler, versperrendes Bauelement oder sein Angriffspunkt am Aufzug.
+func _goal_position() -> Vector3:
+	if _target_player:
+		return _target_player.global_position
+	if _target_buildable:
+		return _target_buildable.global_position
+	var around := Vector3(sin(_attack_angle), 0.0, cos(_attack_angle)) * ATTACK_POINT_RADIUS
+	return _elevator.global_position + around
+
+
+## Endet der Weg zum Aufzug außerhalb der Angriffsreichweite, ist er zugebaut: das Bauelement am Wegende angreifen.
+func _check_path_blocked() -> void:
+	var path_end := _path[_path.size() - 1] if not _path.is_empty() else global_position
+	var end_to_elevator := Vector2(path_end.x - _elevator.global_position.x, path_end.z - _elevator.global_position.z)
+	if end_to_elevator.length() <= ATTACK_RANGE:
+		return
+	var nearest: Buildable = null
+	var nearest_distance := BLOCKER_SEARCH_RADIUS
+	for node in get_tree().get_nodes_in_group(Buildable.GROUP):
+		var buildable := node as Buildable
+		var distance := Vector2(buildable.global_position.x - path_end.x, buildable.global_position.z - path_end.z).length()
+		if distance <= nearest_distance:
+			nearest = buildable
+			nearest_distance = distance
+	if nearest:
+		_target_buildable = nearest
+		_attacking = false
+		_repath_timer = 0.0
 
 
 func _on_velocity_computed(safe_velocity: Vector3) -> void:
@@ -223,11 +269,15 @@ func _attack(delta: float) -> void:
 func _strike() -> void:
 	_windup_left = 0.0
 	_attack_timer = data.attack_interval
-	if _target_player:
+	if _target_player != null:
 		var still_valid := is_instance_valid(_target_player) and not _target_player.is_downed()
 		var reach := data.player_attack_range + data.attack_hit_margin
 		if still_valid and _horizontal_distance_to(_target_player.global_position) <= reach:
 			_target_player.health.damage(data.player_damage)
+	elif _target_buildable != null:
+		# Ziel war ein Bauelement; ist es inzwischen weg, geht der Schlag ins Leere.
+		if is_instance_valid(_target_buildable):
+			_target_buildable.health.damage(data.building_damage)
 	elif _elevator:
 		_elevator.health.damage(data.elevator_damage)
 	_play_attack.rpc()
@@ -236,7 +286,7 @@ func _strike() -> void:
 ## Nur Host: Spieler in der Nähe haben Vorrang vor dem Aufzug. Ein Ziel wird erst aufgegeben, wenn es fällt
 ## oder weit genug weg ist, damit der Gegner nicht zwischen zwei Zielen hin und her springt.
 func _update_target_player() -> void:
-	if _target_player:
+	if _target_player != null:
 		var lost := not is_instance_valid(_target_player) or _target_player.is_downed()
 		if lost or _horizontal_distance_to(_target_player.global_position) > data.aggro_range + data.aggro_leash:
 			_set_target_player(null)

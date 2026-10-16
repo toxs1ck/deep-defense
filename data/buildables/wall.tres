@@ -8,3 +8,4 @@ script = ExtResource("1_data")
 display_name = "Mauer"
 scene = ExtResource("2_scene")
 size = Vector3(2, 2, 0.5)
+max_health = 150

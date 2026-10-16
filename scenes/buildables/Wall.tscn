@@ -1,6 +1,7 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scenes/buildables/Buildable.gd" id="1_buildable"]
+[ext_resource type="Script" path="res://components/HealthComponent.gd" id="2_health"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
 size = Vector3(2, 2, 0.5)
@@ -19,6 +20,9 @@ properties/0/replication_mode = 0
 properties/1/path = NodePath(".:rotation_steps")
 properties/1/spawn = true
 properties/1/replication_mode = 0
+properties/2/path = NodePath(".:data_path")
+properties/2/spawn = true
+properties/2/replication_mode = 0
 
 [node name="Wall" type="StaticBody3D"]
 collision_layer = 8
@@ -32,6 +36,9 @@ shape = SubResource("BoxShape3D_wall")
 [node name="Mesh" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 mesh = SubResource("BoxMesh_wall")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("2_health")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("SceneReplicationConfig_wall")

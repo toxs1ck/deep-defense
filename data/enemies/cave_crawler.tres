@@ -14,6 +14,7 @@ windup_speed_multiplier = 0.5
 attack_hit_margin = 0.3
 stagger_time = 0.4
 player_damage = 5
+building_damage = 10
 aggro_range = 3.0
 aggro_leash = 3.0
 player_attack_range = 1.4

@@ -7,3 +7,5 @@ extends Resource
 @export var scene: PackedScene
 ## Abmessungen in Metern (Breite entlang lokal X, Höhe, Tiefe entlang lokal Z) für Vorschau und Platzprüfung.
 @export var size: Vector3 = Vector3(2, 2, 2)
+## Lebenspunkte; Gegner greifen Bauelemente an, wenn sie den Aufzug sonst nicht erreichen.
+@export var max_health: int = 150

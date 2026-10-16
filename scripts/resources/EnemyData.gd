@@ -18,6 +18,8 @@ extends Resource
 @export var attack_hit_margin: float = 0.3
 ## So lange braucht er nach einem Treffer, der sein Ausholen unterbricht, bis er neu ansetzt.
 @export var stagger_time: float = 0.4
+## Schaden pro Angriff an Bauelementen (wenn der Weg zum Aufzug zugebaut ist).
+@export var building_damage: int = 10
 ## Schaden pro Angriff an Spielern.
 @export var player_damage: int = 5
 ## Kommt ein Spieler näher, greift der Gegner ihn statt des Aufzugs an.
