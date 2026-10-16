@@ -29,6 +29,9 @@ properties/2/replication_mode = 2
 properties/3/path = NodePath(".:carrier_id")
 properties/3/spawn = true
 properties/3/replication_mode = 2
+properties/4/path = NodePath(".:is_offer")
+properties/4/spawn = true
+properties/4/replication_mode = 2
 
 [node name="BlueprintCrate" type="RigidBody3D"]
 collision_layer = 16

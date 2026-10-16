@@ -22,6 +22,7 @@ const MOUSE_BUTTON_NAMES: Dictionary = {
 @onready var _elevator_label: Label = %ElevatorLabel
 @onready var _health_label: Label = %HealthLabel
 @onready var _downed_label: Label = %DownedLabel
+@onready var _hold_bar: ProgressBar = %HoldBar
 @onready var _banner_label: Label = %BannerLabel
 
 var _target: InteractableComponent = null
@@ -43,6 +44,7 @@ func _ready() -> void:
 	set_money(Economy.team_money)
 	_banner_label.visible = false
 	_downed_label.visible = false
+	_hold_bar.visible = false
 	RunManager.phase_changed.connect(_on_phase_changed)
 	RunManager.ready_changed.connect(func(_peers: PackedInt32Array, _count: int) -> void: _refresh_run_label())
 	_refresh_run_label()
@@ -138,6 +140,12 @@ func set_elevator_health(current: int, maximum: int) -> void:
 	_elevator_label.modulate = Color(1, 0.35, 0.3) if current * 3 < maximum else Color.WHITE
 
 
+## Fortschritt beim Halten von E (z. B. Kaufen); 0 blendet den Balken aus.
+func set_hold_progress(fraction: float) -> void:
+	_hold_bar.visible = fraction > 0.0
+	_hold_bar.value = fraction * 100.0
+
+
 func set_player_health(current: int, maximum: int) -> void:
 	_health_label.text = "LP %d/%d" % [current, maximum]
 	_health_label.modulate = Color(1, 0.35, 0.3) if current * 3 < maximum else Color.WHITE
@@ -180,7 +188,10 @@ func _refresh_prompt() -> void:
 				_build_selection, _action_key_name(&"attack"), _action_key_name(&"build_rotate_right"),
 				_action_key_name(&"aim"), _action_key_name(&"build_mode")]
 	elif _target:
-		_prompt_label.text = "%s: %s" % [_action_key_name(_target.action), _target.prompt_text]
+		var key := _action_key_name(_target.action)
+		_prompt_label.text = "%s: %s" % [key, _target.prompt_text]
+		if _target.hold_seconds > 0.0:
+			_prompt_label.text += " · %s halten: %s" % [key, _target.hold_prompt]
 	elif _carrying:
 		_prompt_label.text = "%s: Ablegen · %s: Werfen · %s: Baumodus (Kisten aufbauen)" % [
 			_action_key_name(&"interact"), _action_key_name(&"attack"), _action_key_name(&"build_mode")]

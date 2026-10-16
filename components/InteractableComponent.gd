@@ -6,6 +6,8 @@ extends Area3D
 
 ## Wird nur auf dem Host gesendet. Das Objekt entscheidet dann selbst, was passiert, und verteilt das Ergebnis.
 signal interacted(player: Player)
+## Nur Host: Der Spieler hat die Taste hold_seconds lang gehalten (z. B. Kaufen im Shop).
+signal hold_completed(player: Player)
 
 ## Spielraum für die Entfernungsprüfung auf dem Host, weil der Raycast die Oberfläche trifft,
 ## geprüft aber zur Mitte des Objekts wird; dazu kommt Netzwerk-Verzögerung.
@@ -24,6 +26,10 @@ const INTERACTABLE_LAYER: int = 1 << 5
 @export var extra_range: float = 0.0
 ## Nur anvisierbar, wenn der Spieler etwas trägt (z. B. „Erz einladen“ am Aufzug).
 @export var requires_carrying: bool = false
+## > 0: Halten löst nach so vielen Sekunden hold_completed aus; kurzes Tippen löst weiterhin interacted aus.
+@export var hold_seconds: float = 0.0
+## Text für das Halten, z. B. „Kaufen (60 $)“ → „E halten: Kaufen (60 $)“.
+@export var hold_prompt: String = ""
 ## Mit welcher Aktion interagiert wird. „interact“ (E) für Aufheben, Einladen usw.; „attack“ (Linksklick) für
 ## Abbauen: Dann löst jeder Schlag mit der Spitzhacke die Interaktion aus, Halten schlägt im Takt weiter.
 @export var action: StringName = &"interact"
@@ -40,20 +46,39 @@ func request_interact() -> void:
 	_interact_on_host.rpc_id(1)
 
 
+## Vom lokalen Spieler, nachdem er die Taste hold_seconds lang gehalten hat.
+func request_hold() -> void:
+	_hold_on_host.rpc_id(1)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _hold_on_host() -> void:
+	var player := _validated_sender()
+	if player and hold_seconds > 0.0:
+		hold_completed.emit(player)
+
+
 @rpc("any_peer", "call_local", "reliable")
 func _interact_on_host() -> void:
+	var player := _validated_sender()
+	if player:
+		interacted.emit(player)
+
+
+## Nur Host: Spieler hinter dem RPC, sofern die Komponente aktiv ist und er nah genug steht; sonst null.
+func _validated_sender() -> Player:
 	if not multiplayer.is_server() or not enabled:
-		return
+		return null
 	var peer_id := multiplayer.get_remote_sender_id()
 	if peer_id == 0:
 		peer_id = multiplayer.get_unique_id()
 	var player := _find_player(peer_id)
 	if player == null:
-		return
+		return null
 	var max_distance := player.data.interaction_range + extra_range + HOST_RANGE_TOLERANCE
 	if player.global_position.distance_to(global_position) > max_distance:
-		return
-	interacted.emit(player)
+		return null
+	return player
 
 
 func _find_player(peer_id: int) -> Player:

@@ -20,8 +20,7 @@ const SPAWN_SPACING: float = 1.5
 @onready var _build_manager: BuildManager = $BuildManager
 @onready var _wave_spawner: WaveSpawner = $WaveSpawner
 @onready var _shop_manager: ShopManager = $ShopManager
-@onready var _shop_menu: ShopMenu = $UI/ShopMenu
-@onready var _shop_terminal: InteractableComponent = $TestRoom/ShopTerminal/InteractableComponent
+@onready var _reroll_station: InteractableComponent = $TestRoom/ShopTerminal/InteractableComponent
 @onready var _navigation: NavigationBaker = $TestRoom/NavigationRegion3D
 @onready var _network_status: Label = $UI/NetworkStatus
 
@@ -36,13 +35,10 @@ func _ready() -> void:
 	# Besiegte Erzdiebe lassen ihre Beute fallen; gespawnt wird wie bei abgebauten Brocken.
 	_wave_spawner.ore_dropped.connect(_on_chunk_broken_off)
 	_wave_spawner.preview_changed.connect(_hud.set_wave_preview)
-	# Shop: Terminal öffnet das Menü beim Benutzer, Käufe und Abbauen ergeben Kisten.
-	_shop_terminal.interacted.connect(_shop_manager.open_for)
-	_shop_manager.open_requested.connect(_shop_menu.open)
-	_shop_manager.offers_changed.connect(_shop_menu.set_offers)
-	_shop_menu.buy_requested.connect(_shop_manager.request_buy)
-	_shop_menu.reroll_requested.connect(_shop_manager.request_reroll)
-	_shop_manager.crate_requested.connect(_spawn_crate)
+	# Shop: Angebote stehen als Kisten auf den Stellplätzen; die Würfel-Station ersetzt sie gegen Geld.
+	_shop_manager.offer_crate_requested.connect(_spawn_offer_crate)
+	_shop_manager.reroll_cost_changed.connect(_on_reroll_cost_changed)
+	_reroll_station.hold_completed.connect(_shop_manager.reroll)
 	_build_manager.crate_requested.connect(_spawn_crate)
 	_network_status.visible = false
 	_menu.host_requested.connect(_on_host_requested)
@@ -72,10 +68,7 @@ func _process(_delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Esc öffnet bzw. schließt im Spiel das Pausenmenü; im Startmenü passiert nichts.
-	if event.is_action_pressed("menu") and _shop_menu.visible:
-		_shop_menu.close()
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("menu") and not _menu.visible:
+	if event.is_action_pressed("menu") and not _menu.visible:
 		_pause_menu.toggle()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ready") and not _menu.visible and not GameState.input_blocked:
@@ -163,6 +156,7 @@ func _on_player_added(node: Node) -> void:
 		player.downed_changed.connect(_hud.set_downed)
 		player.build_mode_changed.connect(_hud.set_build_mode)
 		player.build_selection_changed.connect(_hud.set_build_selection)
+		player.hold_progress_changed.connect(_hud.set_hold_progress)
 
 
 ## Nur auf dem Host: Brocken spawnen, der ChunkSpawner repliziert sie zu den Clients.
@@ -178,13 +172,22 @@ func _on_chunk_broken_off(ore: OreData, spawn_position: Vector3, impulse: Vector
 	chunk.angular_velocity = Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1), rng.randf_range(-1, 1)) * CHUNK_MAX_SPIN
 
 
-## Nur auf dem Host: Blaupausen-Kiste spawnen (Kauf im Shop oder abgebautes Bauelement).
-func _spawn_crate(buildable: BuildableData, at: Vector3) -> void:
+## Nur auf dem Host: Blaupausen-Kiste spawnen (abgebautes Bauelement bzw. Shop-Angebot).
+func _spawn_crate(buildable: BuildableData, at: Vector3, offer: bool = false) -> void:
 	var crate := CRATE_SCENE.instantiate() as BlueprintCrate
 	crate.buildable_path = buildable.resource_path
+	crate.is_offer = offer
 	crate.position = at
 	crate.sync_position = at
 	_chunks.add_child(crate, true)
+
+
+func _spawn_offer_crate(buildable: BuildableData, at: Vector3) -> void:
+	_spawn_crate(buildable, at, true)
+
+
+func _on_reroll_cost_changed(cost: int) -> void:
+	_reroll_station.hold_prompt = "Angebote neu würfeln (%d $)" % cost
 
 
 func _on_player_left(peer_id: int) -> void:

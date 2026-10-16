@@ -18,6 +18,8 @@ signal health_changed(current: int, maximum: int)
 signal build_mode_changed(is_active: bool)
 ## Im Baumodus ein anderes Bauelement gewählt.
 signal build_selection_changed(display_name: String)
+## Fortschritt beim Halten von E (0–1); 0 = nicht am Halten.
+signal hold_progress_changed(fraction: float)
 ## Gefallen bzw. wieder da; respawn_seconds ist die Wartezeit bis zum Respawn.
 signal downed_changed(is_downed: bool, respawn_seconds: float)
 
@@ -44,6 +46,8 @@ const PICKAXE_STRIKE_DEGREES: float = -95.0
 const PICKAXE_STRIKE_TIME: float = 0.09
 const PICKAXE_RECOVER_TIME: float = 0.25
 const PHYSICS_LAYER: int = 1 << 1
+## Kürzer gedrückt gilt bei haltbaren Objekten als Tippen.
+const TAP_TIME: float = 0.25
 
 @export var data: PlayerData
 ## Wie schnell fremde Figuren zur empfangenen Position aufschließen. Höher = direkter, aber ruckeliger.
@@ -78,6 +82,9 @@ var _last_host_swing: float = -INF
 var _downed: bool = false
 var _last_health: int = 0
 var _pickaxe_tween: Tween = null
+## Objekt, auf dem E gerade gehalten wird, und wie lange schon.
+var _hold_target: InteractableComponent = null
+var _hold_time: float = 0.0
 
 ## Restzeit, in der ein Sprung noch erlaubt ist; am Boden immer voll.
 var _coyote_timer: float = 0.0
@@ -169,8 +176,7 @@ func _physics_process(delta: float) -> void:
 
 	_update_interaction_target()
 	_handle_carry_input()
-	if _interaction_target and _interaction_target.action == &"interact" and _just_pressed(&"interact"):
-		_interaction_target.request_interact()
+	_handle_interact_input(delta)
 	if _just_pressed(&"build_mode"):
 		build.set_active(not build.active)
 	_swing_cooldown = maxf(0.0, _swing_cooldown - delta)
@@ -201,6 +207,32 @@ func _on_build_selection_changed(selection: BuildableData) -> void:
 func _on_build_mode_changed(is_active: bool) -> void:
 	_camera.set_build_view(is_active)
 	build_mode_changed.emit(is_active)
+
+
+## E: tippen löst die Interaktion aus. Bei haltbaren Objekten entscheidet erst das Loslassen: kurz = tippen,
+## lange genug gehalten = Halte-Aktion (z. B. Kaufen). Wegschauen oder Loslassen bricht das Halten ab.
+func _handle_interact_input(delta: float) -> void:
+	var target := _interaction_target
+	if target and target.action == &"interact" and _just_pressed(&"interact"):
+		if target.hold_seconds > 0.0:
+			_hold_target = target
+			_hold_time = 0.0
+		else:
+			target.request_interact()
+	if _hold_target == null:
+		return
+	if _hold_target != target or not _pressed(&"interact"):
+		if _hold_target == target and _hold_time < TAP_TIME:
+			_hold_target.request_interact()
+		_hold_target = null
+		hold_progress_changed.emit(0.0)
+		return
+	_hold_time += delta
+	hold_progress_changed.emit(minf(1.0, _hold_time / _hold_target.hold_seconds))
+	if _hold_time >= _hold_target.hold_seconds:
+		_hold_target.request_hold()
+		_hold_target = null
+		hold_progress_changed.emit(0.0)
 
 
 func is_downed() -> bool:

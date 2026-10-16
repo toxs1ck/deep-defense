@@ -89,7 +89,8 @@ func try_remove() -> void:
 func _carried_crate() -> BlueprintCrate:
 	for item in carry.carried:
 		var crate := item as BlueprintCrate
-		if crate:
+		# Angebote müssen erst gekauft werden.
+		if crate and not crate.is_offer:
 			return crate
 	return null
 

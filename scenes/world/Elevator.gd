@@ -7,9 +7,6 @@ extends Node3D
 const GROUP: StringName = &"elevator"
 ## Hier erscheinen gefallene Spieler wieder: vor der offenen Seite des Korbs (lokal).
 const RESPAWN_POINT: Vector3 = Vector3(0, 0, -3.0)
-## Hier erscheinen gekaufte Blaupausen-Kisten: links vor dem Korb (lokal), leicht gestreut.
-const CRATE_POINT: Vector3 = Vector3(-2.4, 0.6, -2.2)
-const CRATE_SCATTER: float = 0.6
 
 @export var data: ElevatorData
 
@@ -67,11 +64,6 @@ func _on_health_changed(current: int, maximum: int) -> void:
 func _on_died() -> void:
 	if multiplayer.is_server():
 		RunManager.fail_run()
-
-
-func get_crate_point() -> Vector3:
-	var rng := GameState.rng
-	return to_global(CRATE_POINT + Vector3(rng.randf_range(-CRATE_SCATTER, CRATE_SCATTER), 0, rng.randf_range(-CRATE_SCATTER, CRATE_SCATTER)))
 
 
 func get_respawn_point() -> Vector3:
