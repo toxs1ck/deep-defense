@@ -5,8 +5,6 @@ extends Node3D
 ## (RunManager.round_started) in die Teamkasse aus. Fällt seine Lebenspunkte auf 0, ist der Run verloren.
 
 const GROUP: StringName = &"elevator"
-## Wohin Gegner laufen: knapp hinter der offenen Seite des Korbs (lokal).
-const ATTACK_POINT: Vector3 = Vector3(0, 0, -1.0)
 
 @export var data: ElevatorData
 
@@ -51,10 +49,6 @@ func pay_out() -> int:
 	_cargo.clear()
 	_broadcast_cargo()
 	return amount
-
-
-func get_attack_point() -> Vector3:
-	return to_global(ATTACK_POINT)
 
 
 ## Kurzes rotes Aufblitzen der Anzeige, wenn der Aufzug Schaden nimmt.
