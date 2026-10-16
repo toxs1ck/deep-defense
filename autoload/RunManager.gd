@@ -16,8 +16,6 @@ const DEFAULT_RUN_DATA: RunData = preload("res://data/run/default_run.tres")
 var data: RunData = DEFAULT_RUN_DATA
 var phase: Phase = Phase.LOBBY
 var current_round: int = 0
-## Restzeit der Kampfphase; läuft auf jedem Peer lokal herunter, der Host entscheidet das Ende.
-var combat_time_left: float = 0.0
 var ready_peers: PackedInt32Array = PackedInt32Array()
 var player_count: int = 0
 ## Nur in RUN_OVER sinnvoll: geschafft oder Aufzug zerstört.
@@ -33,14 +31,6 @@ var _announced_phase: Phase = Phase.LOBBY
 func _ready() -> void:
 	NetworkManager.player_joined.connect(_on_player_joined)
 	NetworkManager.player_left.connect(_on_player_left)
-
-
-func _process(delta: float) -> void:
-	if phase != Phase.COMBAT:
-		return
-	combat_time_left = maxf(0.0, combat_time_left - delta)
-	if multiplayer.is_server() and combat_time_left <= 0.0:
-		end_combat()
 
 
 func is_boss_round(round_number: int) -> bool:
@@ -59,7 +49,7 @@ func start_run() -> void:
 	_start_round(1)
 
 
-## Nur Host: Kampfphase beenden. Später ruft das die Wellen-Logik auf, wenn alle Gegner besiegt sind.
+## Nur Host: Kampfphase beenden. Ruft der WaveSpawner auf, sobald alle Gegner der Welle weg sind.
 func end_combat() -> void:
 	if not multiplayer.is_server() or phase != Phase.COMBAT:
 		return
@@ -88,7 +78,7 @@ func request_toggle_ready() -> void:
 ## Lokal zurücksetzen, z. B. beim Verlassen eines Spiels.
 func reset() -> void:
 	_players.clear()
-	_apply_state(Phase.LOBBY, 0, PackedInt32Array(), 0, 0.0, false, false)
+	_apply_state(Phase.LOBBY, 0, PackedInt32Array(), 0, false, false)
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -114,7 +104,6 @@ func _start_round(round_number: int) -> void:
 
 func _start_combat() -> void:
 	phase = Phase.COMBAT
-	combat_time_left = data.combat_duration
 	_broadcast(false)
 
 
@@ -128,7 +117,7 @@ func _check_all_ready() -> void:
 func _on_player_joined(peer_id: int) -> void:
 	_players[peer_id] = false
 	if peer_id != multiplayer.get_unique_id():
-		_sync_state.rpc_id(peer_id, phase, current_round, _ready_list(), _players.size(), combat_time_left, victory, false)
+		_sync_state.rpc_id(peer_id, phase, current_round, _ready_list(), _players.size(), victory, false)
 	_check_all_ready()
 
 
@@ -149,17 +138,17 @@ func _ready_list() -> PackedInt32Array:
 func _broadcast(round_began: bool) -> void:
 	if phase == Phase.LOBBY:
 		return
-	_sync_state.rpc(phase, current_round, _ready_list(), _players.size(), combat_time_left, victory, round_began)
+	_sync_state.rpc(phase, current_round, _ready_list(), _players.size(), victory, round_began)
 
 
 @rpc("authority", "call_local", "reliable")
-func _sync_state(new_phase: int, round_number: int, ready_list: PackedInt32Array, players: int, time_left: float,
-		won: bool, round_began: bool) -> void:
-	_apply_state(new_phase as Phase, round_number, ready_list, players, time_left, won, round_began)
+func _sync_state(new_phase: int, round_number: int, ready_list: PackedInt32Array, players: int, won: bool,
+		round_began: bool) -> void:
+	_apply_state(new_phase as Phase, round_number, ready_list, players, won, round_began)
 
 
-func _apply_state(new_phase: Phase, round_number: int, ready_list: PackedInt32Array, players: int, time_left: float,
-		won: bool, round_began: bool) -> void:
+func _apply_state(new_phase: Phase, round_number: int, ready_list: PackedInt32Array, players: int, won: bool,
+		round_began: bool) -> void:
 	var phase_differs := new_phase != _announced_phase
 	_announced_phase = new_phase
 	phase = new_phase
@@ -167,7 +156,6 @@ func _apply_state(new_phase: Phase, round_number: int, ready_list: PackedInt32Ar
 	current_round = round_number
 	ready_peers = ready_list
 	player_count = players
-	combat_time_left = time_left
 	if round_began:
 		round_started.emit(current_round)
 	if phase_differs or round_began:

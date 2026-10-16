@@ -4,9 +4,6 @@ extends Resource
 
 @export var rounds_per_run: int = 15
 @export var boss_rounds: Array[int] = [5, 10, 15]
-## Dauer der Kampfphase in Sekunden (GDD: 2–3 Minuten). Solange es keine Gegner gibt (Aufgabe 9 und 13),
-## endet die Kampfphase nur über diese Zeit; später endet sie, wenn alle Gegner besiegt sind.
-@export var combat_duration: float = 150.0
 
 ## Geld in der Teamkasse zu Beginn eines Runs.
 @export var starting_money: int = 60
@@ -28,17 +25,19 @@ extends Resource
 @export var max_main_types: int = 2
 ## Aus wie vielen Eingängen eine Welle höchstens kommt (GDD: 1–3).
 @export var max_entrances: int = 3
-## Zum Beginn der Kampfphase kommt ein Pulk: dieser Anteil der Welle (mindestens burst_min_count Gegner),
-## im Abstand von burst_interval Sekunden.
+## Zum Beginn der Kampfphase kommt ein Pulk: dieser Anteil der Welle (mindestens burst_min_count Gegner).
+## Danach folgen Gruppen von group_size_min bis group_size_max Gegnern im zufälligen Abstand von group_interval_min
+## bis group_interval_max Sekunden, bis die Welle aufgebraucht ist. Innerhalb von Pulk und Gruppe liegen
+## burst_interval Sekunden zwischen zwei Gegnern. Ein Zeitlimit gibt es nicht: Die Kampfphase endet, wenn alle weg sind.
 @export_range(0.0, 1.0) var burst_fraction: float = 0.3
 @export var burst_min_count: int = 3
 @export var burst_interval: float = 0.4
-## Die übrigen Gegner kommen als Nachzügler, verteilt über diesen Anteil der Kampfdauer. Jeder Abstand wird zufällig
-## zwischen straggler_jitter_min- und straggler_jitter_max-fachem Mittelwert gewürfelt, mindestens min_spawn_interval.
-@export_range(0.1, 1.0) var spawn_spread: float = 0.8
-@export var straggler_jitter_min: float = 0.4
-@export var straggler_jitter_max: float = 1.6
-@export var min_spawn_interval: float = 0.6
+@export var group_size_min: int = 2
+@export var group_size_max: int = 5
+@export var group_interval_min: float = 5.0
+@export var group_interval_max: float = 12.0
+## Sind nur noch so wenige Gegner übrig (Anteil der Welle, mindestens 1), werden die Adern instabil.
+@export_range(0.0, 1.0) var unstable_fraction: float = 0.05
 
 @export_group("Erz")
 @export var ore_spawn: OreSpawnData

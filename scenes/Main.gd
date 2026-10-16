@@ -41,7 +41,8 @@ func _ready() -> void:
 	_navigation.baked.connect(_ore_spawner.measure_when_ready, CONNECT_ONE_SHOT)
 	_ore_spawner.layout_changed.connect(_navigation.request_bake)
 	_ore_spawner.announced.connect(_hud.show_announcement)
-	_wave_spawner.all_spawned.connect(_ore_spawner.warn_unstable)
+	_wave_spawner.few_remaining.connect(_ore_spawner.warn_unstable)
+	_wave_spawner.progress_changed.connect(_hud.set_wave_progress)
 	# Besiegte Erzdiebe lassen ihre Beute fallen; gespawnt wird wie bei abgebauten Brocken.
 	_wave_spawner.ore_dropped.connect(_on_chunk_broken_off)
 	_wave_spawner.preview_changed.connect(_hud.set_wave_preview)

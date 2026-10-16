@@ -23,6 +23,7 @@ const MOUSE_BUTTON_NAMES: Dictionary = {
 @onready var _health_label: Label = %HealthLabel
 @onready var _downed_label: Label = %DownedLabel
 @onready var _hold_bar: ProgressBar = %HoldBar
+@onready var _wave_bar: ProgressBar = %WaveBar
 @onready var _banner_label: Label = %BannerLabel
 @onready var _announcement_label: Label = %AnnouncementLabel
 
@@ -38,6 +39,9 @@ var _wave_preview: String = ""
 var _money: int = -1
 var _banner_tween: Tween = null
 var _announcement_tween: Tween = null
+## Rundenfortschritt der Kampfphase.
+var _wave_resolved: int = 0
+var _wave_total: int = 0
 ## Restzeit bis zum Respawn; > 0 heißt gefallen.
 var _respawn_left: float = 0.0
 var _using_gamepad: bool = false
@@ -56,9 +60,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	# Countdowns der Kampfphase und bis zum Respawn laufen lokal.
-	if RunManager.phase == RunManager.Phase.COMBAT:
-		_refresh_run_label()
+	# Countdown bis zum Respawn läuft lokal.
 	if _respawn_left > 0.0:
 		_respawn_left = maxf(0.0, _respawn_left - delta)
 		_downed_label.text = "Gefallen – zurück am Aufzug in %d s" % ceili(_respawn_left)
@@ -116,8 +118,7 @@ func _refresh_run_label() -> void:
 			if not _wave_preview.is_empty():
 				_run_label.text += "\n" + _wave_preview
 		RunManager.Phase.COMBAT:
-			var seconds := ceili(run.combat_time_left)
-			_run_label.text = "%s · Kampfphase · %d:%02d" % [header, floori(seconds / 60.0), seconds % 60]
+			_run_label.text = "%s · Kampfphase · %d/%d Gegner erledigt" % [header, _wave_resolved, _wave_total]
 		RunManager.Phase.RUN_OVER:
 			if run.victory:
 				_run_label.text = "Run geschafft – alle %d Schichten überstanden" % run.data.rounds_per_run
@@ -125,6 +126,7 @@ func _refresh_run_label() -> void:
 				_run_label.text = "Run verloren in Schicht %d · Esc: Spiel verlassen" % run.current_round
 		_:
 			_run_label.text = ""
+	_wave_bar.visible = run.phase == RunManager.Phase.COMBAT and _wave_total > 0
 
 
 ## Kleinere Ansage unter dem Banner, z. B. vom OreSpawner („Neue Adern brechen auf!“).
@@ -156,6 +158,14 @@ func set_elevator_health(current: int, maximum: int) -> void:
 	_elevator_label.text = "Aufzug: %d/%d LP" % [current, maximum]
 	# Rot, sobald weniger als ein Drittel übrig ist.
 	_elevator_label.modulate = Color(1, 0.35, 0.3) if current * 3 < maximum else Color.WHITE
+
+
+func set_wave_progress(resolved: int, total: int) -> void:
+	_wave_resolved = resolved
+	_wave_total = total
+	_wave_bar.max_value = maxi(1, total)
+	_wave_bar.value = resolved
+	_refresh_run_label()
 
 
 ## Fortschritt beim Halten von E (z. B. Kaufen); 0 blendet den Balken aus.

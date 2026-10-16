@@ -2,17 +2,19 @@ class_name WaveSpawner
 extends Node
 ## Nur Host: plant zu Beginn jeder Bauphase die nächste Welle aus einem Punkte-Budget (GDD, „Wellen-Design“),
 ## zeigt allen die Vorschau (Typen und Eingänge, nicht die Anzahl) und spawnt sie in der Kampfphase.
-## Zum Kampfbeginn kommt ein Pulk, danach Nachzügler in zufälligen Abständen über den größten Teil der Kampfphase
-## (RunData.burst_*, spawn_spread, straggler_jitter_*), damit Verteidigen und Schürfen gleichzeitig nötig sind.
-## Die Kampfphase endet, sobald alle gespawnt und besiegt (oder entkommen) sind.
+## Zum Kampfbeginn kommt ein Pulk, danach Gruppen in zufälligen Abständen (RunData.burst_*, group_*), damit
+## Verteidigen und Schürfen gleichzeitig nötig sind. Ein Zeitlimit gibt es nicht: Jeder Gegner, der verschwindet
+## (besiegt oder mit Beute entkommen), zählt zum Rundenfortschritt; sind alle weg, endet die Kampfphase.
 ## Zufall über GameState.rng, damit ein Run mit demselben Seed gleich abläuft.
 
 ## Nur Host: ein Gegner hat Erz fallen lassen (z. B. ein besiegter Erzdieb); Main spawnt den Brocken.
 signal ore_dropped(ore: OreData, drop_position: Vector3, impulse: Vector3)
 ## Auf allen Peers: Vorschau der nächsten Welle.
 signal preview_changed(enemy_names: PackedStringArray, entrance_names: PackedStringArray)
-## Nur Host: Der letzte Gegner der Welle ist gespawnt.
-signal all_spawned
+## Auf allen Peers: Rundenfortschritt der Kampfphase (erledigte von allen Gegnern der Welle).
+signal progress_changed(resolved: int, total: int)
+## Nur Host: Es sind nur noch wenige Gegner übrig (RunData.unstable_fraction); einmal pro Welle.
+signal few_remaining
 
 const ENEMY_SCENE: PackedScene = preload("res://scenes/enemies/Enemy.tscn")
 const SPAWN_GROUP: StringName = &"enemy_spawns"
@@ -29,13 +31,18 @@ var _queue: Array[EnemyData] = []
 var _entrances: Array[Node3D] = []
 var _spawn_timer: float = 0.0
 var _spawn_index: int = 0
-## Wie viele Gegner des Pulks noch kommen, und der mittlere Abstand der Nachzügler (beim Kampfbeginn berechnet).
-var _burst_left: int = 0
-var _straggler_interval: float = 1.0
+## Wie viele Gegner des laufenden Pulks bzw. der laufenden Gruppe noch kommen.
+var _group_left: int = 0
+## Nur Host: Rundenfortschritt und ob die Warnung schon kam.
+var _total: int = 0
+var _resolved: int = 0
+var _warned: bool = false
 
 
 func _ready() -> void:
 	RunManager.phase_changed.connect(_on_phase_changed)
+	NetworkManager.player_joined.connect(_on_player_joined)
+	enemies.child_exiting_tree.connect(_on_enemy_gone)
 
 
 func _on_phase_changed(phase: int) -> void:
@@ -46,11 +53,13 @@ func _on_phase_changed(phase: int) -> void:
 			_clear_enemies()
 			_plan_wave(RunManager.current_round)
 		RunManager.Phase.COMBAT:
-			_spawn_timer = 0.0
 			var run := RunManager.data
-			_burst_left = mini(_queue.size(), maxi(run.burst_min_count, roundi(_queue.size() * run.burst_fraction)))
-			var stragglers := _queue.size() - _burst_left
-			_straggler_interval = run.combat_duration * run.spawn_spread / maxf(1.0, stragglers)
+			_spawn_timer = 0.0
+			_group_left = mini(_queue.size(), maxi(run.burst_min_count, roundi(_queue.size() * run.burst_fraction)))
+			_total = _queue.size()
+			_resolved = 0
+			_warned = false
+			_sync_progress.rpc(_resolved, _total)
 		_:
 			_queue.clear()
 			_clear_enemies()
@@ -117,21 +126,41 @@ func _physics_process(delta: float) -> void:
 		if _spawn_timer <= 0.0:
 			_spawn_timer = _next_spawn_delay()
 			_spawn(_queue.pop_front() as EnemyData)
-			if _queue.is_empty():
-				all_spawned.emit()
 	elif _alive_enemy_count() == 0:
 		RunManager.end_combat()
 
 
-## Erst der Pulk in kurzen Abständen, dann Nachzügler mit zufälligem Abstand um den Mittelwert.
+## Innerhalb von Pulk oder Gruppe kurze Abstände; ist sie durch, wird die nächste Gruppe samt Pause gewürfelt.
 func _next_spawn_delay() -> float:
 	var run := RunManager.data
-	if _burst_left > 0:
-		_burst_left -= 1
-		if _burst_left > 0:
-			return run.burst_interval
-	var jitter := GameState.rng.randf_range(run.straggler_jitter_min, run.straggler_jitter_max)
-	return maxf(run.min_spawn_interval, _straggler_interval * jitter)
+	_group_left -= 1
+	if _group_left > 0:
+		return run.burst_interval
+	var rng := GameState.rng
+	_group_left = rng.randi_range(run.group_size_min, run.group_size_max)
+	return rng.randf_range(run.group_interval_min, run.group_interval_max)
+
+
+## Nur Host: Ein Gegner ist weg (besiegt oder entkommen). Zählt nur in der Kampfphase, nicht beim Aufräumen.
+func _on_enemy_gone(_node: Node) -> void:
+	if not multiplayer.is_server() or RunManager.phase != RunManager.Phase.COMBAT:
+		return
+	_resolved = mini(_total, _resolved + 1)
+	_sync_progress.rpc(_resolved, _total)
+	var threshold := maxi(1, floori(_total * RunManager.data.unstable_fraction))
+	if not _warned and _total - _resolved <= threshold:
+		_warned = true
+		few_remaining.emit()
+
+
+func _on_player_joined(peer_id: int) -> void:
+	if multiplayer.is_server() and peer_id != multiplayer.get_unique_id():
+		_sync_progress.rpc_id(peer_id, _resolved, _total)
+
+
+@rpc("authority", "call_local", "reliable")
+func _sync_progress(resolved: int, total: int) -> void:
+	progress_changed.emit(resolved, total)
 
 
 func _spawn(enemy_data: EnemyData) -> void:

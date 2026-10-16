@@ -35,10 +35,10 @@ func measure_when_ready() -> void:
 	_measure_depths()
 
 
-## Nur Host: vom WaveSpawner gemeldet, sobald die letzten Gegner der Welle unterwegs sind.
+## Nur Host: vom WaveSpawner gemeldet, sobald nur noch wenige Gegner der Welle übrig sind.
 func warn_unstable() -> void:
 	if multiplayer.is_server() and deposits.get_child_count() > 0:
-		_announce.rpc("Die letzten Gegner sind da – die Adern werden instabil!")
+		_announce.rpc("Nur noch wenige Gegner – die Adern werden instabil!")
 
 
 func _on_phase_changed(phase: int) -> void:
