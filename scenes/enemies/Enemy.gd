@@ -12,7 +12,8 @@ extends CharacterBody3D
 ## verschwinden sie mit der Beute. Bei jedem Treffer (auch von Verteidigungen) lassen sie das Erz fallen und fliehen
 ## einige Sekunden vom Verursacher weg, bevorzugt an einen Platz außer Sicht. Spielern weichen sie unterwegs im Bogen
 ## aus. Ohne liegendes Erz verhalten sie sich wie die anderen, greifen aber nie Spieler an.
-## Jeder Angriff hat eine Ausholphase (data.attack_windup), in der man ausweichen kann. Dabei rückt er mit
+## Jeder Angriff hat eine Ausholphase (data.attack_windup), in der man ausweichen kann; unterbrechen lässt sie sich
+## nur im ersten Teil (data.interruptible_fraction). Dabei rückt er mit
 ## verringertem Tempo nach; einmal ausgeholt, schlägt er zu, auch wenn das Ziel schon weg ist. Ein Treffer während
 ## des Ausholens bricht den Angriff ab.
 ## Clients bekommen Position und Blickrichtung über den MultiplayerSynchronizer und glätten sie.
@@ -60,6 +61,8 @@ const HIT_FLASH_TIME: float = 0.18
 ## Faktor auf die Grundgröße beim Ausholen.
 const WINDUP_SCALE: Vector3 = Vector3(1.2, 0.85, 1.2)
 const WINDUP_COLOR: Color = Color(1.0, 0.55, 0.1)
+## Ab hier lässt sich der Angriff nicht mehr unterbrechen.
+const COMMITTED_COLOR: Color = Color(1.0, 0.1, 0.05)
 ## So lange schrumpft ein besiegter Gegner, bevor er verschwindet.
 const DEATH_TIME: float = 0.25
 ## Abstand der Angriffspunkte zur Mitte des Aufzugs (knapp außerhalb der Korbwände).
@@ -320,7 +323,7 @@ func _attack(delta: float) -> void:
 	if _attack_timer > 0.0:
 		return
 	_windup_left = data.attack_windup
-	_play_windup.rpc(data.attack_windup)
+	_play_windup.rpc(data.attack_windup, data.attack_windup * data.interruptible_fraction)
 
 
 ## Nur Host: Schlag ausführen. Spieler werden nur getroffen, wenn sie noch nah genug sind.
@@ -384,19 +387,25 @@ func _set_target_player(player: Player) -> void:
 func take_hit(amount: int, knockback: Vector3, attacker: Player, source: Vector3) -> void:
 	if not multiplayer.is_server() or _dying:
 		return
-	velocity += knockback
+	velocity += knockback * (1.0 - data.knockback_resistance)
 	if data.steals_ore:
 		_drop_loot()
 		_start_flee(source)
 	if attacker and not data.steals_ore:
 		_set_target_player(attacker)
-	if attacker and _windup_left > 0.0:
+	if attacker and _windup_left > 0.0 and _is_windup_interruptible():
 		# Unterbrochen: kein Schlag, kurz taumeln.
 		_windup_left = 0.0
 		_attack_timer = data.stagger_time
 		_play_windup_cancel.rpc()
 	_play_hit.rpc()
 	health.damage(amount)
+
+
+## Nur im ersten Teil des Ausholens lässt sich der Angriff noch unterbrechen.
+func _is_windup_interruptible() -> bool:
+	var elapsed := data.attack_windup - _windup_left
+	return elapsed < data.attack_windup * data.interruptible_fraction
 
 
 ## Aufblitzen und kurz zusammenzucken, damit Treffer wuchtig wirken.
@@ -411,14 +420,16 @@ func _play_hit() -> void:
 
 ## Ausholen: nach hinten ducken, breiter werden und orange aufglühen, damit man den Schlag kommen sieht.
 @rpc("authority", "call_local", "reliable")
-func _play_windup(duration: float) -> void:
+## interruptible_time: bis dahin glüht er orange auf (unterbrechbar), danach springt er auf grelles Rot (der Schlag kommt).
+func _play_windup(duration: float, interruptible_time: float) -> void:
 	_kill_attack_tween()
 	_attack_tween = create_tween().set_parallel()
 	_attack_tween.tween_property(_body, "position", _body_rest_position + Vector3.BACK * 0.25, duration) \
 			.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
 	_attack_tween.tween_property(_model, "scale", _base_scale * WINDUP_SCALE, duration)
 	var material := _body.material_override as StandardMaterial3D
-	_attack_tween.tween_property(material, "albedo_color", WINDUP_COLOR, duration)
+	_attack_tween.tween_property(material, "albedo_color", WINDUP_COLOR, interruptible_time)
+	_attack_tween.tween_property(material, "albedo_color", COMMITTED_COLOR, 0.04).set_delay(interruptible_time)
 
 
 ## Zuschlagen: kräftiger Ruck nach vorne, dann zurück in die Ruhelage.

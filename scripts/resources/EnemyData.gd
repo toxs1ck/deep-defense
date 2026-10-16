@@ -38,6 +38,11 @@ extends Resource
 @export var attack_hit_margin: float = 0.3
 ## So lange braucht er nach einem Treffer, der sein Ausholen unterbricht, bis er neu ansetzt.
 @export var stagger_time: float = 0.4
+## Nur im ersten Anteil des Ausholens unterbricht ein Spielertreffer den Angriff; danach kommt der Schlag sicher
+## (1 = immer unterbrechbar, 0 = nie). Der Gegner wechselt dabei von Orange auf grelles Rot.
+@export_range(0.0, 1.0) var interruptible_fraction: float = 0.6
+## Wie viel Rückstoß er wegsteckt (0 = voller Rückstoß, 1 = gar keiner). Schwere Gegner hoch, leichte niedrig.
+@export_range(0.0, 1.0) var knockback_resistance: float = 0.0
 ## Schaden pro Angriff an Bauelementen (wenn der Weg zum Aufzug zugebaut ist).
 @export var building_damage: int = 10
 ## Schaden pro Angriff an Spielern.
