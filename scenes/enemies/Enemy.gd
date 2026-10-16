@@ -8,12 +8,23 @@ extends CharacterBody3D
 ## ist oder sich weiter als aggro_range + aggro_leash entfernt. Hat der Gegner schon ein Angriffsziel (Aufzug,
 ## Bauelement, anderer Spieler), wechselt er nur, wenn ihn ein Spieler trifft.
 ## Erreicht der Weg den Aufzug nicht (zugebaut), greift der Gegner das Bauelement am Wegende an (GDD, „Platzierung“).
+## Erzdiebe (data.steals_ore) suchen stattdessen liegendes Erz, stehlen es und fliehen zum nächsten Eingang; dort
+## verschwinden sie mit der Beute. Besiegt lassen sie das Erz fallen. Ohne liegendes Erz verhalten sie sich wie die
+## anderen, greifen aber nie Spieler an.
 ## Jeder Angriff hat eine Ausholphase (data.attack_windup), in der man ausweichen kann. Dabei rückt er mit
 ## verringertem Tempo nach; einmal ausgeholt, schlägt er zu, auch wenn das Ziel schon weg ist. Ein Treffer während
 ## des Ausholens bricht den Angriff ab.
 ## Clients bekommen Position und Blickrichtung über den MultiplayerSynchronizer und glätten sie.
 
+## Nur Host: Ein Gegner lässt Erz fallen (besiegter Erzdieb). Der WaveSpawner reicht es an Main weiter.
+signal ore_dropped(ore: OreData, drop_position: Vector3, impulse: Vector3)
+
 const GROUP: StringName = &"enemies"
+## Erzdieb: ab dieser Entfernung (waagerecht) greift er einen Brocken bzw. ist am Eingang entkommen.
+const STEAL_RANGE: float = 1.2
+const ESCAPE_RANGE: float = 1.2
+## So weit sucht ein Erzdieb nach liegendem Erz.
+const LOOT_SEARCH_RADIUS: float = 40.0
 ## So oft wird der Weg neu berechnet (GDD: KI in festen Ticks statt jeden Frame).
 const REPATH_INTERVAL: float = 0.5
 ## Ein Wegpunkt gilt als erreicht, wenn er waagerecht so nah ist. Bewusst ohne Höhe: Auf Rampen liegt das Netz
@@ -57,6 +68,14 @@ const TURN_SPEED: float = 10.0
 ## Vom Host gesetzt und per MultiplayerSynchronizer verteilt.
 @export var sync_position: Vector3
 @export var sync_yaw: float
+## Faktor auf die LP nach Spielerzahl; vom Host vor dem Spawnen gesetzt und beim Spawnen mitgeschickt.
+@export var health_multiplier: float = 1.0
+## Erzdieb: Pfad der gestohlenen Erzart, leer = keine Beute. Vom Host gesetzt, an alle verteilt (Anzeige).
+@export var loot_path: String = "":
+	set(value):
+		loot_path = value
+		if is_node_ready():
+			_update_loot_visual()
 
 var data: EnemyData
 
@@ -64,6 +83,7 @@ var data: EnemyData
 @onready var _agent: NavigationAgent3D = $NavigationAgent3D
 @onready var _model: Node3D = $Model
 @onready var _body: MeshInstance3D = $Model/Body
+@onready var _loot: MeshInstance3D = $Model/Loot
 
 var _elevator: Elevator = null
 var _repath_timer: float = 0.0
@@ -86,6 +106,8 @@ var _target_player: Player = null
 ## Nur Host: Bauelement, das den Weg zum Aufzug versperrt und deshalb angegriffen wird.
 var _target_buildable: Buildable = null
 var _dying: bool = false
+## Nur Host, Erzdieb: Brocken, den er gerade holen will.
+var _target_chunk: OreChunk = null
 
 
 func _enter_tree() -> void:
@@ -99,7 +121,9 @@ func _ready() -> void:
 	material.albedo_color = data.color
 	_body.material_override = material
 	_body_rest_position = _body.position
-	health.setup(data.max_health)
+	health.setup(roundi(data.max_health * health_multiplier))
+	_model.scale = Vector3.ONE * data.model_scale
+	_update_loot_visual()
 	health.died.connect(_on_died)
 	global_position = sync_position
 	_model.rotation.y = sync_yaw
@@ -134,6 +158,8 @@ func _physics_process(delta: float) -> void:
 		_attack(delta)
 		if _target_player and _horizontal_distance_to(_target_player.global_position) > data.player_attack_range * 0.8:
 			desired = _move_direction(delta) * data.speed * data.windup_speed_multiplier
+	elif data.steals_ore and not _dying and _thief_has_goal():
+		desired = _thief_step(delta)
 	elif _elevator and not _dying:
 		# Spieler: Abstand Mitte zu Mitte, waagerecht. Aufzug: Abstand zur Mitte des Korbs.
 		var distance := global_position.distance_to(_elevator.global_position)
@@ -188,7 +214,8 @@ func _move_direction(delta: float) -> Vector3:
 		_path_index = 0
 		# Der Agent braucht ein Ziel, sonst reicht er die Geschwindigkeit nicht an die Avoidance weiter.
 		_agent.target_position = target
-		if _target_player == null and _target_buildable == null:
+		var heading_for_elevator := _target_chunk == null and loot_path.is_empty()
+		if heading_for_elevator and _target_player == null and _target_buildable == null:
 			_check_path_blocked()
 	while _path_index < _path.size() and _horizontal_distance_to(_path[_path_index]) < WAYPOINT_REACHED:
 		_path_index += 1
@@ -201,6 +228,10 @@ func _move_direction(delta: float) -> Vector3:
 
 ## Wohin der Gegner gerade will: Spieler, versperrendes Bauelement oder sein Angriffspunkt am Aufzug.
 func _goal_position() -> Vector3:
+	if not loot_path.is_empty():
+		return _nearest_entrance()
+	if _target_chunk != null and is_instance_valid(_target_chunk):
+		return _target_chunk.global_position
 	if _target_player:
 		return _target_player.global_position
 	if _target_buildable:
@@ -289,6 +320,8 @@ func _strike() -> void:
 ## Nur Host: Spieler in der Nähe haben Vorrang vor dem Aufzug, solange der Gegner noch unterwegs ist. Ein Ziel wird
 ## erst aufgegeben, wenn es fällt oder weit genug weg ist, damit der Gegner nicht zwischen Zielen hin und her springt.
 func _update_target_player() -> void:
+	if data.steals_ore:
+		return
 	if _target_player != null:
 		var lost := not is_instance_valid(_target_player) or _target_player.is_downed()
 		if lost or _horizontal_distance_to(_target_player.global_position) > data.aggro_range + data.aggro_leash:
@@ -327,7 +360,7 @@ func take_hit(amount: int, knockback: Vector3, attacker: Player) -> void:
 	if not multiplayer.is_server() or _dying:
 		return
 	velocity += knockback
-	if attacker:
+	if attacker and not data.steals_ore:
 		_set_target_player(attacker)
 	if attacker and _windup_left > 0.0:
 		# Unterbrochen: kein Schlag, kurz taumeln.
@@ -395,6 +428,10 @@ func _on_died() -> void:
 		return
 	_dying = true
 	collision_layer = 0
+	if not loot_path.is_empty():
+		var ore := load(loot_path) as OreData
+		ore_dropped.emit(ore, global_position + Vector3.UP * 0.8, Vector3.UP * 2.0)
+		loot_path = ""
 	_play_death.rpc()
 	get_tree().create_timer(DEATH_TIME).timeout.connect(queue_free)
 
@@ -403,3 +440,75 @@ func _on_died() -> void:
 func _play_death() -> void:
 	_kill_attack_tween()
 	create_tween().tween_property(_model, "scale", Vector3(1.3, 0.05, 1.3), DEATH_TIME).set_ease(Tween.EASE_IN)
+
+
+## Erzdieb: hat er Beute oder ein erreichbares Ziel-Erz? Sonst verhält er sich wie die anderen Gegner.
+func _thief_has_goal() -> bool:
+	if not loot_path.is_empty():
+		return true
+	if _target_chunk == null or not is_instance_valid(_target_chunk) or _target_chunk.carrier_id != 0:
+		var previous := _target_chunk
+		_target_chunk = _find_loot()
+		if _target_chunk != previous:
+			_repath_timer = 0.0
+	return _target_chunk != null
+
+
+## Nur Host, Erzdieb: zur Beute bzw. mit Beute zum Eingang.
+func _thief_step(delta: float) -> Vector3:
+	_attacking = false
+	if not loot_path.is_empty():
+		if _horizontal_distance_to(_nearest_entrance()) <= ESCAPE_RANGE:
+			# Entkommen: Die Beute ist verloren.
+			_dying = true
+			queue_free()
+			return Vector3.ZERO
+		return _move_direction(delta) * data.speed * data.loot_speed_multiplier
+	if _horizontal_distance_to(_target_chunk.global_position) <= STEAL_RANGE:
+		loot_path = _target_chunk.ore_path
+		_target_chunk.queue_free()
+		_target_chunk = null
+		_repath_timer = 0.0
+		return Vector3.ZERO
+	return _move_direction(delta) * data.speed
+
+
+## Nächster frei liegender Brocken (nicht getragen, nicht schon von einem anderen Dieb anvisiert).
+func _find_loot() -> OreChunk:
+	var claimed := {}
+	for node in get_tree().get_nodes_in_group(GROUP):
+		var other := node as Enemy
+		if other != self and other._target_chunk != null and is_instance_valid(other._target_chunk):
+			claimed[other._target_chunk] = true
+	var best: OreChunk = null
+	var best_distance := LOOT_SEARCH_RADIUS
+	for node in get_tree().get_nodes_in_group(OreChunk.GROUP):
+		var chunk := node as OreChunk
+		if chunk.carrier_id != 0 or chunk.is_queued_for_deletion() or claimed.has(chunk):
+			continue
+		var distance := _horizontal_distance_to(chunk.global_position)
+		if distance < best_distance:
+			best = chunk
+			best_distance = distance
+	return best
+
+
+func _nearest_entrance() -> Vector3:
+	var best := global_position
+	var best_distance := INF
+	for node in get_tree().get_nodes_in_group(&"enemy_spawns"):
+		var point := (node as Node3D).global_position
+		var distance := _horizontal_distance_to(point)
+		if distance < best_distance:
+			best = point
+			best_distance = distance
+	return best
+
+
+func _update_loot_visual() -> void:
+	_loot.visible = not loot_path.is_empty()
+	if _loot.visible:
+		var ore := load(loot_path) as OreData
+		var material := StandardMaterial3D.new()
+		material.albedo_color = ore.color
+		_loot.material_override = material

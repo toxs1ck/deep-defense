@@ -21,6 +21,7 @@ extends RigidBody3D
 		_on_carrier_changed()
 
 const ITEM_LAYER: int = 1 << 4
+const GROUP: StringName = &"ore_chunks"
 
 var ore: OreData
 
@@ -29,6 +30,10 @@ var _carrier: Player = null
 
 @onready var _mesh: MeshInstance3D = $Mesh
 @onready var _interactable: InteractableComponent = $InteractableComponent
+
+
+func _enter_tree() -> void:
+	add_to_group(GROUP)
 
 
 func _ready() -> void:

@@ -5,6 +5,8 @@
 [resource]
 script = ExtResource("1_enemy")
 display_name = "Höhlenkrabbler"
+cost = 4
+first_round = 1
 max_health = 30
 speed = 4.0
 elevator_damage = 5

@@ -17,6 +17,7 @@ const SPAWN_SPACING: float = 1.5
 @onready var _hud: HUD = $UI/HUD
 @onready var _pause_menu: PauseMenu = $UI/PauseMenu
 @onready var _build_manager: BuildManager = $BuildManager
+@onready var _wave_spawner: WaveSpawner = $WaveSpawner
 @onready var _navigation: NavigationBaker = $TestRoom/NavigationRegion3D
 @onready var _network_status: Label = $UI/NetworkStatus
 
@@ -28,6 +29,9 @@ func _ready() -> void:
 	_players.child_entered_tree.connect(_on_player_added)
 	for deposit: OreDeposit in get_tree().get_nodes_in_group(OreDeposit.GROUP):
 		deposit.chunk_broken_off.connect(_on_chunk_broken_off)
+	# Besiegte Erzdiebe lassen ihre Beute fallen; gespawnt wird wie bei abgebauten Brocken.
+	_wave_spawner.ore_dropped.connect(_on_chunk_broken_off)
+	_wave_spawner.preview_changed.connect(_hud.set_wave_preview)
 	_network_status.visible = false
 	_menu.host_requested.connect(_on_host_requested)
 	_menu.join_requested.connect(_on_join_requested)

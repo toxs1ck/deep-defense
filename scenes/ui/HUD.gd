@@ -28,6 +28,8 @@ var _target: InteractableComponent = null
 var _carrying: bool = false
 var _build_mode: bool = false
 var _build_selection: String = ""
+## Vorschau der nächsten Welle (GDD: Typen und Eingänge, nicht die Anzahl).
+var _wave_preview: String = ""
 ## Zuletzt angezeigter Betrag; -1 = noch keiner, dann ohne Aufleuchten.
 var _money: int = -1
 var _banner_tween: Tween = null
@@ -104,6 +106,8 @@ func _refresh_run_label() -> void:
 		RunManager.Phase.BUILD:
 			var own := "bereit" if run.is_local_player_ready() else "%s: bereit" % _action_key_name(&"ready")
 			_run_label.text = "%s · Bauphase · Bereit %d/%d (%s)" % [header, run.ready_peers.size(), run.player_count, own]
+			if not _wave_preview.is_empty():
+				_run_label.text += "\n" + _wave_preview
 		RunManager.Phase.COMBAT:
 			var seconds := ceili(run.combat_time_left)
 			_run_label.text = "%s · Kampfphase · %d:%02d" % [header, floori(seconds / 60.0), seconds % 60]
@@ -143,6 +147,11 @@ func set_downed(downed: bool, respawn_seconds: float) -> void:
 	_downed_label.visible = downed
 	_respawn_left = respawn_seconds if downed else 0.0
 	_refresh_prompt()
+
+
+func set_wave_preview(enemy_names: PackedStringArray, entrance_names: PackedStringArray) -> void:
+	_wave_preview = "Nächste Welle: %s · aus %s" % [", ".join(enemy_names), ", ".join(entrance_names)]
+	_refresh_run_label()
 
 
 func set_build_selection(display_name: String) -> void:

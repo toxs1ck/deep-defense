@@ -3,6 +3,16 @@ extends Resource
 ## Werte eines Gegnertyps. Startwerte laut GDD, Abschnitte „Gegnertypen“ und „Startwerte“.
 
 @export var display_name: String = ""
+## Kosten im Wellen-Budget und ab welcher Schicht der Typ vorkommt (GDD, „Gegnertypen“ und „Wellen-Design“).
+@export var cost: int = 4
+@export var first_round: int = 1
+## Erzdieb: sucht liegendes Erz, stiehlt es und flieht zum nächsten Eingang. Greift Spieler nie an; ohne
+## liegendes Erz geht er wie die anderen zum Aufzug.
+@export var steals_ore: bool = false
+## Tempo beim Fliehen mit Beute, als Anteil von speed.
+@export var loot_speed_multiplier: float = 0.8
+## Größe des Modells (die Kollision bleibt gleich).
+@export var model_scale: float = 1.0
 @export var max_health: int = 30
 ## Laufgeschwindigkeit in m/s.
 @export var speed: float = 4.0

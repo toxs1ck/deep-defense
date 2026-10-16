@@ -1,12 +1,20 @@
-[gd_resource type="Resource" script_class="RunData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="RunData" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/RunData.gd" id="1_data"]
+[ext_resource type="Resource" path="res://data/enemies/cave_crawler.tres" id="2_crawler"]
+[ext_resource type="Resource" path="res://data/enemies/ore_thief.tres" id="3_thief"]
+[ext_resource type="Script" path="res://scripts/resources/EnemyData.gd" id="4_enemy_data"]
 
 [resource]
 script = ExtResource("1_data")
 rounds_per_run = 15
 boss_rounds = Array[int]([5, 10, 15])
 combat_duration = 150.0
-prototype_wave_base = 4
-prototype_wave_per_round = 2
-spawn_interval = 1.0
+wave_budget_base = 20.0
+wave_budget_exponent = 1.2
+enemy_types = Array[ExtResource("4_enemy_data")]([ExtResource("2_crawler"), ExtResource("3_thief")])
+max_main_types = 2
+max_entrances = 3
+spawn_interval = 0.8
+count_multiplier_by_players = Array[float]([1.0, 1.5, 2.0, 2.5])
+health_multiplier_by_players = Array[float]([1.0, 1.15, 1.3, 1.45])

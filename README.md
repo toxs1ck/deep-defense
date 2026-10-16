@@ -53,4 +53,5 @@ Zusätzlich (nicht im GDD): `camera_switch_shoulder` – V / rechten Stick drüc
 - [x] 10 – Spieler-Kampf
 - [x] 11 – Bausystem
 - [x] 12 – Verteidigung
-- [ ] 13 – Wellen & Erzdieb
+- [x] 13 – Wellen & Erzdieb
+- [ ] 14 – Shop & Merkmale

@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scenes/enemies/Enemy.gd" id="1_enemy"]
 [ext_resource type="Script" path="res://components/HealthComponent.gd" id="2_health"]
@@ -23,6 +23,12 @@ height = 0.18
 radial_segments = 6
 rings = 3
 
+[sub_resource type="SphereMesh" id="SphereMesh_loot"]
+radius = 0.24
+height = 0.4
+radial_segments = 5
+rings = 2
+
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_enemy"]
 properties/0/path = NodePath(".:data_path")
 properties/0/spawn = true
@@ -33,6 +39,12 @@ properties/1/replication_mode = 1
 properties/2/path = NodePath(".:sync_yaw")
 properties/2/spawn = true
 properties/2/replication_mode = 1
+properties/3/path = NodePath(".:health_multiplier")
+properties/3/spawn = true
+properties/3/replication_mode = 0
+properties/4/path = NodePath(".:loot_path")
+properties/4/spawn = true
+properties/4/replication_mode = 2
 
 [node name="Enemy" type="CharacterBody3D"]
 collision_layer = 4
@@ -58,6 +70,11 @@ mesh = SubResource("SphereMesh_eye")
 [node name="EyeRight" type="MeshInstance3D" parent="Model/Body"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.225, 0.18, -0.54)
 mesh = SubResource("SphereMesh_eye")
+
+[node name="Loot" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0.25)
+visible = false
+mesh = SubResource("SphereMesh_loot")
 
 [node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
 radius = 0.6
