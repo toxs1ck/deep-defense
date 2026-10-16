@@ -1,7 +1,7 @@
 class_name Enemy
 extends CharacterBody3D
 ## Basis für alle Gegner; Typen unterscheiden sich über EnemyData.
-## Die KI läuft nur auf dem Host: zum Aufzug laufen (NavigationAgent3D), dort in Abständen angreifen.
+## Die KI läuft nur auf dem Host: per Navigationsnetz zum Aufzug laufen, dort in Abständen angreifen.
 ## Jeder Gegner sucht sich einen eigenen Angriffspunkt rund um den Aufzug, und die Agenten weichen einander aus
 ## (Avoidance), damit sich keine Schlange bildet. Spieler, die einen Gegner berühren, schieben ihn weg.
 ## Clients bekommen Position und Blickrichtung über den MultiplayerSynchronizer und glätten sie.
@@ -9,6 +9,9 @@ extends CharacterBody3D
 const GROUP: StringName = &"enemies"
 ## So oft wird der Weg neu berechnet (GDD: KI in festen Ticks statt jeden Frame).
 const REPATH_INTERVAL: float = 0.5
+## Ein Wegpunkt gilt als erreicht, wenn er waagerecht so nah ist. Bewusst ohne Höhe: Auf Rampen liegt das Netz
+## etwas über oder unter dem Boden, mit 3D-Abstand würde der Punkt nie „erreicht“ und der Gegner pendeln.
+const WAYPOINT_REACHED: float = 0.5
 ## Ab dieser Entfernung zur Mitte des Aufzugs greift der Gegner an.
 const ATTACK_RANGE: float = 2.8
 ## Wer angreift, hört erst auf, wenn er so viel weiter weg gedrückt wird (gegen Flackern an der Grenze).
@@ -45,6 +48,9 @@ var data: EnemyData
 
 var _elevator: Elevator = null
 var _repath_timer: float = 0.0
+## Nur Host: aktueller Weg vom NavigationServer und Index des nächsten Wegpunkts.
+var _path: PackedVector3Array = PackedVector3Array()
+var _path_index: int = 0
 var _attack_timer: float = 0.0
 var _body_rest_position: Vector3 = Vector3.ZERO
 ## Nur Host: eigener Angriffspunkt als Winkel um den Aufzug und die von der Avoidance berechnete Geschwindigkeit.
@@ -119,17 +125,26 @@ func _physics_process(delta: float) -> void:
 	sync_yaw = _model.rotation.y
 
 
+## Der NavigationAgent3D dient nur noch dem Ausweichen; den Weg holt und verfolgt der Gegner selbst.
 func _move_direction(delta: float) -> Vector3:
+	var around := Vector3(sin(_attack_angle), 0.0, cos(_attack_angle)) * ATTACK_POINT_RADIUS
+	var target := _elevator.global_position + around
 	_repath_timer -= delta
 	if _repath_timer <= 0.0:
 		_repath_timer = REPATH_INTERVAL
-		var around := Vector3(sin(_attack_angle), 0.0, cos(_attack_angle)) * ATTACK_POINT_RADIUS
-		_agent.target_position = _elevator.global_position + around
-	# Am Wegende, aber noch nicht in Reichweite (z. B. Angriffspunkt in einer engen Ecke): direkt darauf zu.
-	var next := _agent.target_position if _agent.is_navigation_finished() else _agent.get_next_path_position()
+		_path = NavigationServer3D.map_get_path(get_world_3d().navigation_map, global_position, target, true)
+		_path_index = 0
+	while _path_index < _path.size() and _horizontal_distance_to(_path[_path_index]) < WAYPOINT_REACHED:
+		_path_index += 1
+	# Ohne Weg (Netz noch nicht fertig) oder am Wegende, aber noch nicht in Reichweite: direkt aufs Ziel zu.
+	var next := _path[_path_index] if _path_index < _path.size() else target
 	var to_next := next - global_position
 	to_next.y = 0.0
 	return to_next.normalized() if to_next.length_squared() > 0.0001 else Vector3.ZERO
+
+
+func _horizontal_distance_to(point: Vector3) -> float:
+	return Vector2(point.x - global_position.x, point.z - global_position.z).length()
 
 
 ## Spieler, die den Gegner berühren, schieben ihn von sich weg. Positionen fremder Spieler sind auf dem Host

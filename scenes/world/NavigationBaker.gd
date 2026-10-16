@@ -3,8 +3,10 @@ extends NavigationRegion3D
 ## Die Geometrie wird selbst gesammelt, und zwar aus Kollisionen auf den Ebenen navigation_mesh.geometry_collision_mask:
 ## - CSG-Formen über bake_collision_shape() (Godots eigener Parser liest CSG über die GPU aus, das bremst),
 ## - Kollisionsformen von StaticBody3D über CPU-seitig erzeugte Mesh-Daten.
+## Zellhöhe 0,1 m (genauso im Projekt unter navigation/3d/default_cell_height), damit das Netz auf Rampen und
+## Treppen dicht am echten Boden liegt.
 ## Zwei Gruppen steuern das Backen:
-## - „navigation_ignore“: Knoten samt Kindern wird übersprungen (z. B. Treppen, die Gegner nicht nutzen sollen),
+## - „navigation_ignore“: Knoten samt Kindern wird übersprungen (z. B. Deko, die Gegner nicht beachten sollen),
 ## - „navigation_blocker“: Kollisionsform zählt als Hindernis, egal auf welcher Physik-Ebene (auch Ebene 0,
 ##   also ohne Wirkung auf die Spielphysik).
 ## Später (Aufgabe 11) wird nach dem Bauen neu gebacken.
