@@ -1,7 +1,7 @@
 class_name CarryComponent
 extends Node3D
-## Hält getragene Erzbrocken vor der Spielfigur. Der Knoten selbst ist der Haltepunkt.
-## Wer was trägt, steht in OreChunk.carrier_id (vom Host gesetzt, an alle verteilt); die Brocken melden sich hier
+## Hält getragene Items (Erzbrocken, Blaupausen-Kisten) vor der Spielfigur. Der Knoten selbst ist der Haltepunkt.
+## Wer was trägt, steht in Carryable.carrier_id (vom Host gesetzt, an alle verteilt); die Items melden sich hier
 ## an und ab. So kennt jeder Peer die Liste, und der Besitzer kann sein Tempo lokal berechnen.
 ## Ablegen und Werfen fragt der Besitzer beim Host an.
 
@@ -12,45 +12,45 @@ const STACK_SPACING: float = 0.35
 ## Wo abgelegte Brocken relativ zum Haltepunkt landen: etwas tiefer, damit sie nicht in Kopfhöhe fallen.
 const DROP_OFFSET: Vector3 = Vector3(0, -0.4, 0)
 
-var carried: Array[OreChunk] = []
+var carried: Array[Carryable] = []
 
 
 func is_carrying() -> bool:
 	return not carried.is_empty()
 
 
-## Nur gleiche Erzart wird gestapelt, und nur bis zu deren Traglimit.
-func can_pick_up(chunk: OreChunk) -> bool:
+## Nur Gleiches wird gestapelt (gleiche Erzart, gleiche Kiste), und nur bis zu dessen Traglimit.
+func can_pick_up(item: Carryable) -> bool:
 	if carried.is_empty():
 		return true
-	return carried[0].ore == chunk.ore and carried.size() < chunk.ore.carry_limit
+	return carried[0].get_stack_key() == item.get_stack_key() and carried.size() < item.get_carry_limit()
 
 
 func get_speed_multiplier() -> float:
 	var multiplier := 1.0
-	for chunk in carried:
-		multiplier = minf(multiplier, chunk.ore.carry_speed_multiplier)
+	for item in carried:
+		multiplier = minf(multiplier, item.get_carry_speed_multiplier())
 	return multiplier
 
 
-func get_hold_transform(chunk: OreChunk) -> Transform3D:
-	var index := maxi(0, carried.find(chunk))
+func get_hold_transform(item: Carryable) -> Transform3D:
+	var index := maxi(0, carried.find(item))
 	return global_transform.translated(Vector3.UP * STACK_SPACING * index)
 
 
-## Von OreChunk aufgerufen, wenn sich dessen carrier_id auf diesen Spieler ändert.
-func register(chunk: OreChunk) -> void:
-	if chunk in carried:
+## Von Carryable aufgerufen, wenn sich dessen carrier_id auf diesen Spieler ändert.
+func register(item: Carryable) -> void:
+	if item in carried:
 		return
-	carried.append(chunk)
+	carried.append(item)
 	if carried.size() == 1:
 		carried_changed.emit(true)
 
 
-func unregister(chunk: OreChunk) -> void:
-	if not chunk in carried:
+func unregister(item: Carryable) -> void:
+	if not item in carried:
 		return
-	carried.erase(chunk)
+	carried.erase(item)
 	if carried.is_empty():
 		carried_changed.emit(false)
 
@@ -92,7 +92,7 @@ func _exit_tree() -> void:
 
 func _release_all(velocity: Vector3) -> void:
 	var drop_at := global_position + DROP_OFFSET
-	for chunk: OreChunk in carried.duplicate():
-		if is_instance_valid(chunk) and not chunk.is_queued_for_deletion():
-			chunk.release(drop_at, velocity)
+	for item: Carryable in carried.duplicate():
+		if is_instance_valid(item) and not item.is_queued_for_deletion():
+			item.release(drop_at, velocity)
 		drop_at += Vector3.UP * STACK_SPACING

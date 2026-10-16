@@ -2,10 +2,14 @@ class_name BuildManager
 extends Node
 ## Raster und Platzierung der Bauelemente (GDD: 2-m-Zellen). can_place() läuft auf jedem Peer, damit die
 ## Vorschau sofort grün oder rot zeigt; platziert und entfernt wird nur auf dem Host, der dabei erneut prüft.
-## Nach jeder Änderung meldet layout_changed, dass die Navigation neu gebacken werden muss.
+## Aufgebaut wird aus einer getragenen Blaupausen-Kiste, die dabei verbraucht wird; abgebaut wird ein Bauelement
+## wieder zur Kiste (so lässt es sich versetzen). Nach jeder Änderung meldet layout_changed, dass die Navigation neu
+## gebacken werden muss.
 
 ## Nur auf dem Host: Bauelemente wurden hinzugefügt oder entfernt.
 signal layout_changed
+## Nur Host: abgebautes Bauelement als Kiste an dieser Stelle hinlegen (Main spawnt sie).
+signal crate_requested(buildable: BuildableData, at: Vector3)
 
 const GROUP: StringName = &"build_manager"
 const CELL_SIZE: float = 2.0
@@ -23,6 +27,8 @@ const FLOOR_CLEARANCE: float = 0.03
 
 ## Container, unter den Bauelemente kommen; der BuildableSpawner repliziert ihn.
 @export var buildables: Node3D
+## Container der tragbaren Items (Erz und Kisten), um die Kiste zum Aufbauen zu finden.
+@export var items: Node3D
 
 
 func _enter_tree() -> void:
@@ -59,24 +65,28 @@ func can_place(data: BuildableData, cell: Vector2i, rotation_steps: int, near: V
 	return result
 
 
-## Vom lokalen Spieler.
-func request_place(data: BuildableData, cell: Vector2i, rotation_steps: int) -> void:
-	_place_on_host.rpc_id(1, data.resource_path, cell, rotation_steps)
+## Vom lokalen Spieler: die getragene Kiste an der Zelle aufbauen.
+func request_place(crate: BlueprintCrate, cell: Vector2i, rotation_steps: int) -> void:
+	_place_on_host.rpc_id(1, String(crate.name), cell, rotation_steps)
 
 
-## Vom lokalen Spieler: das getroffene Bauelement entfernen.
+## Vom lokalen Spieler: das getroffene Bauelement abbauen, es wird wieder zur Kiste.
 func request_remove(buildable: Buildable) -> void:
 	_remove_on_host.rpc_id(1, String(buildable.name))
 
 
 @rpc("any_peer", "call_local", "reliable")
-func _place_on_host(data_path: String, cell: Vector2i, rotation_steps: int) -> void:
+func _place_on_host(crate_name: String, cell: Vector2i, rotation_steps: int) -> void:
 	if not multiplayer.is_server():
 		return
 	var player := _sender_player()
-	var data := load(data_path) as BuildableData
-	if player == null or player.is_downed() or data == null:
+	var crate := items.get_node_or_null(crate_name) as BlueprintCrate
+	if player == null or player.is_downed() or crate == null:
 		return
+	# Nur wer die Kiste gerade trägt, darf sie aufbauen.
+	if crate.carrier_id != player.get_multiplayer_authority():
+		return
+	var data := crate.buildable
 	var check := can_place(data, cell, posmod(rotation_steps, 4), player.global_position)
 	var position: Vector3 = check["position"]
 	if not check["ok"] or position.distance_to(player.global_position) > MAX_BUILD_DISTANCE:
@@ -86,6 +96,7 @@ func _place_on_host(data_path: String, cell: Vector2i, rotation_steps: int) -> v
 	buildable.sync_position = position
 	buildable.rotation_steps = posmod(rotation_steps, 4)
 	buildables.add_child(buildable, true)
+	crate.queue_free()
 	layout_changed.emit()
 
 
@@ -99,6 +110,7 @@ func _remove_on_host(buildable_name: String) -> void:
 		return
 	if buildable.global_position.distance_to(player.global_position) > MAX_BUILD_DISTANCE:
 		return
+	crate_requested.emit(buildable.data, buildable.global_position + Vector3.UP * 0.8)
 	destroy(buildable)
 
 

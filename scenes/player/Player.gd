@@ -54,6 +54,13 @@ const PHYSICS_LAYER: int = 1 << 1
 ## Vom Besitzer gesetzt und per MultiplayerSynchronizer verteilt.
 @export var sync_position: Vector3
 @export var sync_yaw: float
+## Gewähltes Merkmal (Pfad zur TraitData, leer = keins); vom Besitzer gesetzt, damit auch der Host es kennt.
+@export var trait_path: String = "":
+	set(value):
+		trait_path = value
+		trait_data = load(value) as TraitData if not value.is_empty() else null
+
+var trait_data: TraitData = null
 
 @onready var carry: CarryComponent = $Model/CarryComponent
 @onready var health: HealthComponent = $HealthComponent
@@ -98,8 +105,9 @@ func _ready() -> void:
 	health.died.connect(_on_died)
 	_pickaxe.rotation_degrees.x = PICKAXE_REST_DEGREES
 	build.active_changed.connect(_on_build_mode_changed)
-	build.selection_changed.connect(func(selection: BuildableData) -> void: build_selection_changed.emit(selection.display_name))
+	build.selection_changed.connect(_on_build_selection_changed)
 	if is_multiplayer_authority():
+		trait_path = GameState.selected_trait_path
 		_camera.activate()
 
 
@@ -173,19 +181,21 @@ func _physics_process(delta: float) -> void:
 		_swing()
 
 
-## Baumodus: Linksklick platziert, Rechtsklick entfernt, R / Mausrad dreht.
+## Baumodus: Linksklick baut die getragene Kiste auf, Rechtsklick baut ab, R / Mausrad dreht.
 func _handle_build_input() -> void:
 	build.update_aim(_camera.get_view_transform(), global_position)
 	if _just_pressed(&"build_rotate_left"):
 		build.rotate_selection(-1)
 	if _just_pressed(&"build_rotate_right"):
 		build.rotate_selection(1)
-	if _just_pressed(&"build_cycle"):
-		build.cycle_selection()
 	if _just_pressed(&"attack"):
 		build.try_place()
 	elif _just_pressed(&"aim"):
 		build.try_remove()
+
+
+func _on_build_selection_changed(selection: BuildableData) -> void:
+	build_selection_changed.emit(selection.display_name if selection else "")
 
 
 func _on_build_mode_changed(is_active: bool) -> void:
@@ -197,8 +207,22 @@ func is_downed() -> bool:
 	return _downed
 
 
+## Schläge pro Sekunde beim Abbauen bzw. im Kampf, mit Merkmal (z. B. Hauer).
+func get_mining_rate() -> float:
+	return data.swing_rate * (trait_data.mining_speed_multiplier if trait_data else 1.0)
+
+
+func get_attack_rate() -> float:
+	return data.swing_rate * (trait_data.attack_speed_multiplier if trait_data else 1.0)
+
+
+func get_melee_damage() -> int:
+	return roundi(data.attack_damage * (trait_data.melee_damage_multiplier if trait_data else 1.0))
+
+
 func _swing() -> void:
-	_swing_cooldown = 1.0 / data.swing_rate
+	var mining := _interaction_target != null and _interaction_target.action == &"attack"
+	_swing_cooldown = 1.0 / (get_mining_rate() if mining else get_attack_rate())
 	# Zum Schlagen in Kamerarichtung drehen, damit man trifft, wohin man schaut.
 	var forward := -_camera.get_yaw_basis().z
 	_model.rotation.y = atan2(-forward.x, -forward.z)
@@ -236,7 +260,7 @@ func _melee_on_host(forward: Vector3) -> void:
 	if sender != get_multiplayer_authority():
 		return
 	var now := Time.get_ticks_msec() / 1000.0
-	if now - _last_host_swing < SWING_RATE_TOLERANCE / data.swing_rate:
+	if now - _last_host_swing < SWING_RATE_TOLERANCE / get_attack_rate():
 		return
 	_last_host_swing = now
 
@@ -257,7 +281,7 @@ func _melee_on_host(forward: Vector3) -> void:
 		var direction := to_enemy / distance if distance > 0.001 else forward
 		if distance > ATTACK_POINT_BLANK and direction.dot(forward) < ATTACK_CONE_DOT:
 			continue
-		enemy.take_hit(data.attack_damage, direction * data.attack_knockback, self, global_position)
+		enemy.take_hit(get_melee_damage(), direction * data.attack_knockback, self, global_position)
 		hits += 1
 	if hits > 0:
 		_confirm_hit.rpc_id(sender)

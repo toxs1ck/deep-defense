@@ -40,6 +40,24 @@ theme_override_font_sizes/font_size = 32
 text = "Deep Defense"
 horizontal_alignment = 1
 
+[node name="TraitRow" type="HBoxContainer" parent="Center/Panel/Margin/Rows"]
+layout_mode = 2
+
+[node name="TraitLabel" type="Label" parent="Center/Panel/Margin/Rows/TraitRow"]
+layout_mode = 2
+text = "Merkmal:"
+
+[node name="TraitSelect" type="OptionButton" parent="Center/Panel/Margin/Rows/TraitRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TraitDescription" type="Label" parent="Center/Panel/Margin/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 3
+
 [node name="HostButton" type="Button" parent="Center/Panel/Margin/Rows"]
 unique_name_in_owner = true
 layout_mode = 2

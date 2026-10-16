@@ -9,6 +9,7 @@ script = ExtResource("1_data")
 display_name = "Geschützturm"
 scene = ExtResource("2_scene")
 size = Vector3(1.4, 2.2, 1.4)
+price = 60
 max_health = 200
 blocks_path = true
 attack_range = 15.0

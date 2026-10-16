@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TraitData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/TraitData.gd" id="1_trait"]
+
+[resource]
+script = ExtResource("1_trait")
+display_name = "Raufbold"
+description = "+40 % Nahkampfschaden, −30 % Fernkampfschaden"
+melee_damage_multiplier = 1.4
+ranged_damage_multiplier = 0.7

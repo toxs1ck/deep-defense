@@ -1,15 +1,25 @@
-[gd_resource type="Resource" script_class="RunData" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="RunData" load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/RunData.gd" id="1_data"]
 [ext_resource type="Resource" path="res://data/enemies/cave_crawler.tres" id="2_crawler"]
 [ext_resource type="Resource" path="res://data/enemies/ore_thief.tres" id="3_thief"]
 [ext_resource type="Script" path="res://scripts/resources/EnemyData.gd" id="4_enemy_data"]
+[ext_resource type="Script" path="res://scripts/resources/BuildableData.gd" id="5_buildable_data"]
+[ext_resource type="Resource" path="res://data/buildables/wall.tres" id="6_wall"]
+[ext_resource type="Resource" path="res://data/buildables/spike_trap.tres" id="7_trap"]
+[ext_resource type="Resource" path="res://data/buildables/blade_whirl.tres" id="8_blade"]
+[ext_resource type="Resource" path="res://data/buildables/turret.tres" id="9_turret"]
 
 [resource]
 script = ExtResource("1_data")
 rounds_per_run = 15
 boss_rounds = Array[int]([5, 10, 15])
 combat_duration = 150.0
+starting_money = 60
+shop_pool = Array[ExtResource("5_buildable_data")]([ExtResource("6_wall"), ExtResource("7_trap"), ExtResource("8_blade"), ExtResource("9_turret")])
+shop_offer_count = 4
+reroll_base_cost = 20
+reroll_cost_step = 10
 wave_budget_base = 20.0
 wave_budget_exponent = 1.2
 enemy_types = Array[ExtResource("4_enemy_data")]([ExtResource("2_crawler"), ExtResource("3_thief")])

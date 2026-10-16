@@ -5,6 +5,7 @@ extends Node3D
 
 const PLAYER_SCENE: PackedScene = preload("res://scenes/player/Player.tscn")
 const CHUNK_SCENE: PackedScene = preload("res://scenes/world/OreChunk.tscn")
+const CRATE_SCENE: PackedScene = preload("res://scenes/world/BlueprintCrate.tscn")
 ## Höchster Drall herausspringender Brocken pro Achse in rad/s.
 const CHUNK_MAX_SPIN: float = 8.0
 const SPAWN_ORIGIN: Vector3 = Vector3(0, 0, 4)
@@ -18,6 +19,9 @@ const SPAWN_SPACING: float = 1.5
 @onready var _pause_menu: PauseMenu = $UI/PauseMenu
 @onready var _build_manager: BuildManager = $BuildManager
 @onready var _wave_spawner: WaveSpawner = $WaveSpawner
+@onready var _shop_manager: ShopManager = $ShopManager
+@onready var _shop_menu: ShopMenu = $UI/ShopMenu
+@onready var _shop_terminal: InteractableComponent = $TestRoom/ShopTerminal/InteractableComponent
 @onready var _navigation: NavigationBaker = $TestRoom/NavigationRegion3D
 @onready var _network_status: Label = $UI/NetworkStatus
 
@@ -32,6 +36,14 @@ func _ready() -> void:
 	# Besiegte Erzdiebe lassen ihre Beute fallen; gespawnt wird wie bei abgebauten Brocken.
 	_wave_spawner.ore_dropped.connect(_on_chunk_broken_off)
 	_wave_spawner.preview_changed.connect(_hud.set_wave_preview)
+	# Shop: Terminal öffnet das Menü beim Benutzer, Käufe und Abbauen ergeben Kisten.
+	_shop_terminal.interacted.connect(_shop_manager.open_for)
+	_shop_manager.open_requested.connect(_shop_menu.open)
+	_shop_manager.offers_changed.connect(_shop_menu.set_offers)
+	_shop_menu.buy_requested.connect(_shop_manager.request_buy)
+	_shop_menu.reroll_requested.connect(_shop_manager.request_reroll)
+	_shop_manager.crate_requested.connect(_spawn_crate)
+	_build_manager.crate_requested.connect(_spawn_crate)
 	_network_status.visible = false
 	_menu.host_requested.connect(_on_host_requested)
 	_menu.join_requested.connect(_on_join_requested)
@@ -60,7 +72,10 @@ func _process(_delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Esc öffnet bzw. schließt im Spiel das Pausenmenü; im Startmenü passiert nichts.
-	if event.is_action_pressed("menu") and not _menu.visible:
+	if event.is_action_pressed("menu") and _shop_menu.visible:
+		_shop_menu.close()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("menu") and not _menu.visible:
 		_pause_menu.toggle()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ready") and not _menu.visible and not GameState.input_blocked:
@@ -161,6 +176,15 @@ func _on_chunk_broken_off(ore: OreData, spawn_position: Vector3, impulse: Vector
 	# Zufälliger Drall, damit die Brocken unterschiedlich trudeln und landen.
 	var rng := GameState.rng
 	chunk.angular_velocity = Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1), rng.randf_range(-1, 1)) * CHUNK_MAX_SPIN
+
+
+## Nur auf dem Host: Blaupausen-Kiste spawnen (Kauf im Shop oder abgebautes Bauelement).
+func _spawn_crate(buildable: BuildableData, at: Vector3) -> void:
+	var crate := CRATE_SCENE.instantiate() as BlueprintCrate
+	crate.buildable_path = buildable.resource_path
+	crate.position = at
+	crate.sync_position = at
+	_chunks.add_child(crate, true)
 
 
 func _on_player_left(peer_id: int) -> void:

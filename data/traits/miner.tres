@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TraitData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/TraitData.gd" id="1_trait"]
+
+[resource]
+script = ExtResource("1_trait")
+display_name = "Hauer"
+description = "+40 % Abbaugeschwindigkeit, −25 % Angriffstempo"
+mining_speed_multiplier = 1.4
+attack_speed_multiplier = 0.75

@@ -9,5 +9,7 @@ extends Resource
 @export var size: Vector3 = Vector3(2, 2, 2)
 ## Lebenspunkte; Gegner greifen Bauelemente an, wenn sie den Aufzug sonst nicht erreichen.
 @export var max_health: int = 150
+## Preis im Shop in $.
+@export var price: int = 20
 ## Ob das Bauelement den Weg versperrt (Mauer, Turm). Fallen tun das nicht und werden nie angegriffen.
 @export var blocks_path: bool = true

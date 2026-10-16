@@ -8,6 +8,16 @@ extends Resource
 ## endet die Kampfphase nur über diese Zeit; später endet sie, wenn alle Gegner besiegt sind.
 @export var combat_duration: float = 150.0
 
+## Geld in der Teamkasse zu Beginn eines Runs.
+@export var starting_money: int = 60
+
+@export_group("Shop")
+## Woraus der Bauelemente-Shop jede Schicht zieht (GDD: 4 Angebote, neu würfeln 20 $, jedes weitere Mal +10 $).
+@export var shop_pool: Array[BuildableData] = []
+@export var shop_offer_count: int = 4
+@export var reroll_base_cost: int = 20
+@export var reroll_cost_step: int = 10
+
 @export_group("Wellen")
 ## Punkte-Budget pro Welle: wave_budget_base × Schicht ^ wave_budget_exponent (GDD: 20 × Runde^1,2).
 ## Jeder Gegner kostet EnemyData.cost.

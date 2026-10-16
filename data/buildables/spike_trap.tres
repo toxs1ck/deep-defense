@@ -8,6 +8,7 @@ script = ExtResource("1_data")
 display_name = "Stachelfalle"
 scene = ExtResource("2_scene")
 size = Vector3(1.9, 0.1, 1.9)
+price = 30
 max_health = 100
 blocks_path = false
 attack_range = 0.0

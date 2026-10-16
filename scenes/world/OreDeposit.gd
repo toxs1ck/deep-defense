@@ -53,7 +53,7 @@ func _on_interacted(player: Player) -> void:
 	if _chunks_left <= 0 or player.carry.is_carrying():
 		return
 	var now := Time.get_ticks_msec() / 1000.0
-	var min_interval := HIT_RATE_TOLERANCE / player.data.swing_rate
+	var min_interval := HIT_RATE_TOLERANCE / player.get_mining_rate()
 	var last_hit: float = _last_hit_time.get(player.name, -INF)
 	if now - last_hit < min_interval:
 		return

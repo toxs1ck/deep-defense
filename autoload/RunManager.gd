@@ -55,6 +55,7 @@ func is_local_player_ready() -> bool:
 func start_run() -> void:
 	assert(multiplayer.is_server(), "Den Run startet der Host")
 	GameState.set_run_seed(GameState.new_random_seed())
+	Economy.add_money(data.starting_money)
 	_start_round(1)
 
 

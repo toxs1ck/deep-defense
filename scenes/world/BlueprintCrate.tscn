@@ -1,0 +1,64 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scenes/world/BlueprintCrate.gd" id="1_crate"]
+[ext_resource type="Script" path="res://components/InteractableComponent.gd" id="2_interact"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_crate"]
+size = Vector3(0.7, 0.6, 0.7)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_crate"]
+albedo_color = Color(0.62, 0.45, 0.25, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_crate"]
+material = SubResource("StandardMaterial3D_crate")
+size = Vector3(0.7, 0.6, 0.7)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_interact"]
+radius = 0.55
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_crate"]
+properties/0/path = NodePath(".:buildable_path")
+properties/0/spawn = true
+properties/0/replication_mode = 0
+properties/1/path = NodePath(".:sync_position")
+properties/1/spawn = true
+properties/1/replication_mode = 2
+properties/2/path = NodePath(".:sync_rotation")
+properties/2/spawn = true
+properties/2/replication_mode = 2
+properties/3/path = NodePath(".:carrier_id")
+properties/3/spawn = true
+properties/3/replication_mode = 2
+
+[node name="BlueprintCrate" type="RigidBody3D"]
+collision_layer = 16
+collision_mask = 25
+mass = 8.0
+script = ExtResource("1_crate")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_crate")
+
+[node name="Mesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_crate")
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+billboard = 1
+outline_size = 6
+font_size = 24
+text = "Kiste"
+
+[node name="InteractableComponent" type="Area3D" parent="."]
+collision_layer = 32
+collision_mask = 0
+monitoring = false
+script = ExtResource("2_interact")
+prompt_text = "Aufheben"
+extra_range = 1.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="InteractableComponent"]
+shape = SubResource("SphereShape3D_interact")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_crate")

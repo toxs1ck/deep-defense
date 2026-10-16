@@ -87,8 +87,9 @@ func _find_target() -> Enemy:
 func _on_load_interacted(player: Player) -> void:
 	if ammo >= _defense.max_ammo:
 		return
-	for chunk: OreChunk in player.carry.carried.duplicate():
-		if chunk.ore == _defense.ammo_ore and ammo < _defense.max_ammo:
+	for item: Carryable in player.carry.carried.duplicate():
+		var chunk := item as OreChunk
+		if chunk and chunk.ore == _defense.ammo_ore and ammo < _defense.max_ammo:
 			chunk.queue_free()
 			ammo = mini(_defense.max_ammo, ammo + _defense.ammo_per_load)
 

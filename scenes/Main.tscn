@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scenes/Main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/world/TestRoom.tscn" id="2_room"]
@@ -7,6 +7,8 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/PauseMenu.tscn" id="5_pause"]
 [ext_resource type="Script" path="res://scenes/world/WaveSpawner.gd" id="6_waves"]
 [ext_resource type="Script" path="res://scenes/world/BuildManager.gd" id="7_build"]
+[ext_resource type="Script" path="res://scenes/world/ShopManager.gd" id="8_shop"]
+[ext_resource type="PackedScene" path="res://scenes/ui/ShopMenu.tscn" id="9_shop_menu"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -36,7 +38,7 @@ spawn_path = NodePath("../Players")
 [node name="Chunks" type="Node3D" parent="."]
 
 [node name="ChunkSpawner" type="MultiplayerSpawner" parent="."]
-_spawnable_scenes = PackedStringArray("res://scenes/world/OreChunk.tscn")
+_spawnable_scenes = PackedStringArray("res://scenes/world/OreChunk.tscn", "res://scenes/world/BlueprintCrate.tscn")
 spawn_path = NodePath("../Chunks")
 
 [node name="Enemies" type="Node3D" parent="."]
@@ -55,9 +57,13 @@ enemies = NodePath("../Enemies")
 _spawnable_scenes = PackedStringArray("res://scenes/buildables/Wall.tscn", "res://scenes/buildables/Turret.tscn", "res://scenes/buildables/BladeWhirl.tscn", "res://scenes/buildables/SpikeTrap.tscn")
 spawn_path = NodePath("../Buildables")
 
-[node name="BuildManager" type="Node" parent="." node_paths=PackedStringArray("buildables")]
+[node name="BuildManager" type="Node" parent="." node_paths=PackedStringArray("buildables", "items")]
 script = ExtResource("7_build")
 buildables = NodePath("../Buildables")
+items = NodePath("../Chunks")
+
+[node name="ShopManager" type="Node" parent="."]
+script = ExtResource("8_shop")
 
 [node name="MenuCamera" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.857167, 0.515038, 0, -0.515038, 0.857167, 0, 6, 12)
@@ -74,7 +80,8 @@ offset_right = 624.0
 offset_bottom = 156.0
 text = "WASD / linker Stick: laufen · Shift: sprinten · Leertaste: springen · Maus / rechter Stick: Kamera
 Linksklick / RT: Spitzhacke (abbauen, kämpfen; halten schlägt weiter) · E / X: aufheben, einladen
-Beim Tragen: E ablegen · Linksklick / RT werfen · V / R3: Schulter · B / Y: Baumodus · F: bereit · Esc: Menü"
+Beim Tragen: E ablegen · Linksklick / RT werfen · V / R3: Schulter · B / Y: Baumodus · F: bereit · Esc: Menü
+Shop: Terminal links vor dem Aufzug (nur in der Bauphase)"
 
 [node name="NetworkStatus" type="Label" parent="UI"]
 anchors_preset = 1
@@ -88,5 +95,7 @@ grow_horizontal = 0
 horizontal_alignment = 2
 
 [node name="MainMenu" parent="UI" instance=ExtResource("3_menu")]
+
+[node name="ShopMenu" parent="UI" instance=ExtResource("9_shop_menu")]
 
 [node name="PauseMenu" parent="UI" instance=ExtResource("5_pause")]

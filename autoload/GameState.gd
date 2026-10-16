@@ -9,6 +9,8 @@ var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 ## true, solange ein Menü offen ist (z. B. Pause). Die Spielfigur nimmt dann keine Eingaben an.
 ## Das Spiel selbst läuft weiter, weil im Multiplayer niemand allein pausieren kann.
 var input_blocked: bool = false
+## Im Startmenü gewähltes Merkmal (Pfad zur TraitData, leer = keins). Die eigene Figur übernimmt es beim Spawnen.
+var selected_trait_path: String = ""
 
 
 func set_run_seed(seed_value: int) -> void:

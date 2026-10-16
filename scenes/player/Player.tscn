@@ -47,6 +47,9 @@ properties/0/replication_mode = 1
 properties/1/path = NodePath(".:sync_yaw")
 properties/1/spawn = true
 properties/1/replication_mode = 1
+properties/2/path = NodePath(".:trait_path")
+properties/2/spawn = true
+properties/2/replication_mode = 2
 
 [node name="Player" type="CharacterBody3D"]
 collision_layer = 2
@@ -88,8 +91,9 @@ mesh = SubResource("BoxMesh_head")
 script = ExtResource("5_health")
 max_health = 100
 
-[node name="BuildComponent" type="Node" parent="."]
+[node name="BuildComponent" type="Node" parent="." node_paths=PackedStringArray("carry")]
 script = ExtResource("6_build")
+carry = NodePath("../Model/CarryComponent")
 
 [node name="PlayerCamera" parent="." instance=ExtResource("3_cam")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)

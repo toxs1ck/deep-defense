@@ -24,7 +24,7 @@ Hosts eintragen; der Host muss UDP-Port 7777 freigeben.
 | Ordner | Inhalt |
 | --- | --- |
 | `autoload/` | Globale Systeme: `GameState`, `RunManager`, `Economy`, `NetworkManager` |
-| `data/` | Balancing-Werte als `.tres`: `player/`, `run/`, `elevator/`, `ores/`, `enemies/`, `buildables/`, `buildables/`, `enemies/`, `traits/`, `items/`, `recipes/` |
+| `data/` | Balancing-Werte als `.tres`: `player/`, `run/`, `elevator/`, `ores/`, `enemies/`, `buildables/`, `traits/`, `buildables/`, `enemies/`, `traits/`, `items/`, `recipes/` |
 | `scenes/` | `Main.tscn` sowie `player/`, `enemies/`, `buildables/`, `world/`, `ui/` |
 | `components/` | Wiederverwendbare Kind-Nodes: `InteractableComponent`, `CarryComponent`, `HealthComponent`, `BuildComponent`, später Health, Hitbox, Carry, Ability … |
 | `scripts/` | Hilfsklassen und Resource-Klassen (`resources/`), z. B. `WaveGenerator.gd`, `MineGenerator.gd` |
@@ -36,8 +36,7 @@ Alle Aktionen aus der Steuerungstabelle im GDD sind in der Input Map angelegt (M
 `InputEventMouseMotion`), `jump`, `sprint`, `attack`, `aim`, `interact`, `build_mode`,
 `build_rotate_left/right`, `ability`, `ping`, `ready`, `show_info`, `menu`.
 
-Zusätzlich (nicht im GDD): `camera_switch_shoulder` – V / rechten Stick drücken wechselt die Kameraschulter;
-`build_cycle` – C / Steuerkreuz rechts wechselt im Baumodus das Bauelement (bis es den Shop gibt).
+Zusätzlich (nicht im GDD): `camera_switch_shoulder` – V / rechten Stick drücken wechselt die Kameraschulter.
 
 ## Fortschritt (Prototyp-Plan)
 
@@ -54,4 +53,5 @@ Zusätzlich (nicht im GDD): `camera_switch_shoulder` – V / rechten Stick drüc
 - [x] 11 – Bausystem
 - [x] 12 – Verteidigung
 - [x] 13 – Wellen & Erzdieb
-- [ ] 14 – Shop & Merkmale
+- [x] 14 – Shop & Merkmale
+- [ ] 15 – Technik-Test Förderband

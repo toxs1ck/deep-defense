@@ -7,6 +7,9 @@ extends Node3D
 const GROUP: StringName = &"elevator"
 ## Hier erscheinen gefallene Spieler wieder: vor der offenen Seite des Korbs (lokal).
 const RESPAWN_POINT: Vector3 = Vector3(0, 0, -3.0)
+## Hier erscheinen gekaufte Blaupausen-Kisten: links vor dem Korb (lokal), leicht gestreut.
+const CRATE_POINT: Vector3 = Vector3(-2.4, 0.6, -2.2)
+const CRATE_SCATTER: float = 0.6
 
 @export var data: ElevatorData
 
@@ -66,6 +69,11 @@ func _on_died() -> void:
 		RunManager.fail_run()
 
 
+func get_crate_point() -> Vector3:
+	var rng := GameState.rng
+	return to_global(CRATE_POINT + Vector3(rng.randf_range(-CRATE_SCATTER, CRATE_SCATTER), 0, rng.randf_range(-CRATE_SCATTER, CRATE_SCATTER)))
+
+
 func get_respawn_point() -> Vector3:
 	return to_global(RESPAWN_POINT)
 
@@ -98,8 +106,9 @@ func _on_basket_body_entered(body: Node3D) -> void:
 
 ## Nur Host: alles einladen, was der Spieler trägt, solange Platz ist.
 func _on_load_interacted(player: Player) -> void:
-	for chunk: OreChunk in player.carry.carried.duplicate():
-		if not _try_load(chunk):
+	for item: Carryable in player.carry.carried.duplicate():
+		var chunk := item as OreChunk
+		if chunk and not _try_load(chunk):
 			break
 
 
