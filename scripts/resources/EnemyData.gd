@@ -11,8 +11,12 @@ extends Resource
 @export var steals_ore: bool = false
 ## Tempo beim Fliehen mit Beute, als Anteil von speed.
 @export var loot_speed_multiplier: float = 0.8
-## Getroffen lässt der Erzdieb die Beute fallen und kann erst nach so vielen Sekunden wieder stehlen.
-@export var steal_cooldown: float = 1.5
+## Getroffen lässt der Erzdieb die Beute fallen und flieht so viele Sekunden (zufällig dazwischen) vom
+## Verursacher weg, möglichst an einen Platz außer Sicht. Währenddessen stiehlt er nicht.
+@export var flee_time_min: float = 3.0
+@export var flee_time_max: float = 5.0
+## Wie weit er sich dabei ungefähr entfernt, in Metern.
+@export var flee_distance: float = 10.0
 ## Größe des Modells (die Kollision bleibt gleich).
 @export var model_scale: float = 1.0
 @export var max_health: int = 30

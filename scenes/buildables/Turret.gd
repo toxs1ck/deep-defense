@@ -57,7 +57,8 @@ func _physics_process(delta: float) -> void:
 	var aim := target.global_position + Vector3.UP * AIM_HEIGHT
 	var push := (aim - global_position)
 	push.y = 0.0
-	target.take_hit(_defense.damage if loaded else _defense.unloaded_damage, push.normalized() * _defense.knockback, null)
+	var amount := _defense.damage if loaded else _defense.unloaded_damage
+	target.take_hit(amount, push.normalized() * _defense.knockback, null, global_position)
 	_play_shot.rpc(aim, loaded)
 
 

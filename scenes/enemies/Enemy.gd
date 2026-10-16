@@ -9,9 +9,9 @@ extends CharacterBody3D
 ## Bauelement, anderer Spieler), wechselt er nur, wenn ihn ein Spieler trifft.
 ## Erreicht der Weg den Aufzug nicht (zugebaut), greift der Gegner das Bauelement am Wegende an (GDD, „Platzierung“).
 ## Erzdiebe (data.steals_ore) suchen stattdessen liegendes Erz, stehlen es und fliehen zum nächsten Eingang; dort
-## verschwinden sie mit der Beute. Bei jedem Treffer (auch von Verteidigungen) lassen sie das Erz fallen und können
-## erst nach data.steal_cooldown wieder stehlen. Ohne liegendes Erz verhalten sie sich wie die anderen, greifen aber
-## nie Spieler an.
+## verschwinden sie mit der Beute. Bei jedem Treffer (auch von Verteidigungen) lassen sie das Erz fallen und fliehen
+## einige Sekunden vom Verursacher weg, bevorzugt an einen Platz außer Sicht. Ohne liegendes Erz verhalten sie sich
+## wie die anderen, greifen aber nie Spieler an.
 ## Jeder Angriff hat eine Ausholphase (data.attack_windup), in der man ausweichen kann. Dabei rückt er mit
 ## verringertem Tempo nach; einmal ausgeholt, schlägt er zu, auch wenn das Ziel schon weg ist. Ein Treffer während
 ## des Ausholens bricht den Angriff ab.
@@ -26,6 +26,13 @@ const STEAL_RANGE: float = 1.2
 const ESCAPE_RANGE: float = 1.2
 ## So weit sucht ein Erzdieb nach liegendem Erz.
 const LOOT_SEARCH_RADIUS: float = 40.0
+## Flucht: so viele Richtungen in einem Fächer weg vom Verursacher werden geprüft …
+const FLEE_SAMPLES: int = 12
+const FLEE_FAN_ANGLE: float = PI * 0.65
+## … und Punkte außer Sicht (Welt oder Bauelement dazwischen) bekommen diesen Bonus auf ihre Entfernung.
+const FLEE_HIDDEN_BONUS: float = 20.0
+const FLEE_SIGHT_MASK: int = (1 << 0) | (1 << 3)
+const FLEE_EYE_HEIGHT: float = 1.2
 ## So oft wird der Weg neu berechnet (GDD: KI in festen Ticks statt jeden Frame).
 const REPATH_INTERVAL: float = 0.5
 ## Ein Wegpunkt gilt als erreicht, wenn er waagerecht so nah ist. Bewusst ohne Höhe: Auf Rampen liegt das Netz
@@ -109,8 +116,9 @@ var _target_buildable: Buildable = null
 var _dying: bool = false
 ## Nur Host, Erzdieb: Brocken, den er gerade holen will.
 var _target_chunk: OreChunk = null
-## Nur Host, Erzdieb: Restzeit, bis er nach einem Treffer wieder stehlen darf.
-var _steal_cooldown: float = 0.0
+## Nur Host, Erzdieb: Restzeit der Flucht nach einem Treffer und das gewählte Versteck.
+var _flee_left: float = 0.0
+var _flee_point: Vector3 = Vector3.ZERO
 
 
 func _enter_tree() -> void:
@@ -217,7 +225,7 @@ func _move_direction(delta: float) -> Vector3:
 		_path_index = 0
 		# Der Agent braucht ein Ziel, sonst reicht er die Geschwindigkeit nicht an die Avoidance weiter.
 		_agent.target_position = target
-		var heading_for_elevator := _target_chunk == null and loot_path.is_empty()
+		var heading_for_elevator := _target_chunk == null and loot_path.is_empty() and _flee_left <= 0.0
 		if heading_for_elevator and _target_player == null and _target_buildable == null:
 			_check_path_blocked()
 	while _path_index < _path.size() and _horizontal_distance_to(_path[_path_index]) < WAYPOINT_REACHED:
@@ -231,6 +239,8 @@ func _move_direction(delta: float) -> Vector3:
 
 ## Wohin der Gegner gerade will: Spieler, versperrendes Bauelement oder sein Angriffspunkt am Aufzug.
 func _goal_position() -> Vector3:
+	if _flee_left > 0.0:
+		return _flee_point
 	if not loot_path.is_empty():
 		return _nearest_entrance()
 	if _target_chunk != null and is_instance_valid(_target_chunk):
@@ -359,11 +369,14 @@ func _set_target_player(player: Player) -> void:
 
 ## Nur Host: getroffen, von einem Spieler oder (attacker = null) von einer Verteidigung. Nur Spieler lenken die
 ## Aggro um und unterbrechen das Ausholen; sonst würden Türme Gegner dauerhaft am Angreifen hindern.
-func take_hit(amount: int, knockback: Vector3, attacker: Player) -> void:
+## source ist die Position des Verursachers (Erzdiebe fliehen davor).
+func take_hit(amount: int, knockback: Vector3, attacker: Player, source: Vector3) -> void:
 	if not multiplayer.is_server() or _dying:
 		return
 	velocity += knockback
-	_drop_loot()
+	if data.steals_ore:
+		_drop_loot()
+		_start_flee(source)
 	if attacker and not data.steals_ore:
 		_set_target_player(attacker)
 	if attacker and _windup_left > 0.0:
@@ -443,7 +456,7 @@ func _play_death() -> void:
 	create_tween().tween_property(_model, "scale", Vector3(1.3, 0.05, 1.3), DEATH_TIME).set_ease(Tween.EASE_IN)
 
 
-## Nur Host, Erzdieb: Beute fallen lassen (getroffen oder besiegt) und kurz nicht mehr stehlen.
+## Nur Host, Erzdieb: Beute fallen lassen (getroffen oder besiegt).
 func _drop_loot() -> void:
 	if loot_path.is_empty():
 		return
@@ -451,18 +464,44 @@ func _drop_loot() -> void:
 	ore_dropped.emit(ore, global_position + Vector3.UP * 0.8, Vector3.UP * 2.0)
 	loot_path = ""
 	_target_chunk = null
-	_steal_cooldown = data.steal_cooldown
 	_repath_timer = 0.0
 
 
-## Erzdieb: hat er Beute oder ein erreichbares Ziel-Erz? Sonst verhält er sich wie die anderen Gegner.
+## Nur Host, Erzdieb: Versteck weg vom Verursacher wählen und für eine zufällige Zeit dorthin fliehen.
+## Geprüft wird ein Fächer von Punkten auf dem Navigationsnetz; Punkte, die man vom Verursacher aus nicht sieht,
+## werden bevorzugt, danach zählt die Entfernung zum Verursacher.
+func _start_flee(source: Vector3) -> void:
+	_flee_left = GameState.rng.randf_range(data.flee_time_min, data.flee_time_max)
+	_target_chunk = null
+	_attacking = false
+	_windup_left = 0.0
+	_repath_timer = 0.0
+	var away := global_position - source
+	away.y = 0.0
+	if away.length_squared() < 0.01:
+		away = Vector3.FORWARD.rotated(Vector3.UP, GameState.rng.randf_range(0.0, TAU))
+	away = away.normalized()
+	var map := get_world_3d().navigation_map
+	var space := get_world_3d().direct_space_state
+	var eye := source + Vector3.UP * FLEE_EYE_HEIGHT
+	var best_score := -INF
+	_flee_point = global_position + away * data.flee_distance
+	for i in FLEE_SAMPLES:
+		var angle := lerpf(-FLEE_FAN_ANGLE, FLEE_FAN_ANGLE, float(i) / float(FLEE_SAMPLES - 1))
+		var wanted := global_position + away.rotated(Vector3.UP, angle) * data.flee_distance
+		var candidate := NavigationServer3D.map_get_closest_point(map, wanted)
+		var sight := PhysicsRayQueryParameters3D.create(eye, candidate + Vector3.UP * 0.5, FLEE_SIGHT_MASK)
+		var hidden := not space.intersect_ray(sight).is_empty()
+		var score := candidate.distance_to(source) + (FLEE_HIDDEN_BONUS if hidden else 0.0)
+		if score > best_score:
+			best_score = score
+			_flee_point = candidate
+
+
+## Erzdieb: hat er Beute, flieht er oder gibt es ein erreichbares Ziel-Erz? Sonst verhält er sich wie die anderen.
 func _thief_has_goal() -> bool:
-	if not loot_path.is_empty():
+	if not loot_path.is_empty() or _flee_left > 0.0:
 		return true
-	if _steal_cooldown > 0.0:
-		_steal_cooldown -= get_physics_process_delta_time()
-		_target_chunk = null
-		return false
 	if _target_chunk == null or not is_instance_valid(_target_chunk) or _target_chunk.carrier_id != 0:
 		var previous := _target_chunk
 		_target_chunk = _find_loot()
@@ -474,6 +513,12 @@ func _thief_has_goal() -> bool:
 ## Nur Host, Erzdieb: zur Beute bzw. mit Beute zum Eingang.
 func _thief_step(delta: float) -> Vector3:
 	_attacking = false
+	if _flee_left > 0.0:
+		_flee_left -= delta
+		if _horizontal_distance_to(_flee_point) <= WAYPOINT_REACHED:
+			# Im Versteck: abwarten, bis die Fluchtzeit um ist.
+			return Vector3.ZERO
+		return _move_direction(delta) * data.speed
 	if not loot_path.is_empty():
 		if _horizontal_distance_to(_nearest_entrance()) <= ESCAPE_RANGE:
 			# Entkommen: Die Beute ist verloren.

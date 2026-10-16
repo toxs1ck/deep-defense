@@ -35,4 +35,4 @@ func _physics_process(delta: float) -> void:
 			continue
 		away.y = 0.0
 		if away.length() <= _defense.attack_range + Enemy.BODY_RADIUS:
-			enemy.take_hit(_defense.damage, away.normalized() * _defense.knockback, null)
+			enemy.take_hit(_defense.damage, away.normalized() * _defense.knockback, null, global_position)

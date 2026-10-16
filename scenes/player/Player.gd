@@ -257,7 +257,7 @@ func _melee_on_host(forward: Vector3) -> void:
 		var direction := to_enemy / distance if distance > 0.001 else forward
 		if distance > ATTACK_POINT_BLANK and direction.dot(forward) < ATTACK_CONE_DOT:
 			continue
-		enemy.take_hit(data.attack_damage, direction * data.attack_knockback, self)
+		enemy.take_hit(data.attack_damage, direction * data.attack_knockback, self, global_position)
 		hits += 1
 	if hits > 0:
 		_confirm_hit.rpc_id(sender)

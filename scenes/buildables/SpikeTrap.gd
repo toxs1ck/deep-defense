@@ -36,7 +36,7 @@ func _physics_process(delta: float) -> void:
 		return
 	_cooldown = _defense.interval
 	for enemy in victims:
-		enemy.take_hit(_defense.damage, Vector3.ZERO, null)
+		enemy.take_hit(_defense.damage, Vector3.ZERO, null, global_position)
 	_play_trigger.rpc()
 
 
