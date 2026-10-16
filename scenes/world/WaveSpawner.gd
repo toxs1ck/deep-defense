@@ -105,7 +105,7 @@ func _physics_process(delta: float) -> void:
 		_spawn_timer -= delta
 		if _spawn_timer <= 0.0:
 			_spawn_timer = RunManager.data.spawn_interval
-			_spawn(_queue.pop_front())
+			_spawn(_queue.pop_front() as EnemyData)
 	elif _alive_enemy_count() == 0:
 		RunManager.end_combat()
 

@@ -33,6 +33,8 @@ const FLEE_FAN_ANGLE: float = PI * 0.65
 const FLEE_HIDDEN_BONUS: float = 20.0
 const FLEE_SIGHT_MASK: int = (1 << 0) | (1 << 3)
 const FLEE_EYE_HEIGHT: float = 1.2
+## Beim Ausweichen um Spieler: Anteil, mit dem der Dieb zusätzlich vom Spieler weg lenkt.
+const AVOID_AWAY_SHARE: float = 0.4
 ## So oft wird der Weg neu berechnet (GDD: KI in festen Ticks statt jeden Frame).
 const REPATH_INTERVAL: float = 0.5
 ## Ein Wegpunkt gilt als erreicht, wenn er waagerecht so nah ist. Bewusst ohne Höhe: Auf Rampen liegt das Netz
@@ -119,6 +121,8 @@ var _target_chunk: OreChunk = null
 ## Nur Host, Erzdieb: Restzeit der Flucht nach einem Treffer und das gewählte Versteck.
 var _flee_left: float = 0.0
 var _flee_point: Vector3 = Vector3.ZERO
+## Nur Host, Erzdieb: Seite (+1 / -1), auf der er Spielern ausweicht, wenn er genau auf sie zuläuft.
+var _avoid_side: float = 1.0
 
 
 func _enter_tree() -> void:
@@ -140,6 +144,7 @@ func _ready() -> void:
 	_model.rotation.y = sync_yaw
 	if multiplayer.is_server():
 		_attack_angle = GameState.rng.randf_range(0.0, TAU)
+		_avoid_side = 1.0 if GameState.rng.randf() < 0.5 else -1.0
 		_agent.max_speed = data.speed
 		_agent.avoidance_enabled = true
 		_agent.velocity_computed.connect(_on_velocity_computed)
@@ -535,29 +540,35 @@ func _thief_step(delta: float) -> Vector3:
 	return _avoid_players(_move_direction(delta)) * data.speed
 
 
-## Biegt die Laufrichtung von nahen Spielern weg: Jeder Spieler im Umkreis drückt umso stärker, je näher er ist.
-## Der Weg gibt die grobe Richtung vor, so entsteht ein Bogen um den Spieler statt eines Umkehrens.
+## Lenkt im Bogen um nahe Spieler: Der Anteil der Laufrichtung, der auf einen Spieler zeigt, wird durch die
+## Richtung seitlich an ihm vorbei ersetzt (tangential), dazu ein leichter Druck weg vom Spieler. Je näher der Spieler,
+## desto stärker. Läuft der Dieb genau auf ihn zu, nimmt er seine feste Ausweichseite, damit er nicht pendelt.
 func _avoid_players(direction: Vector3) -> Vector3:
 	if data.player_avoid_radius <= 0.0 or direction == Vector3.ZERO:
 		return direction
-	var push := Vector3.ZERO
+	var steered := direction
 	for node in get_tree().get_nodes_in_group(Player.GROUP):
 		var player := node as Player
 		if player.is_downed():
 			continue
-		var away := global_position - player.global_position
-		away.y = 0.0
-		var distance := away.length()
+		var to_player := player.global_position - global_position
+		to_player.y = 0.0
+		var distance := to_player.length()
 		if distance < 0.001 or distance > data.player_avoid_radius:
 			continue
-		var closeness := 1.0 - distance / data.player_avoid_radius
-		push += away / distance * closeness * data.player_avoid_strength
-	var steered := direction + push
+		var toward := to_player / distance
+		var heading := steered.dot(toward)
+		if heading <= 0.0:
+			# Spieler liegt hinter ihm: nur ein wenig zusätzlicher Abstand.
+			continue
+		var tangent := steered - toward * heading
+		if tangent.length_squared() < 0.04:
+			tangent = toward.cross(Vector3.UP) * _avoid_side
+		tangent = tangent.normalized()
+		var weight := clampf((1.0 - distance / data.player_avoid_radius) * data.player_avoid_strength, 0.0, 1.0)
+		steered = steered.lerp(tangent - toward * AVOID_AWAY_SHARE, weight)
 	steered.y = 0.0
-	# Heben sich Weg und Ausweichen fast auf, zur Seite statt stehen zu bleiben.
-	if steered.length_squared() < 0.01:
-		steered = direction.cross(Vector3.UP)
-	return steered.normalized()
+	return steered.normalized() if steered.length_squared() > 0.0001 else direction
 
 
 ## Nächster frei liegender Brocken (nicht getragen, nicht schon von einem anderen Dieb anvisiert).
