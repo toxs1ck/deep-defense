@@ -52,7 +52,7 @@ enemies = NodePath("../Enemies")
 [node name="Buildables" type="Node3D" parent="." groups=["nav_source"]]
 
 [node name="BuildableSpawner" type="MultiplayerSpawner" parent="."]
-_spawnable_scenes = PackedStringArray("res://scenes/buildables/Wall.tscn")
+_spawnable_scenes = PackedStringArray("res://scenes/buildables/Wall.tscn", "res://scenes/buildables/Turret.tscn", "res://scenes/buildables/BladeWhirl.tscn", "res://scenes/buildables/SpikeTrap.tscn")
 spawn_path = NodePath("../Buildables")
 
 [node name="BuildManager" type="Node" parent="." node_paths=PackedStringArray("buildables")]

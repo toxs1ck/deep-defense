@@ -4,6 +4,7 @@ extends Node
 ## Prüft lokal für die Vorschau; platziert wird über den BuildManager auf dem Host.
 
 signal active_changed(is_active: bool)
+signal selection_changed(data: BuildableData)
 
 ## Bis wohin der Zielstrahl von der Kamera aus reicht.
 const AIM_DISTANCE: float = 20.0
@@ -12,8 +13,19 @@ const AIM_MASK: int = (1 << 0) | (1 << 3)
 const VALID_COLOR: Color = Color(0.3, 1.0, 0.4, 0.45)
 const INVALID_COLOR: Color = Color(1.0, 0.25, 0.2, 0.45)
 
-## Vorerst gibt es nur Mauern; mit dem Shop (Aufgabe 14) wird hier das gekaufte Element gewählt.
-@export var selected: BuildableData = preload("res://data/buildables/wall.tres")
+## Vorerst ist alles frei wählbar (C / Steuerkreuz rechts wechselt); mit dem Shop (Aufgabe 14) wird hier das
+## gekaufte Element gewählt.
+## Erst zur Laufzeit geladen (kein preload), weil die Bauelemente über ihre Skripte wieder auf Player verweisen.
+const OPTION_PATHS: Array[String] = [
+	"res://data/buildables/wall.tres",
+	"res://data/buildables/turret.tres",
+	"res://data/buildables/blade_whirl.tres",
+	"res://data/buildables/spike_trap.tres",
+]
+
+var options: Array[BuildableData] = []
+var selected: BuildableData = null
+var _selected_index: int = 0
 
 var active: bool = false
 var _rotation_steps: int = 0
@@ -30,10 +42,26 @@ func set_active(value: bool) -> void:
 	active = value
 	if active:
 		_create_ghost()
+		selection_changed.emit(selected)
 	elif _ghost:
 		_ghost.queue_free()
 		_ghost = null
 	active_changed.emit(active)
+
+
+func _ready() -> void:
+	for path in OPTION_PATHS:
+		options.append(load(path) as BuildableData)
+	selected = options[0]
+
+
+func cycle_selection() -> void:
+	_selected_index = posmod(_selected_index + 1, options.size())
+	selected = options[_selected_index]
+	if _ghost:
+		_ghost.queue_free()
+		_create_ghost()
+	selection_changed.emit(selected)
 
 
 func rotate_selection(steps: int) -> void:

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="DefenseData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/DefenseData.gd" id="1_data"]
+[ext_resource type="PackedScene" path="res://scenes/buildables/Turret.tscn" id="2_scene"]
+[ext_resource type="Resource" path="res://data/ores/iron.tres" id="3_iron"]
+
+[resource]
+script = ExtResource("1_data")
+display_name = "Geschützturm"
+scene = ExtResource("2_scene")
+size = Vector3(1.4, 2.2, 1.4)
+max_health = 200
+blocks_path = true
+attack_range = 15.0
+damage = 10
+interval = 0.5
+knockback = 0.8
+max_ammo = 60
+ammo_per_load = 30
+ammo_ore = ExtResource("3_iron")
+unloaded_damage = 3
+unloaded_interval = 1.0

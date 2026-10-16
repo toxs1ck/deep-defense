@@ -27,6 +27,7 @@ const MOUSE_BUTTON_NAMES: Dictionary = {
 var _target: InteractableComponent = null
 var _carrying: bool = false
 var _build_mode: bool = false
+var _build_selection: String = ""
 ## Zuletzt angezeigter Betrag; -1 = noch keiner, dann ohne Aufleuchten.
 var _money: int = -1
 var _banner_tween: Tween = null
@@ -144,6 +145,11 @@ func set_downed(downed: bool, respawn_seconds: float) -> void:
 	_refresh_prompt()
 
 
+func set_build_selection(display_name: String) -> void:
+	_build_selection = display_name
+	_refresh_prompt()
+
+
 func set_build_mode(active: bool) -> void:
 	_build_mode = active
 	_refresh_prompt()
@@ -157,9 +163,9 @@ func set_carrying(carrying: bool) -> void:
 func _refresh_prompt() -> void:
 	_prompt_label.visible = (_target != null or _carrying or _build_mode) and _respawn_left <= 0.0
 	if _build_mode:
-		_prompt_label.text = "Baumodus · %s: platzieren · %s: entfernen · %s: drehen · %s: beenden" % [
-			_action_key_name(&"attack"), _action_key_name(&"aim"), _action_key_name(&"build_rotate_right"),
-			_action_key_name(&"build_mode")]
+		_prompt_label.text = "Baumodus: %s (%s: wechseln)\n%s: platzieren · %s: entfernen · %s: drehen · %s: beenden" % [
+			_build_selection, _action_key_name(&"build_cycle"), _action_key_name(&"attack"), _action_key_name(&"aim"),
+			_action_key_name(&"build_rotate_right"), _action_key_name(&"build_mode")]
 	elif _target:
 		_prompt_label.text = "%s: %s" % [_action_key_name(_target.action), _target.prompt_text]
 	elif _carrying:

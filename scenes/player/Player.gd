@@ -16,6 +16,8 @@ signal carrying_changed(is_carrying: bool)
 signal health_changed(current: int, maximum: int)
 ## Baumodus an bzw. aus.
 signal build_mode_changed(is_active: bool)
+## Im Baumodus ein anderes Bauelement gewählt.
+signal build_selection_changed(display_name: String)
 ## Gefallen bzw. wieder da; respawn_seconds ist die Wartezeit bis zum Respawn.
 signal downed_changed(is_downed: bool, respawn_seconds: float)
 
@@ -96,6 +98,7 @@ func _ready() -> void:
 	health.died.connect(_on_died)
 	_pickaxe.rotation_degrees.x = PICKAXE_REST_DEGREES
 	build.active_changed.connect(_on_build_mode_changed)
+	build.selection_changed.connect(func(selection: BuildableData) -> void: build_selection_changed.emit(selection.display_name))
 	if is_multiplayer_authority():
 		_camera.activate()
 
@@ -177,6 +180,8 @@ func _handle_build_input() -> void:
 		build.rotate_selection(-1)
 	if _just_pressed(&"build_rotate_right"):
 		build.rotate_selection(1)
+	if _just_pressed(&"build_cycle"):
+		build.cycle_selection()
 	if _just_pressed(&"attack"):
 		build.try_place()
 	elif _just_pressed(&"aim"):

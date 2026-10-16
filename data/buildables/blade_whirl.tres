@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="DefenseData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/DefenseData.gd" id="1_data"]
+[ext_resource type="PackedScene" path="res://scenes/buildables/BladeWhirl.tscn" id="2_scene"]
+
+[resource]
+script = ExtResource("1_data")
+display_name = "Klingenwirbel"
+scene = ExtResource("2_scene")
+size = Vector3(1.2, 1.2, 1.2)
+max_health = 150
+blocks_path = true
+attack_range = 1.9
+damage = 6
+interval = 0.4
+knockback = 2.0

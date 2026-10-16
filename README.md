@@ -36,7 +36,8 @@ Alle Aktionen aus der Steuerungstabelle im GDD sind in der Input Map angelegt (M
 `InputEventMouseMotion`), `jump`, `sprint`, `attack`, `aim`, `interact`, `build_mode`,
 `build_rotate_left/right`, `ability`, `ping`, `ready`, `show_info`, `menu`.
 
-Zusätzlich (nicht im GDD): `camera_switch_shoulder` – V / rechten Stick drücken wechselt die Kameraschulter.
+Zusätzlich (nicht im GDD): `camera_switch_shoulder` – V / rechten Stick drücken wechselt die Kameraschulter;
+`build_cycle` – C / Steuerkreuz rechts wechselt im Baumodus das Bauelement (bis es den Shop gibt).
 
 ## Fortschritt (Prototyp-Plan)
 
@@ -51,4 +52,5 @@ Zusätzlich (nicht im GDD): `camera_switch_shoulder` – V / rechten Stick drüc
 - [x] 9 – Gegner-Basis
 - [x] 10 – Spieler-Kampf
 - [x] 11 – Bausystem
-- [ ] 12 – Verteidigung
+- [x] 12 – Verteidigung
+- [ ] 13 – Wellen & Erzdieb

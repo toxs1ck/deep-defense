@@ -1,0 +1,132 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://scenes/buildables/Turret.gd" id="1_turret"]
+[ext_resource type="Script" path="res://components/HealthComponent.gd" id="2_health"]
+[ext_resource type="Script" path="res://components/InteractableComponent.gd" id="3_interact"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_body"]
+size = Vector3(1.2, 2.0, 1.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_base"]
+albedo_color = Color(0.38, 0.4, 0.44, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_base"]
+material = SubResource("StandardMaterial3D_base")
+top_radius = 0.45
+bottom_radius = 0.65
+height = 1.4
+radial_segments = 8
+rings = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_head"]
+albedo_color = Color(0.3, 0.32, 0.36, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_head"]
+material = SubResource("StandardMaterial3D_head")
+size = Vector3(0.7, 0.5, 0.8)
+
+[sub_resource type="BoxMesh" id="BoxMesh_barrel"]
+material = SubResource("StandardMaterial3D_head")
+size = Vector3(0.14, 0.14, 0.9)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tracer"]
+shading_mode = 0
+albedo_color = Color(1, 0.85, 0.3, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_tracer"]
+material = SubResource("StandardMaterial3D_tracer")
+size = Vector3(0.05, 0.05, 1)
+
+[sub_resource type="Gradient" id="Gradient_bar"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_bar"]
+gradient = SubResource("Gradient_bar")
+width = 32
+height = 4
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_load"]
+size = Vector3(1.6, 2.2, 1.6)
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_turret"]
+properties/0/path = NodePath(".:sync_position")
+properties/0/spawn = true
+properties/0/replication_mode = 0
+properties/1/path = NodePath(".:rotation_steps")
+properties/1/spawn = true
+properties/1/replication_mode = 0
+properties/2/path = NodePath(".:data_path")
+properties/2/spawn = true
+properties/2/replication_mode = 0
+properties/3/path = NodePath(".:ammo")
+properties/3/spawn = true
+properties/3/replication_mode = 2
+
+[node name="Turret" type="StaticBody3D"]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_turret")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("BoxShape3D_body")
+
+[node name="Mesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+mesh = SubResource("CylinderMesh_base")
+
+[node name="Head" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, 0)
+
+[node name="HeadMesh" type="MeshInstance3D" parent="Head"]
+mesh = SubResource("BoxMesh_head")
+
+[node name="Barrel" type="MeshInstance3D" parent="Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.7)
+mesh = SubResource("BoxMesh_barrel")
+
+[node name="Muzzle" type="Marker3D" parent="Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.2)
+
+[node name="Tracer" type="MeshInstance3D" parent="."]
+top_level = true
+mesh = SubResource("BoxMesh_tracer")
+
+[node name="AmmoBar" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.48, 2.4, 0)
+
+[node name="Background" type="Sprite3D" parent="AmmoBar"]
+modulate = Color(0.1, 0.1, 0.1, 0.8)
+centered = false
+pixel_size = 0.03
+billboard = 1
+no_depth_test = true
+texture = SubResource("GradientTexture2D_bar")
+
+[node name="Fill" type="Sprite3D" parent="AmmoBar"]
+sorting_offset = 0.1
+modulate = Color(1, 0.8, 0.25, 1)
+centered = false
+pixel_size = 0.03
+billboard = 1
+no_depth_test = true
+texture = SubResource("GradientTexture2D_bar")
+
+[node name="LoadInteractable" type="Area3D" parent="."]
+collision_layer = 32
+collision_mask = 0
+monitoring = false
+script = ExtResource("3_interact")
+prompt_text = "Munition laden"
+extra_range = 1.0
+requires_carrying = true
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LoadInteractable"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("BoxShape3D_load")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("2_health")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_turret")

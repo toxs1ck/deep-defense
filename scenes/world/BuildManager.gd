@@ -18,6 +18,8 @@ const FLOOR_PROBE_HEIGHT: float = 3.0
 const FLOOR_PROBE_DEPTH: float = 6.0
 ## Maximale Entfernung zwischen Spieler und Bauplatz (Host-Prüfung, mit Spielraum).
 const MAX_BUILD_DISTANCE: float = 12.0
+## Die Prüfform schwebt so weit über dem Boden, damit sie ihn nicht selbst berührt (wichtig für flache Fallen).
+const FLOOR_CLEARANCE: float = 0.03
 
 ## Container, unter den Bauelemente kommen; der BuildableSpawner repliziert ihn.
 @export var buildables: Node3D
@@ -51,7 +53,8 @@ func can_place(data: BuildableData, cell: Vector2i, rotation_steps: int, near: V
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape = shape
 	query.collision_mask = BLOCKING_MASK
-	query.transform = Transform3D(Basis(Vector3.UP, rotation_steps * PI / 2.0), center + Vector3.UP * data.size.y / 2.0)
+	var lift := Vector3.UP * (data.size.y / 2.0 + FLOOR_CLEARANCE)
+	query.transform = Transform3D(Basis(Vector3.UP, rotation_steps * PI / 2.0), center + lift)
 	result["ok"] = space.intersect_shape(query, 1).is_empty()
 	return result
 

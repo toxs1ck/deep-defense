@@ -219,6 +219,8 @@ func _check_path_blocked() -> void:
 	var nearest_distance := BLOCKER_SEARCH_RADIUS
 	for node in get_tree().get_nodes_in_group(Buildable.GROUP):
 		var buildable := node as Buildable
+		if not buildable.data.blocks_path:
+			continue
 		var distance := Vector2(buildable.global_position.x - path_end.x, buildable.global_position.z - path_end.z).length()
 		if distance <= nearest_distance:
 			nearest = buildable
@@ -319,13 +321,15 @@ func _set_target_player(player: Player) -> void:
 	_repath_timer = 0.0
 
 
-## Nur Host: von einem Spieler getroffen. Rückstoß, und der Gegner wendet sich dem Angreifer zu.
+## Nur Host: getroffen, von einem Spieler oder (attacker = null) von einer Verteidigung. Nur Spieler lenken die
+## Aggro um und unterbrechen das Ausholen; sonst würden Türme Gegner dauerhaft am Angreifen hindern.
 func take_hit(amount: int, knockback: Vector3, attacker: Player) -> void:
 	if not multiplayer.is_server() or _dying:
 		return
 	velocity += knockback
-	_set_target_player(attacker)
-	if _windup_left > 0.0:
+	if attacker:
+		_set_target_player(attacker)
+	if attacker and _windup_left > 0.0:
 		# Unterbrochen: kein Schlag, kurz taumeln.
 		_windup_left = 0.0
 		_attack_timer = data.stagger_time
