@@ -1,0 +1,308 @@
+[gd_scene load_steps=15 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/world/OreDeposit.tscn" id="1_deposit"]
+[ext_resource type="Resource" path="res://data/ores/coal.tres" id="2_coal"]
+[ext_resource type="Resource" path="res://data/ores/iron.tres" id="3_iron"]
+[ext_resource type="Resource" path="res://data/ores/gold.tres" id="4_gold"]
+[ext_resource type="Resource" path="res://data/ores/crystal.tres" id="5_crystal"]
+[ext_resource type="PackedScene" path="res://scenes/world/Elevator.tscn" id="6_elevator"]
+[ext_resource type="Script" path="res://scenes/world/NavigationBaker.gd" id="7_nav"]
+[ext_resource type="PackedScene" path="res://scenes/world/ShopTerminal.tscn" id="8_shop"]
+[ext_resource type="PackedScene" path="res://scenes/world/Stairs.tscn" id="9_stairs"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rock"]
+albedo_color = Color(0.24, 0.2, 0.17, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cave"]
+albedo_color = Color(0.36, 0.3, 0.25, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_accent"]
+albedo_color = Color(0.5, 0.38, 0.24, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shop_pad"]
+albedo_color = Color(0.85, 0.6, 0.2, 1)
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_mine"]
+geometry_parsed_geometry_type = 1
+geometry_collision_mask = 9
+geometry_source_geometry_mode = 1
+geometry_source_group_name = &"nav_source"
+cell_size = 0.25
+cell_height = 0.1
+agent_height = 1.0
+agent_radius = 0.5
+agent_max_climb = 0.2
+agent_max_slope = 45.0
+filter_baking_aabb = AABB(-60, -1, -62, 120, 6.5, 80)
+
+[node name="TestMine" type="Node3D" groups=["nav_source"]]
+
+[node name="Rock" type="CSGCombiner3D" parent="."]
+use_collision = true
+
+[node name="Mass" type="CSGBox3D" parent="Rock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, -22)
+size = Vector3(120, 8, 80)
+material = SubResource("StandardMaterial3D_rock")
+
+[node name="Hall" type="CSGBox3D" parent="Rock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.5, 0)
+operation = 2
+size = Vector3(24, 7, 24)
+material = SubResource("StandardMaterial3D_cave")
+
+[node name="WestShaft" type="CSGBox3D" parent="Rock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 2, 0)
+operation = 2
+size = Vector3(17, 4, 4)
+material = SubResource("StandardMaterial3D_cave")
+
+[node name="WestRoom" type="CSGBox3D" parent="Rock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -33, 2.5, 0)
+operation = 2
+size = Vector3(10, 5, 12)
+material = SubResource("StandardMaterial3D_cave")
+
+[node name="WestShaftDeep" type="CSGBox3D" parent="Rock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -44, 2, 0)
+operation = 2
+size = Vector3(13, 4, 4)
+material = SubResource("StandardMaterial3D_cave")
+
+[node name="WestNest" type="CSGBox3D" parent="Rock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -53, 2, 0)
+operation = 2
+size = Vector3(6, 4, 8)
+material = SubResource("StandardMaterial3D_cave")
+
+[node name="EastShaft" type="CSGBox3D" parent="Rock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 2, 0)
+operation = 2
+size = Vector3(17, 4, 4)
+material = SubResource("StandardMaterial3D_cave")
+
+[node name="EastRoom" type="CSGBox3D" parent="Rock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 33, 2.5, 0)
+operation = 2
+size = Vector3(10, 5, 12)
+material = SubResource("StandardMaterial3D_cave")
+
+[node name="EastShaftDeep" type="CSGBox3D" parent="Rock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44, 2, 0)
+operation = 2
+size = Vector3(13, 4, 4)
+material = SubResource("StandardMaterial3D_cave")
+
+[node name="EastNest" type="CSGBox3D" parent="Rock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 53, 2, 0)
+operation = 2
+size = Vector3(6, 4, 8)
+material = SubResource("StandardMaterial3D_cave")
+
+[node name="NorthShaft" type="CSGBox3D" parent="Rock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -20)
+operation = 2
+size = Vector3(4, 4, 17)
+material = SubResource("StandardMaterial3D_cave")
+
+[node name="NorthRoom" type="CSGBox3D" parent="Rock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -33)
+operation = 2
+size = Vector3(14, 5, 10)
+material = SubResource("StandardMaterial3D_cave")
+
+[node name="NorthShaftDeep" type="CSGBox3D" parent="Rock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -44)
+operation = 2
+size = Vector3(4, 4, 13)
+material = SubResource("StandardMaterial3D_cave")
+
+[node name="NorthNest" type="CSGBox3D" parent="Rock"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -53)
+operation = 2
+size = Vector3(8, 4, 6)
+material = SubResource("StandardMaterial3D_cave")
+
+[node name="Elevator" parent="." instance=ExtResource("6_elevator")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8)
+
+[node name="ShopTerminal" parent="." instance=ExtResource("8_shop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, 10)
+
+[node name="ShopPad1" type="CSGBox3D" parent="." groups=["shop_pads"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.02, 6)
+size = Vector3(1.4, 0.04, 1.4)
+material = SubResource("StandardMaterial3D_shop_pad")
+
+[node name="ShopPad2" type="CSGBox3D" parent="." groups=["shop_pads"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0.02, 6)
+size = Vector3(1.4, 0.04, 1.4)
+material = SubResource("StandardMaterial3D_shop_pad")
+
+[node name="ShopPad3" type="CSGBox3D" parent="." groups=["shop_pads"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.02, 6)
+size = Vector3(1.4, 0.04, 1.4)
+material = SubResource("StandardMaterial3D_shop_pad")
+
+[node name="ShopPad4" type="CSGBox3D" parent="." groups=["shop_pads"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.02, 6)
+size = Vector3(1.4, 0.04, 1.4)
+material = SubResource("StandardMaterial3D_shop_pad")
+
+[node name="Stairs" parent="." instance=ExtResource("9_stairs")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -4)
+
+[node name="Platform" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 1, -8.7)
+use_collision = true
+size = Vector3(3, 2, 3)
+material = SubResource("StandardMaterial3D_accent")
+
+[node name="HallCoal" parent="." instance=ExtResource("1_deposit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 6)
+ore = ExtResource("2_coal")
+
+[node name="WestCoalA" parent="." instance=ExtResource("1_deposit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -33, 0, -3)
+ore = ExtResource("2_coal")
+
+[node name="WestCoalB" parent="." instance=ExtResource("1_deposit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30.5, 0, 3)
+ore = ExtResource("2_coal")
+
+[node name="WestIron" parent="." instance=ExtResource("1_deposit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36, 0, 2.5)
+ore = ExtResource("3_iron")
+
+[node name="EastIron" parent="." instance=ExtResource("1_deposit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31, 0, -3)
+ore = ExtResource("3_iron")
+
+[node name="EastCoal" parent="." instance=ExtResource("1_deposit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.5, 0, 3.5)
+ore = ExtResource("2_coal")
+
+[node name="EastGold" parent="." instance=ExtResource("1_deposit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36, 0, 2.5)
+ore = ExtResource("4_gold")
+
+[node name="NorthGold" parent="." instance=ExtResource("1_deposit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, -33)
+ore = ExtResource("4_gold")
+
+[node name="NorthCrystalA" parent="." instance=ExtResource("1_deposit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, -35)
+ore = ExtResource("5_crystal")
+
+[node name="NorthCrystalB" parent="." instance=ExtResource("1_deposit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0, -30.5)
+ore = ExtResource("5_crystal")
+
+[node name="EnemySpawnWest" type="Marker3D" parent="." groups=["enemy_spawns"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -53.5, 0, 0)
+
+[node name="EnemySpawnEast" type="Marker3D" parent="." groups=["enemy_spawns"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 53.5, 0, 0)
+
+[node name="EnemySpawnNorth" type="Marker3D" parent="." groups=["enemy_spawns"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -53.5)
+
+[node name="HallLightA" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 6.2, -6)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 15.0
+
+[node name="HallLightB" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 6.2, -6)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 15.0
+
+[node name="HallLightC" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 6.2, 6)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 15.0
+
+[node name="HallLightD" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 6.2, 6)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 15.0
+
+[node name="WestShaftLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 3.4, 0)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 15.0
+
+[node name="WestRoomLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -33, 4.3, 0)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 15.0
+
+[node name="WestDeepLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -44, 3.4, 0)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 15.0
+
+[node name="WestNestLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -53, 3.2, 0)
+light_color = Color(1, 0.35, 0.25, 1)
+light_energy = 1.1
+omni_range = 9.0
+
+[node name="EastShaftLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 3.4, 0)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 15.0
+
+[node name="EastRoomLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 33, 4.3, 0)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 15.0
+
+[node name="EastDeepLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44, 3.4, 0)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 15.0
+
+[node name="EastNestLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 53, 3.2, 0)
+light_color = Color(1, 0.35, 0.25, 1)
+light_energy = 1.1
+omni_range = 9.0
+
+[node name="NorthShaftLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, -20)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 15.0
+
+[node name="NorthRoomLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.3, -33)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 15.0
+
+[node name="NorthDeepLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.4, -44)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 15.0
+
+[node name="NorthNestLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.2, -53)
+light_color = Color(1, 0.35, 0.25, 1)
+light_energy = 1.1
+omni_range = 9.0
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavigationMesh_mine")
+script = ExtResource("7_nav")

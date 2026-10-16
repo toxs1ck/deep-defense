@@ -1,5 +1,7 @@
 extends Node3D
-## Einstiegsszene: Startmenü, Testraum und Spielfiguren.
+## Einstiegsszene: Startmenü, Welt (Testmine; der alte Testraum lässt sich unter „World“ wieder einsetzen) und Spielfiguren.
+## Jede Welt braucht: Elevator, ShopTerminal, Stellplätze (Gruppe shop_pads), Gegner-Eingänge (enemy_spawns) und
+## eine NavigationRegion3D mit NavigationBaker.
 ## Der Host spawnt für jeden Peer eine Figur unter „Players“; der MultiplayerSpawner repliziert sie zu den Clients.
 ## Zum schnellen Testen per Kommandozeile: „-- --host“ oder „-- --join=127.0.0.1“.
 
@@ -20,8 +22,8 @@ const SPAWN_SPACING: float = 1.5
 @onready var _build_manager: BuildManager = $BuildManager
 @onready var _wave_spawner: WaveSpawner = $WaveSpawner
 @onready var _shop_manager: ShopManager = $ShopManager
-@onready var _reroll_station: InteractableComponent = $TestRoom/ShopTerminal/InteractableComponent
-@onready var _navigation: NavigationBaker = $TestRoom/NavigationRegion3D
+@onready var _reroll_station: InteractableComponent = $World/ShopTerminal/InteractableComponent
+@onready var _navigation: NavigationBaker = $World/NavigationRegion3D
 @onready var _network_status: Label = $UI/NetworkStatus
 
 

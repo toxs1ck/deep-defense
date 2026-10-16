@@ -9,6 +9,10 @@
 2. Im Projektmanager „Importieren“ wählen und `project.godot` in diesem Ordner öffnen.
 3. Mit F5 starten. Im Startmenü „Spiel hosten“ wählen (gilt auch für Solo); Esc beendet.
 
+Gespielt wird in der Testmine (`scenes/world/TestMine.tscn`): Halle mit Aufzug und Shop, drei Schächte nach
+Westen, Osten und Norden mit je einem Erzraum und einem Gegner-Eingang am Ende. Der alte Testraum
+(`TestRoom.tscn`) lässt sich in `Main.tscn` als Instanz für „World“ wieder einsetzen.
+
 ## Multiplayer auf einem PC testen
 
 1. Im Editor **Debug → Laufende Instanzen anpassen…** (*Customize Run Instances*) öffnen.
