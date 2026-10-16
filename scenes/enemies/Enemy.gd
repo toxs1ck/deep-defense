@@ -57,6 +57,7 @@ const MIN_FACING_SPEED: float = 0.6
 const AVOIDANCE_TIMEOUT: float = 0.2
 const HIT_FLASH_TIME: float = 0.18
 ## Aussehen beim Ausholen: breiter und flacher, Warnfarbe.
+## Faktor auf die Grundgröße beim Ausholen.
 const WINDUP_SCALE: Vector3 = Vector3(1.2, 0.85, 1.2)
 const WINDUP_COLOR: Color = Color(1.0, 0.55, 0.1)
 ## So lange schrumpft ein besiegter Gegner, bevor er verschwindet.
@@ -103,6 +104,8 @@ var _path_index: int = 0
 var _attack_timer: float = 0.0
 var _body_rest_position: Vector3 = Vector3.ZERO
 var _attack_tween: Tween = null
+## Grundgröße des Modells (EnemyData.model_scale); alle Animationen rechnen relativ dazu.
+var _base_scale: Vector3 = Vector3.ONE
 ## Nur Host: eigener Angriffspunkt als Winkel um den Aufzug und die von der Avoidance berechnete Geschwindigkeit.
 var _attack_angle: float = 0.0
 var _safe_velocity: Vector3 = Vector3.ZERO
@@ -137,7 +140,8 @@ func _ready() -> void:
 	_body.material_override = material
 	_body_rest_position = _body.position
 	health.setup(roundi(data.max_health * health_multiplier))
-	_model.scale = Vector3.ONE * data.model_scale
+	_base_scale = Vector3.ONE * data.model_scale
+	_model.scale = _base_scale
 	_update_loot_visual()
 	health.died.connect(_on_died)
 	global_position = sync_position
@@ -239,7 +243,9 @@ func _move_direction(delta: float) -> Vector3:
 	var next := _path[_path_index] if _path_index < _path.size() else target
 	var to_next := next - global_position
 	to_next.y = 0.0
-	return to_next.normalized() if to_next.length_squared() > 0.0001 else Vector3.ZERO
+	var direction := to_next.normalized() if to_next.length_squared() > 0.0001 else Vector3.ZERO
+	# Erzdiebe lenken um Spieler herum (bei anderen Gegnern ist der Radius 0).
+	return _avoid_players(direction)
 
 
 ## Wohin der Gegner gerade will: Spieler, versperrendes Bauelement oder sein Angriffspunkt am Aufzug.
@@ -410,7 +416,7 @@ func _play_windup(duration: float) -> void:
 	_attack_tween = create_tween().set_parallel()
 	_attack_tween.tween_property(_body, "position", _body_rest_position + Vector3.BACK * 0.25, duration) \
 			.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-	_attack_tween.tween_property(_model, "scale", WINDUP_SCALE, duration)
+	_attack_tween.tween_property(_model, "scale", _base_scale * WINDUP_SCALE, duration)
 	var material := _body.material_override as StandardMaterial3D
 	_attack_tween.tween_property(material, "albedo_color", WINDUP_COLOR, duration)
 
@@ -422,7 +428,7 @@ func _play_attack() -> void:
 	_kill_attack_tween()
 	var material := _body.material_override as StandardMaterial3D
 	material.albedo_color = data.color
-	_model.scale = Vector3.ONE
+	_model.scale = _base_scale
 	_attack_tween = create_tween()
 	_attack_tween.tween_property(_body, "position", _body_rest_position + Vector3.FORWARD * 0.45, 0.06)
 	_attack_tween.tween_property(_body, "position", _body_rest_position, 0.18)
@@ -435,7 +441,7 @@ func _play_windup_cancel() -> void:
 	material.albedo_color = data.color
 	_attack_tween = create_tween().set_parallel()
 	_attack_tween.tween_property(_body, "position", _body_rest_position, 0.15)
-	_attack_tween.tween_property(_model, "scale", Vector3.ONE, 0.15)
+	_attack_tween.tween_property(_model, "scale", _base_scale, 0.15)
 
 
 func _kill_attack_tween() -> void:
@@ -458,7 +464,7 @@ func _on_died() -> void:
 @rpc("authority", "call_local", "reliable")
 func _play_death() -> void:
 	_kill_attack_tween()
-	create_tween().tween_property(_model, "scale", Vector3(1.3, 0.05, 1.3), DEATH_TIME).set_ease(Tween.EASE_IN)
+	create_tween().tween_property(_model, "scale", _base_scale * Vector3(1.3, 0.05, 1.3), DEATH_TIME).set_ease(Tween.EASE_IN)
 
 
 ## Nur Host, Erzdieb: Beute fallen lassen (getroffen oder besiegt).
@@ -523,21 +529,21 @@ func _thief_step(delta: float) -> Vector3:
 		if _horizontal_distance_to(_flee_point) <= WAYPOINT_REACHED:
 			# Im Versteck: abwarten, bis die Fluchtzeit um ist.
 			return Vector3.ZERO
-		return _avoid_players(_move_direction(delta)) * data.speed
+		return _move_direction(delta) * data.speed
 	if not loot_path.is_empty():
 		if _horizontal_distance_to(_nearest_entrance()) <= ESCAPE_RANGE:
 			# Entkommen: Die Beute ist verloren.
 			_dying = true
 			queue_free()
 			return Vector3.ZERO
-		return _avoid_players(_move_direction(delta)) * data.speed * data.loot_speed_multiplier
+		return _move_direction(delta) * data.speed * data.loot_speed_multiplier
 	if _horizontal_distance_to(_target_chunk.global_position) <= STEAL_RANGE:
 		loot_path = _target_chunk.ore_path
 		_target_chunk.queue_free()
 		_target_chunk = null
 		_repath_timer = 0.0
 		return Vector3.ZERO
-	return _avoid_players(_move_direction(delta)) * data.speed
+	return _move_direction(delta) * data.speed
 
 
 ## Lenkt im Bogen um nahe Spieler: Der Anteil der Laufrichtung, der auf einen Spieler zeigt, wird durch die
