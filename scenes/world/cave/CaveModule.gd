@@ -1,7 +1,8 @@
 class_name CaveModule
 extends Node3D
 ## Baustein der Mine aus Kenneys Cave Kit (assets/kenney-cave-kit, CC0) in Originalgröße: Ein Tile ist 4 m groß,
-## also 2 × 2 Baufelder, die Decke liegt bei gut 4 m. Das Modul baut sich beim Laden aus einem ASCII-Layout auf
+## also 2 × 2 Baufelder. Über jedes Teil kommt eine senkrecht gespiegelte Kopie, so ist die Höhle 8 m hoch und der
+## gespiegelte Boden bildet die Decke. Das Modul baut sich beim Laden aus einem ASCII-Layout auf
 ## (Zeilen von Norden nach Süden, Spalten von Westen nach Osten, ein Zeichen pro Tile):
 ##   #  Fels                       .  Boden
 ##   s  Schlitz: schmaler Spalt (gut 1 m), nur für Spieler passierbar, nicht im Navigationsnetz
@@ -10,17 +11,23 @@ extends Node3D
 ##   b  Fass      x  Kisten           a  Amboss    r  Felsbrocken    L  zusätzliches Licht
 ## Alles außer # und s ist begehbarer Boden. Boden- oder Schlitz-Tiles am Rand sind Ausgänge (Marker unter
 ## „Exits“, −Z zeigt hinaus); daran setzt der Kartengenerator später Module aneinander.
-## Sichtbar sind die Kit-Teile (Boden, Wände, abgerundete Ecken, Eckstücke), die Kollision besteht aus einfachen
-## Boxen: eine Bodenplatte, eine Box hinter jeder Wandkante, drei entlang jeder abgerundeten Ecke, zwei pro Schlitz.
+## Sichtbar sind die Kit-Teile: Wände stehen im Fels-Tile hinter der Kante und zeigen ihre Felsseite zum Boden,
+## Ecken von Räumen werden abgerundet (template-corner, nur auf leeren Boden-Tiles), Eckpfeiler verdecken Fugen.
+## Die Kollision besteht aus einfachen Boxen: eine Bodenplatte, eine Box hinter jeder Wandkante, drei entlang jeder
+## abgerundeten Ecke, zwei pro Schlitz.
 
 const TILE_SIZE: float = 4.0
+## Höhe einer Kit-Ebene; die gespiegelte zweite Ebene endet bei der doppelten Höhe (Decke).
+const TIER_HEIGHT: float = 4.05
 ## Höhe der Wand-Kollision, bis zur Decke.
-const WALL_HEIGHT: float = 4.1
+const WALL_HEIGHT: float = 8.2
+## Die felsige Seite der Kit-Wände liegt etwas hinter der Tile-Kante; so weit beginnt auch die Kollision dahinter.
+const WALL_FACE_OFFSET: float = 0.15
 const WALL_THICKNESS: float = 1.5
 ## Halbe lichte Breite eines Schlitzes. Spieler (Radius 0,4 m) passen durch, Gegner (0,525 m) und das
 ## Navigationsnetz (Agentenradius 0,5 m) nicht.
 const SLIT_HALF_WIDTH: float = 0.48
-const LIGHT_HEIGHT: float = 3.0
+const LIGHT_HEIGHT: float = 5.5
 const LIGHT_COLOR: Color = Color(1, 0.82, 0.6)
 const NEST_LIGHT_COLOR: Color = Color(1, 0.35, 0.25)
 ## Deko aus dem Survival Kit ist im Kit winzig; so passt sie zur Spielfigur.
@@ -61,6 +68,7 @@ func _ready() -> void:
 	for j in _height:
 		for i in _width:
 			_build_tile(Vector2i(i, j))
+			_build_rock_floor(Vector2i(i, j))
 	for j in _height + 1:
 		for i in _width + 1:
 			_build_vertex(Vector2i(i, j))
@@ -141,12 +149,18 @@ func _build_tile(cell: Vector2i) -> void:
 		# Abgerundete Ecke: im Kit liegt der Fels bei +X/+Z, also zwischen Osten (0) und Süden (1).
 		var angle := -corner * PI / 2.0
 		_add_piece(KIT % "template-corner", center, angle)
-		var basis := Basis(Vector3.UP, angle)
+		var turn := Basis(Vector3.UP, angle)
 		for k in CORNER_ARC.size() - 1:
-			var a := basis * Vector3(CORNER_ARC[k].x, 0, CORNER_ARC[k].y)
-			var b := basis * Vector3(CORNER_ARC[k + 1].x, 0, CORNER_ARC[k + 1].y)
-			var outward := basis * Vector3(1, 0, 1)
+			var a := turn * Vector3(CORNER_ARC[k].x, 0, CORNER_ARC[k].y)
+			var b := turn * Vector3(CORNER_ARC[k + 1].x, 0, CORNER_ARC[k + 1].y)
+			var outward := turn * Vector3(1, 0, 1)
 			_add_wall_segment(center + a, center + b, outward)
+		# Wo die Rundung auf die geraden Wände der Nachbarn trifft, bleibt sonst ein Spalt.
+		var along_a := Vector3(DIRECTIONS[corner].x, 0, DIRECTIONS[corner].y)
+		var along_b := Vector3(DIRECTIONS[(corner + 1) % 4].x, 0, DIRECTIONS[(corner + 1) % 4].y)
+		var toward := Vector2(along_a.x + along_b.x, along_a.z + along_b.z)
+		for end: Vector3 in [along_a - along_b, along_b - along_a]:
+			_add_piece(KIT % "template-wall-corner", center + end * TILE_SIZE / 2.0, _quadrant_angle(toward))
 	else:
 		var piece := FLOOR_PIECES[posmod(cell.x * 31 + cell.y * 17, FLOOR_PIECES.size())] if c == "." else "template-floor"
 		_add_piece(KIT % piece, center, 0.0)
@@ -159,7 +173,8 @@ func _build_tile(cell: Vector2i) -> void:
 
 ## Richtung der abgerundeten Ecke (0 = Fels im Osten und Süden, dann im Uhrzeigersinn), oder −1.
 func _corner_direction(cell: Vector2i, walled: Array[int], slit: Array[int]) -> int:
-	if walled.size() != 2 or not slit.is_empty():
+	# Der Fels der Rundung reicht bis zur Tile-Mitte; Marker und Deko brauchen dort freien Boden.
+	if _at(cell) != "." or walled.size() != 2 or not slit.is_empty():
 		return -1
 	for d in 4:
 		var e := (d + 1) % 4
@@ -172,9 +187,22 @@ func _corner_direction(cell: Vector2i, walled: Array[int], slit: Array[int]) -> 
 func _build_wall(center: Vector3, d: int) -> void:
 	var dir := Vector3(DIRECTIONS[d].x, 0, DIRECTIONS[d].y)
 	var edge := center + dir * TILE_SIZE / 2.0
-	_add_piece(KIT % "template-wall", edge, _facing_angle(dir))
-	_add_box(edge + dir * WALL_THICKNESS / 2.0 + Vector3.UP * WALL_HEIGHT / 2.0, _facing_angle(dir),
+	# template-wall gehört in die Mitte des Fels-Tiles; seine Felsseite (−Z) zeigt zum Boden.
+	_add_piece(KIT % "template-wall", center + dir * TILE_SIZE, _facing_angle(-dir))
+	_add_box(edge + dir * (WALL_FACE_OFFSET + WALL_THICKNESS / 2.0) + Vector3.UP * WALL_HEIGHT / 2.0, _facing_angle(dir),
 			Vector3(TILE_SIZE, WALL_HEIGHT, WALL_THICKNESS))
+
+
+## Boden unter Fels-Tiles am Rand, damit zwischen Boden und Wandfuß keine Lücke klafft.
+func _build_rock_floor(cell: Vector2i) -> void:
+	if _at(cell) != "#":
+		return
+	for dz: int in [-1, 0, 1]:
+		for dx: int in [-1, 0, 1]:
+			var neighbor := cell + Vector2i(dx, dz)
+			if neighbor.x >= 0 and neighbor.x < _width and neighbor.y >= 0 and neighbor.y < _height and _at(neighbor) != "#":
+				_add_piece(KIT % "template-floor", _tile_center(cell), 0.0)
+				return
 
 
 ## Kante zu einem Schlitz: links und rechts der 2 m breiten Öffnung je eine halbe Wand. Die Kollision dort liefert
@@ -182,9 +210,8 @@ func _build_wall(center: Vector3, d: int) -> void:
 func _build_slit_edge(center: Vector3, d: int) -> void:
 	var dir := Vector3(DIRECTIONS[d].x, 0, DIRECTIONS[d].y)
 	var side := Vector3(-dir.z, 0, dir.x)
-	var edge := center + dir * TILE_SIZE / 2.0
 	for side_sign: float in [-1.0, 1.0]:
-		_add_piece(KIT % "template-wall-half", edge + side * 2.0 * side_sign, _facing_angle(dir))
+		_add_piece(KIT % "template-wall-half", center + dir * TILE_SIZE + side * 2.0 * side_sign, _facing_angle(-dir))
 
 
 ## Schlitz: das schmale Gang-Teil des Kits, ausgerichtet auf die offenen Nachbarn.
@@ -193,10 +220,10 @@ func _build_slit(cell: Vector2i, center: Vector3) -> void:
 			or _at(cell + Vector2i(0, -1)) == "s" or _at(cell + Vector2i(0, 1)) == "s"
 	var angle := PI / 2.0 if north_south else 0.0
 	_add_piece(KIT % "corridor", center, angle)
-	var basis := Basis(Vector3.UP, angle)
+	var turn := Basis(Vector3.UP, angle)
 	var side_width := TILE_SIZE / 2.0 - SLIT_HALF_WIDTH
 	for side_sign: float in [-1.0, 1.0]:
-		var offset := basis * Vector3(0, 0, side_sign * (SLIT_HALF_WIDTH + side_width / 2.0))
+		var offset := turn * Vector3(0, 0, side_sign * (SLIT_HALF_WIDTH + side_width / 2.0))
 		_add_box(center + offset + Vector3.UP * WALL_HEIGHT / 2.0, angle, Vector3(TILE_SIZE, WALL_HEIGHT, side_width))
 
 
@@ -317,12 +344,16 @@ func _add_wall_segment(a: Vector3, b: Vector3, outward: Vector3) -> void:
 			Vector3(along.length(), WALL_HEIGHT, WALL_THICKNESS))
 
 
-func _add_piece(path: String, at: Vector3, angle: float, scale_factor: float = 1.0) -> Node3D:
-	var piece := (load(path) as PackedScene).instantiate() as Node3D
-	piece.position = at
-	piece.rotation.y = angle
-	piece.scale = Vector3.ONE * scale_factor
-	return _add(piece, _kit, "Piece") as Node3D
+## Kit-Teil samt gespiegelter Kopie darüber (zweite Ebene bis zur Decke).
+func _add_piece(path: String, at: Vector3, angle: float) -> void:
+	var scene := load(path) as PackedScene
+	for upper: bool in [false, true]:
+		var piece := scene.instantiate() as Node3D
+		piece.position = at + (Vector3.UP * TIER_HEIGHT * 2.0 if upper else Vector3.ZERO)
+		piece.rotation.y = angle
+		# Negative Skalierung spiegelt; Godot dreht dabei die Flächenausrichtung mit, die Seiten bleiben sichtbar.
+		piece.scale = Vector3(1, -1, 1) if upper else Vector3.ONE
+		_add(piece, _kit, "Piece")
 
 
 ## Box-Kollision; angle dreht die lokale X-Achse der Box um die Hochachse.
@@ -340,7 +371,11 @@ func _add_box(at: Vector3, angle: float, size: Vector3) -> void:
 
 
 func _add_prop(name_in_kit: String, at: Vector3, angle: float, round_shape: bool, scale_factor: float = PROP_SCALE) -> void:
-	var prop := _add_piece(SURVIVAL % name_in_kit, at, angle, scale_factor)
+	var prop := (load(SURVIVAL % name_in_kit) as PackedScene).instantiate() as Node3D
+	prop.position = at
+	prop.rotation.y = angle
+	prop.scale = Vector3.ONE * scale_factor
+	_add(prop, _kit, "Prop")
 	var bounds := _bounds(prop)
 	if bounds.size == Vector3.ZERO:
 		return
@@ -391,8 +426,8 @@ func _add_light(at: Vector3, color: Color) -> void:
 	var light := OmniLight3D.new()
 	light.position = at + Vector3.UP * LIGHT_HEIGHT
 	light.light_color = color
-	light.light_energy = 1.2
-	light.omni_range = 10.0
+	light.light_energy = 1.4
+	light.omni_range = 13.0
 	_add(light, self, "Light")
 
 

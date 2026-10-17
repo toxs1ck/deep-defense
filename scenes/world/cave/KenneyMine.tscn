@@ -69,7 +69,7 @@ transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0, 0, -66)
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, -80)
 
 [node name="Ceiling" type="CSGBox3D" parent="." groups=["navigation_ignore"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.05, -28)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.1, -28)
 use_collision = true
 size = Vector3(184, 2, 128)
 material = SubResource("StandardMaterial3D_ceiling")

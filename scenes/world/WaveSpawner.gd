@@ -156,7 +156,8 @@ func _next_spawn_delay() -> float:
 
 ## Nur Host: Ein Gegner ist weg (besiegt oder entkommen). Zählt nur in der Kampfphase, nicht beim Aufräumen.
 func _on_enemy_gone(_node: Node) -> void:
-	if not multiplayer.is_server() or RunManager.phase != RunManager.Phase.COMBAT:
+	# Beim Beenden verlassen die Gegner den Baum nach dem Spawner; dann gibt es kein Multiplayer mehr.
+	if not is_inside_tree() or not multiplayer.is_server() or RunManager.phase != RunManager.Phase.COMBAT:
 		return
 	_resolved = mini(_total, _resolved + 1)
 	_sync_progress.rpc(_resolved, _total)

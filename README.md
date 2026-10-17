@@ -22,7 +22,8 @@ einsetzen.
 ### Höhlenmodule
 
 Grafik: Kenney-Packs unter `assets/` (CC0). Das Cave Kit wird in Originalgröße genutzt: Ein Tile ist 4 m, also
-2 × 2 Baufelder, die Decke liegt bei gut 4 m. Jedes Modul unter `scenes/world/cave/modules/` ist ein ASCII-Layout
+2 × 2 Baufelder. Über jedes Teil kommt eine senkrecht gespiegelte Kopie; so ist die Höhle 8 m hoch, der gespiegelte
+Boden bildet die Decke. Wände stehen im Fels-Tile hinter der Kante und zeigen ihre Felsseite zum Raum. Jedes Modul unter `scenes/world/cave/modules/` ist ein ASCII-Layout
 (Eigenschaft `layout`, im Inspector editierbar), aus dem `CaveModule.gd` beim Laden Boden, Wände, abgerundete Ecken,
 Schlitze, Marker, Shop, Aufzug, Deko und Licht aufbaut. Zeichen: `#` Fels, `.` Boden, `s` Schlitz (nur für Spieler),
 `o` Erzstelle, `N` Gegner-Eingang, `E` Aufzug, `T` Würfel-Station, `P` zwei Shop-Stellplätze, `b`/`x`/`a`/`r` Deko,
