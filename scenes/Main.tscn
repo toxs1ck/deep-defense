@@ -76,7 +76,7 @@ script = ExtResource("10_ore")
 deposits = NodePath("../Deposits")
 
 [node name="MenuCamera" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.857167, 0.515038, 0, -0.515038, 0.857167, 0, 5, 11)
+transform = Transform3D(1, 0, 0, 0, 0.939693, 0.34202, 0, -0.34202, 0.939693, 0, 3.2, 12)
 fov = 75.0
 
 [node name="UI" type="CanvasLayer" parent="."]

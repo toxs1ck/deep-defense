@@ -1,6 +1,8 @@
 class_name BuildManager
 extends Node
-## Raster und Platzierung der Bauelemente (GDD: 2-m-Zellen). can_place() läuft auf jedem Peer, damit die
+## Raster und Platzierung der Bauelemente (GDD: 2-m-Zellen). Die Zellgrenzen liegen auf geraden Metern, damit sie
+## mit den 4-m-Tiles der Höhle zusammenfallen (ein Tile = 2 × 2 Zellen). Jede Zelle trägt höchstens ein Bauelement.
+## can_place() läuft auf jedem Peer, damit die
 ## Vorschau sofort grün oder rot zeigt; platziert und entfernt wird nur auf dem Host, der dabei erneut prüft.
 ## Aufgebaut wird aus einer getragenen Blaupausen-Kiste, die dabei verbraucht wird; abgebaut wird ein Bauelement
 ## wieder zur Kiste, samt Zustand (Lebenspunkte, Munition), so lässt es sich versetzen. Nach jeder Änderung meldet layout_changed, dass die Navigation neu
@@ -14,8 +16,11 @@ signal crate_requested(buildable: BuildableData, at: Vector3, state: Dictionary,
 
 const GROUP: StringName = &"build_manager"
 const CELL_SIZE: float = 2.0
+const WORLD_LAYER: int = 1 << 0
 ## Was einen Platz belegt: Welt, Spieler, Gegner, Bauelemente, Erzbrocken.
-const BLOCKING_MASK: int = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4)
+const BLOCKING_MASK: int = WORLD_LAYER | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4)
+## Für Bauelemente, die in den Fels ragen dürfen (BuildableData.embeds_in_rock): Nur ihre Mitte muss frei sein.
+const EMBED_CENTER_SIZE: float = 0.3
 ## Etwas kleiner prüfen als das Bauelement, damit Nachbarn auf dem Raster sich nicht gegenseitig blockieren.
 const OVERLAP_SHRINK: float = 0.9
 ## Boden wird von so weit über dem Zielpunkt nach unten gesucht.
@@ -37,14 +42,29 @@ func _enter_tree() -> void:
 
 
 func world_to_cell(point: Vector3) -> Vector2i:
-	return Vector2i(roundi(point.x / CELL_SIZE), roundi(point.z / CELL_SIZE))
+	return Vector2i(floori(point.x / CELL_SIZE), floori(point.z / CELL_SIZE))
+
+
+func cell_center(cell: Vector2i, height: float) -> Vector3:
+	return Vector3((cell.x + 0.5) * CELL_SIZE, height, (cell.y + 0.5) * CELL_SIZE)
+
+
+func is_cell_occupied(cell: Vector2i) -> bool:
+	for node in buildables.get_children():
+		var other := node as Buildable
+		if other and not other.is_queued_for_deletion() and world_to_cell(other.global_position) == cell:
+			return true
+	return false
 
 
 ## Ergebnis: { "ok": bool, "position": Vector3 } mit Bodenhöhe an der Zelle.
 func can_place(data: BuildableData, cell: Vector2i, rotation_steps: int, near: Vector3) -> Dictionary:
 	var result := { "ok": false, "position": Vector3.ZERO }
 	var space := get_viewport().get_world_3d().direct_space_state
-	var center := Vector3(cell.x * CELL_SIZE, near.y, cell.y * CELL_SIZE)
+	var center := cell_center(cell, near.y)
+	# Eine Zelle, ein Bauelement – auch flache Fallen zählen, obwohl die Prüfform über ihnen schweben würde.
+	if is_cell_occupied(cell):
+		return result
 
 	var probe := PhysicsRayQueryParameters3D.create(center + Vector3.UP * FLOOR_PROBE_HEIGHT,
 			center + Vector3.DOWN * FLOOR_PROBE_DEPTH, 1 << 0)
@@ -59,10 +79,20 @@ func can_place(data: BuildableData, cell: Vector2i, rotation_steps: int, near: V
 	shape.size = data.size * OVERLAP_SHRINK
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape = shape
-	query.collision_mask = BLOCKING_MASK
+	query.collision_mask = BLOCKING_MASK & ~WORLD_LAYER if data.embeds_in_rock else BLOCKING_MASK
 	var lift := Vector3.UP * (data.size.y / 2.0 + FLOOR_CLEARANCE)
 	query.transform = Transform3D(Basis(Vector3.UP, rotation_steps * PI / 2.0), center + lift)
-	result["ok"] = space.intersect_shape(query, 1).is_empty()
+	if not space.intersect_shape(query, 1).is_empty():
+		return result
+	if data.embeds_in_rock:
+		# Darf in den Fels ragen (z. B. Mauern, um Gänge bis an die Wand zu schließen), aber nicht ganz darin stecken.
+		var core := BoxShape3D.new()
+		core.size = Vector3(EMBED_CENTER_SIZE, data.size.y * OVERLAP_SHRINK, EMBED_CENTER_SIZE)
+		query.shape = core
+		query.collision_mask = WORLD_LAYER
+		if not space.intersect_shape(query, 1).is_empty():
+			return result
+	result["ok"] = true
 	return result
 
 

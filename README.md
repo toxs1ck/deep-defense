@@ -12,23 +12,27 @@
    Erzstellen, Shop-Angebote (auch nach gleich vielen Rerolls) und Wellen. Der Seed steht im Esc-Menü.
 
 Gespielt wird in der Kenney-Mine (`scenes/world/cave/KenneyMine.tscn`), von Hand aus Höhlenmodulen zusammengesetzt:
-Aufzugshalle mit Shop in der Mitte, Gänge nach Westen, Osten und Norden mit je einem Erzraum, Erznischen und einem
-Gegner-Eingang am Ende. Erz gibt es nur in der Kampfphase: Zu ihrem Beginn brechen auf den Erzstellen (Marker in der
-Gruppe `ore_spawn_points`) neue Adern auf, am Ende stürzen sie ein. Was wo erscheint, steht in
-`data/run/ore_spawn.tres`. Die alte Testmine aus CSG (`TestMine.tscn`) und der Testraum (`TestRoom.tscn`) lassen sich
-in `Main.tscn` als Instanz für „World“ wieder einsetzen.
+Aufzugshalle mit Shop in der Mitte, 8 m breite Gänge nach Westen, Osten und Norden mit je einem Erzraum und einem
+Gegner-Eingang am Ende, im Süden ein Schlitz zu einer Erztasche, in die nur Spieler passen. Erz gibt es nur in der
+Kampfphase: Zu ihrem Beginn brechen auf den Erzstellen (Marker in der Gruppe `ore_spawn_points`) neue Adern auf, am
+Ende stürzen sie ein. Was wo erscheint, steht in `data/run/ore_spawn.tres`. Die alte Testmine aus CSG
+(`TestMine.tscn`) und der Testraum (`TestRoom.tscn`) lassen sich in `Main.tscn` als Instanz für „World“ wieder
+einsetzen.
 
 ### Höhlenmodule
 
-Grafik: Kenney-Packs unter `assets/` (CC0). Die Module unter `scenes/world/cave/modules/` bestehen aus Teilen des
-Cave Kits in doppelter Größe (Raster 8 m statt 4 m; schmale Gänge sind Engstellen, Räume 24 × 24 m, Halle 40 × 24 m).
-Die Modelle haben keine Kollision; jedes Modul hat unter „Collision“ einfache Formen (eine flache Box als Boden,
-Boxen entlang des vereinfachten Wandumrisses, grobe Formen für Deko), aus dem Kit-Umriss erzeugt und im Editor
-anpassbar. `CaveModule.gd` listet die Ausgänge (Marker unter „Exits“, −Z zeigt hinaus), an denen später der
-Kartengenerator Module aneinandersetzt. Vorhanden: ElevatorHall, OreRoom,
-OreRoomVariation, Corridor, CorridorCorner, CorridorJunction, CorridorCross, OreNiche (Sackgasse mit Erzstelle),
-EnemyNest (Sackgasse mit Gegner-Eingang). Die Decke ist in der Karte eine dunkle Platte auf 8,2 m, weil das Kit
-oben offen ist.
+Grafik: Kenney-Packs unter `assets/` (CC0). Das Cave Kit wird in Originalgröße genutzt: Ein Tile ist 4 m, also
+2 × 2 Baufelder, die Decke liegt bei gut 4 m. Jedes Modul unter `scenes/world/cave/modules/` ist ein ASCII-Layout
+(Eigenschaft `layout`, im Inspector editierbar), aus dem `CaveModule.gd` beim Laden Boden, Wände, abgerundete Ecken,
+Schlitze, Marker, Shop, Aufzug, Deko und Licht aufbaut. Zeichen: `#` Fels, `.` Boden, `s` Schlitz (nur für Spieler),
+`o` Erzstelle, `N` Gegner-Eingang, `E` Aufzug, `T` Würfel-Station, `P` zwei Shop-Stellplätze, `b`/`x`/`a`/`r` Deko,
+`L` Licht. Boden am Modulrand ist ein Ausgang (Marker unter „Exits“, −Z zeigt hinaus); die Ausgänge benachbarter
+Module müssen sich treffen. Die Kollision besteht aus einfachen Boxen (Bodenplatte, eine Box hinter jeder Wandkante,
+drei entlang jeder abgerundeten Ecke, zwei pro Schlitz). Vorhanden: ElevatorHall, Tunnel, OreRoom, OreRoomLarge,
+EnemyNest, SlitPocket. Das Kit ist oben offen; die Decke ist in der Karte eine dunkle Platte.
+
+Bauen: Die Baufelder liegen genau auf den Tile-Kanten. Pro Feld steht höchstens ein Bauelement (auch keine Mauer auf
+einer Falle); Mauern dürfen in den Fels ragen, solange ihre Mitte frei ist.
 
 ### Modelle
 

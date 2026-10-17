@@ -13,3 +13,5 @@ extends Resource
 @export var price: int = 20
 ## Ob das Bauelement den Weg versperrt (Mauer, Turm). Fallen tun das nicht und werden nie angegriffen.
 @export var blocks_path: bool = true
+## Darf in den Fels ragen (nur die Mitte muss frei sein), damit man Gänge bis an die Höhlenwand schließen kann.
+@export var embeds_in_rock: bool = false
