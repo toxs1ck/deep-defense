@@ -1,12 +1,15 @@
 class_name SpikeTrap
 extends Buildable
-## Stachelfalle: flach im Boden, versperrt nichts. Betreten Gegner sie, während sie gespannt ist, schießen die
-## Stacheln hoch und treffen alle Gegner darauf mit hohem Schaden – aber nur einmal. Danach bleiben die Stacheln
+## Stachelfalle: flach im Boden, versperrt nichts. Betritt ein Gegner sie, während sie gespannt ist, klickt sie
+## (Stacheln zucken ein Stück hoch) und schnappt nach DefenseData.trigger_delay zu: Alle Gegner, die dann darauf
+## stehen, bekommen hohen Schaden – aber nur einmal. Danach bleiben die Stacheln
 ## oben, bis ein Spieler sie neu spannt (R halten, DefenseData.reset_hold_seconds).
 ## Erkennung nur auf dem Host; ob sie gespannt ist, kommt per MultiplayerSynchronizer.
 
 const SPIKES_DOWN_Y: float = -0.35
 const SPIKES_UP_Y: float = 0.0
+## So weit zucken die Stacheln beim Klicken hoch (Warnung, dass die Falle gleich zuschnappt).
+const SPIKES_PRIMED_Y: float = -0.25
 
 ## Gespannt = bereit zum Auslösen. Vom Host gesetzt und verteilt.
 @export var armed: bool = true:
@@ -21,6 +24,8 @@ const SPIKES_UP_Y: float = 0.0
 
 var _defense: DefenseData
 var _spikes_tween: Tween = null
+## Nur Host: Restzeit bis zum Zuschnappen; < 0 = nicht ausgelöst.
+var _snap_left: float = -1.0
 
 
 func _ready() -> void:
@@ -32,19 +37,31 @@ func _ready() -> void:
 	_update_armed(false)
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if not multiplayer.is_server() or health.is_dead() or not armed:
 		return
+	var victims := _victims()
+	if _snap_left < 0.0:
+		if victims.is_empty():
+			return
+		_snap_left = _defense.trigger_delay
+		_play_primed.rpc()
+	_snap_left -= delta
+	if _snap_left > 0.0:
+		return
+	_snap_left = -1.0
+	for enemy in victims:
+		enemy.take_hit(_defense.damage, Vector3.ZERO, null, global_position)
+	armed = false
+
+
+func _victims() -> Array[Enemy]:
 	var victims: Array[Enemy] = []
 	for body in _trigger.get_overlapping_bodies():
 		var enemy := body as Enemy
 		if enemy and not enemy.health.is_dead():
 			victims.append(enemy)
-	if victims.is_empty():
-		return
-	for enemy in victims:
-		enemy.take_hit(_defense.damage, Vector3.ZERO, null, global_position)
-	armed = false
+	return victims
 
 
 func get_state() -> Dictionary:
@@ -56,6 +73,14 @@ func get_state() -> Dictionary:
 func apply_state(state: Dictionary) -> void:
 	super(state)
 	armed = state.get("armed", true)
+
+
+@rpc("authority", "call_local", "reliable")
+func _play_primed() -> void:
+	if _spikes_tween:
+		_spikes_tween.kill()
+	_spikes_tween = create_tween()
+	_spikes_tween.tween_property(_spikes, "position:y", SPIKES_PRIMED_Y, 0.08)
 
 
 ## Nur Host: R lange genug gehalten.

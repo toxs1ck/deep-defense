@@ -16,3 +16,4 @@ damage = 60
 interval = 1.0
 knockback = 0.0
 reset_hold_seconds = 3.0
+trigger_delay = 0.6

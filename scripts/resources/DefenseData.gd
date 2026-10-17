@@ -33,3 +33,5 @@ extends BuildableData
 @export_group("Einmal-Auslösung")
 ## > 0: löst nur einmal aus und muss dann so viele Sekunden mit R neu gespannt werden (Stachelfalle).
 @export var reset_hold_seconds: float = 0.0
+## Sekunden zwischen dem ersten Gegner auf der Falle und dem Zuschnappen, damit Nachrückende mit erwischt werden.
+@export var trigger_delay: float = 0.0
