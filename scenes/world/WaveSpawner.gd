@@ -119,7 +119,6 @@ func _plan_wave(round_number: int) -> void:
 	_show_preview.rpc(enemy_names, entrance_names)
 
 
-@rpc("authority", "call_local", "reliable")
 func _entrance_name(point: Node3D) -> String:
 	var label := String(point.name).trim_prefix(SPAWN_NAME_PREFIX)
 	if label.is_empty() and point.get_parent() != null:
@@ -127,6 +126,7 @@ func _entrance_name(point: Node3D) -> String:
 	return label
 
 
+@rpc("authority", "call_local", "reliable")
 func _show_preview(enemy_names: PackedStringArray, entrance_names: PackedStringArray) -> void:
 	preview_changed.emit(enemy_names, entrance_names)
 

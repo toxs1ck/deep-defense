@@ -77,7 +77,7 @@ func _fill_controls() -> void:
 		var gamepad: String
 		if row.has("actions"):
 			var actions: Array[StringName] = []
-			actions.assign(row["actions"])
+			actions.assign(row["actions"] as Array)
 			keyboard = InputNames.all(actions, false)
 			gamepad = InputNames.all(actions, true)
 		else:

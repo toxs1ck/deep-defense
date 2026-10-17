@@ -39,10 +39,10 @@ func _build_collision() -> void:
 	body.collision_layer = 1
 	body.collision_mask = 0
 	add_child(body)
-	var to_local := global_transform.affine_inverse()
+	var inverse := global_transform.affine_inverse()
 	for mesh_instance in _mesh_instances(kit):
 		# Skalierung in die Dreiecke übernehmen, die Form selbst bleibt unskaliert (verträgt die Physik besser).
-		var relative := to_local * mesh_instance.global_transform
+		var relative := inverse * mesh_instance.global_transform
 		var scale_basis := Basis.from_scale(relative.basis.get_scale())
 		var faces := mesh_instance.mesh.get_faces()
 		for i in faces.size():

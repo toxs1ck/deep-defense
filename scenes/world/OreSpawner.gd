@@ -109,7 +109,7 @@ func _spawn_deposits(round_number: int) -> void:
 		var point := points[i] as Node3D
 		if not is_instance_valid(point):
 			continue
-		var ore := _pick_ore(rng, data, clampf(_depths[point] + depth_bonus, 0.0, 1.0), round_number)
+		var ore := _pick_ore(rng, data, clampf(float(_depths[point]) + depth_bonus, 0.0, 1.0), round_number)
 		if ore == null:
 			continue
 		var deposit := DEPOSIT_SCENE.instantiate() as OreDeposit
