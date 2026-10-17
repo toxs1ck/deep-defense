@@ -66,6 +66,8 @@ const CHARACTER_SCALE: float = 2.6
 ## Der Import setzt keine Schleifen; diese Animationen laufen im Kreis.
 const LOOPING_ANIMATIONS: Array[StringName] = [&"idle", &"walk", &"sprint", &"fall", &"holding-both"]
 const ANIMATION_BLEND: float = 0.15
+## Die Sprint-Animation des Kits ist für unser Sprinttempo etwas zu hektisch.
+const SPRINT_ANIMATION_SPEED: float = 0.75
 ## Ab dieser Geschwindigkeit (m/s) läuft die Figur sichtbar; darüber hinaus (über walk_speed) sprintet sie.
 const WALK_ANIMATION_SPEED: float = 0.4
 ## Senkrechte Geschwindigkeit, ab der Sprung bzw. Fallen gezeigt wird.
@@ -484,7 +486,7 @@ func _update_animation(delta: float) -> void:
 		animation_name = &"walk"
 	elif carry.is_carrying():
 		animation_name = &"holding-both"
-	_play_animation(animation_name)
+	_play_animation(animation_name, SPRINT_ANIMATION_SPEED if animation_name == &"sprint" else 1.0)
 
 
 func _play_animation(animation_name: StringName, speed: float = 1.0) -> void:

@@ -10,6 +10,10 @@ extends Node3D
 
 ## Kantenlänge eines Rasterfelds in Metern.
 const CELL_SIZE: float = 8.0
+## Kleine Steine auf dem Kit-Boden bekommen keine Kollision, sonst bleiben Gegner daran hängen: Dreiecke des Kit-Teils,
+## die ganz unter dieser Höhe liegen und nicht zum flachen Boden gehören, fallen weg (gilt nicht für Deko).
+const FLOOR_DETAIL_HEIGHT: float = 0.7
+const FLOOR_HEIGHT: float = 0.05
 
 ## Größe in Rasterfeldern (für den Generator).
 @export var footprint: Vector2i = Vector2i.ONE
@@ -40,6 +44,7 @@ func _build_collision() -> void:
 	body.collision_mask = 0
 	add_child(body)
 	var inverse := global_transform.affine_inverse()
+	var piece := kit.get_node_or_null(^"Model")
 	for mesh_instance in ModelTint.mesh_instances(kit):
 		# Skalierung in die Dreiecke übernehmen, die Form selbst bleibt unskaliert (verträgt die Physik besser).
 		var relative := inverse * mesh_instance.global_transform
@@ -47,6 +52,8 @@ func _build_collision() -> void:
 		var faces := mesh_instance.mesh.get_faces()
 		for i in faces.size():
 			faces[i] = scale_basis * faces[i]
+		if piece and (piece == mesh_instance or piece.is_ancestor_of(mesh_instance)):
+			faces = _without_floor_detail(faces, relative.origin.y)
 		var shape := ConcavePolygonShape3D.new()
 		shape.set_faces(faces)
 		shape.backface_collision = true
@@ -55,3 +62,20 @@ func _build_collision() -> void:
 		collision.transform = Transform3D(relative.basis.orthonormalized(), relative.origin)
 		body.add_child(collision)
 
+
+## Entfernt Dreiecke, die komplett knapp über dem Boden liegen, außer dem flachen Boden selbst.
+## Die Flächen sind schon skaliert, aber noch nicht gedreht; Drehungen der Kit-Teile gehen nur um die Hochachse.
+func _without_floor_detail(faces: PackedVector3Array, base_height: float) -> PackedVector3Array:
+	var kept := PackedVector3Array()
+	for i in range(0, faces.size() - 2, 3):
+		var a := faces[i]
+		var b := faces[i + 1]
+		var c := faces[i + 2]
+		var top := maxf(a.y, maxf(b.y, c.y)) + base_height
+		var flat_floor := top < FLOOR_HEIGHT
+		if top < FLOOR_DETAIL_HEIGHT and not flat_floor:
+			continue
+		kept.append(a)
+		kept.append(b)
+		kept.append(c)
+	return kept
