@@ -1,25 +1,6 @@
-[gd_resource type="Resource" script_class="PlayerData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="PlayerData" format=3 uid="uid://dvjo2bw4b8sqk"]
 
-[ext_resource type="Script" path="res://scripts/resources/PlayerData.gd" id="1_data"]
+[ext_resource type="Script" uid="uid://crnpj0vfvduwt" path="res://scripts/resources/PlayerData.gd" id="1_data"]
 
 [resource]
 script = ExtResource("1_data")
-walk_speed = 5.0
-sprint_speed = 7.5
-jump_height = 1.0
-coyote_time = 0.12
-jump_buffer_time = 0.12
-gravity_scale = 1.5
-fall_gravity_multiplier = 1.3
-acceleration = 60.0
-deceleration = 80.0
-air_acceleration = 30.0
-turn_speed = 20.0
-interaction_range = 1.25
-swing_rate = 1.5
-attack_damage = 15
-attack_range = 1.8
-attack_knockback = 6.0
-max_health = 100
-respawn_time = 10.0
-throw_speed = 8.0
