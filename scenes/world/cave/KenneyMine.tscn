@@ -1,0 +1,101 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scenes/world/NavigationBaker.gd" id="1_nav"]
+[ext_resource type="PackedScene" path="res://scenes/world/cave/modules/ElevatorHall.tscn" id="m2_elevatorhall"]
+[ext_resource type="PackedScene" path="res://scenes/world/cave/modules/Corridor.tscn" id="m3_corridor"]
+[ext_resource type="PackedScene" path="res://scenes/world/cave/modules/CorridorJunction.tscn" id="m4_corridorjunction"]
+[ext_resource type="PackedScene" path="res://scenes/world/cave/modules/OreRoom.tscn" id="m5_oreroom"]
+[ext_resource type="PackedScene" path="res://scenes/world/cave/modules/OreRoomVariation.tscn" id="m6_oreroomvariation"]
+[ext_resource type="PackedScene" path="res://scenes/world/cave/modules/OreNiche.tscn" id="m7_oreniche"]
+[ext_resource type="PackedScene" path="res://scenes/world/cave/modules/EnemyNest.tscn" id="m8_enemynest"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ceiling"]
+albedo_color = Color(0.12, 0.1, 0.09, 1)
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_mine"]
+geometry_parsed_geometry_type = 1
+geometry_collision_mask = 9
+geometry_source_geometry_mode = 1
+geometry_source_group_name = &"nav_source"
+cell_size = 0.25
+cell_height = 0.1
+agent_height = 1.0
+agent_radius = 0.5
+agent_max_climb = 0.2
+agent_max_slope = 45.0
+filter_baking_aabb = AABB(-72, -1, -64, 144, 7.5, 88)
+
+[node name="KenneyMine" type="Node3D" groups=["nav_source"]]
+
+[node name="ElevatorHall" parent="." instance=ExtResource("m2_elevatorhall")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="HallNiche" parent="." instance=ExtResource("m7_oreniche")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0, 0, 16)
+
+[node name="WestCorridor" parent="." instance=ExtResource("m3_corridor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24, 0, 0)
+
+[node name="WestRoom" parent="." instance=ExtResource("m5_oreroom")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 0, 0)
+
+[node name="WestNicheNorth" parent="." instance=ExtResource("m7_oreniche")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -40, 0, -16)
+
+[node name="WestNicheSouth" parent="." instance=ExtResource("m7_oreniche")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -40, 0, 16)
+
+[node name="WestCorridorDeep" parent="." instance=ExtResource("m3_corridor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -56, 0, 0)
+
+[node name="NestWest" parent="." instance=ExtResource("m8_enemynest")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -64, 0, 0)
+
+[node name="EastJunction" parent="." instance=ExtResource("m4_corridorjunction")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 0, 0)
+
+[node name="EastJunctionNiche" parent="." instance=ExtResource("m7_oreniche")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 24, 0, -8)
+
+[node name="EastRoom" parent="." instance=ExtResource("m6_oreroomvariation")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 0, 0)
+
+[node name="EastNicheNorth" parent="." instance=ExtResource("m7_oreniche")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 40, 0, -16)
+
+[node name="EastNicheSouth" parent="." instance=ExtResource("m7_oreniche")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 40, 0, 16)
+
+[node name="EastCorridorDeep" parent="." instance=ExtResource("m3_corridor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, 0, 0)
+
+[node name="NestEast" parent="." instance=ExtResource("m8_enemynest")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 64, 0, 0)
+
+[node name="NorthCorridor" parent="." instance=ExtResource("m3_corridor")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0, 0, -16)
+
+[node name="NorthRoom" parent="." instance=ExtResource("m5_oreroom")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -32)
+
+[node name="NorthNicheWest" parent="." instance=ExtResource("m7_oreniche")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 0, -32)
+
+[node name="NorthNicheEast" parent="." instance=ExtResource("m7_oreniche")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 16, 0, -32)
+
+[node name="NorthCorridorDeep" parent="." instance=ExtResource("m3_corridor")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0, 0, -48)
+
+[node name="NestNorth" parent="." instance=ExtResource("m8_enemynest")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, -56)
+
+[node name="Ceiling" type="CSGBox3D" parent="." groups=["navigation_ignore"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.2, -20)
+use_collision = true
+size = Vector3(150, 2, 100)
+material = SubResource("StandardMaterial3D_ceiling")
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavigationMesh_mine")
+script = ExtResource("1_nav")

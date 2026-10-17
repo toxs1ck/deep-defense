@@ -21,6 +21,8 @@ const ENEMY_SCENE: PackedScene = preload("res://scenes/enemies/Enemy.tscn")
 const SPAWN_GROUP: StringName = &"enemy_spawns"
 ## Namenspräfix der Eingangs-Marker; der Rest des Namens erscheint in der Vorschau (z. B. „EnemySpawnWest“ → „West“).
 const SPAWN_NAME_PREFIX: String = "EnemySpawn"
+## Heißt der Marker nur „EnemySpawn“ (wie im Höhlenmodul EnemyNest), kommt der Name vom Modul („NestWest“ → „West“).
+const NEST_NAME_PREFIX: String = "Nest"
 ## Zufälliger Versatz um den Eingang, damit Gegner nicht exakt aufeinander erscheinen.
 const SPAWN_JITTER: float = 1.0
 
@@ -113,11 +115,18 @@ func _plan_wave(round_number: int) -> void:
 		enemy_names.append(enemy_data.display_name)
 	var entrance_names := PackedStringArray()
 	for point in _entrances:
-		entrance_names.append(String(point.name).trim_prefix(SPAWN_NAME_PREFIX))
+		entrance_names.append(_entrance_name(point))
 	_show_preview.rpc(enemy_names, entrance_names)
 
 
 @rpc("authority", "call_local", "reliable")
+func _entrance_name(point: Node3D) -> String:
+	var label := String(point.name).trim_prefix(SPAWN_NAME_PREFIX)
+	if label.is_empty() and point.get_parent() != null:
+		label = String(point.get_parent().name).trim_prefix(NEST_NAME_PREFIX)
+	return label
+
+
 func _show_preview(enemy_names: PackedStringArray, entrance_names: PackedStringArray) -> void:
 	preview_changed.emit(enemy_names, entrance_names)
 

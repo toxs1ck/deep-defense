@@ -1,0 +1,92 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scenes/world/cave/CaveModule.gd" id="1_module"]
+
+[ext_resource type="PackedScene" path="res://assets/kenney-cave-kit/GLB format/room-wide.glb" id="2_kit"]
+
+[ext_resource type="PackedScene" path="res://scenes/world/Elevator.tscn" id="3_elevator"]
+
+[ext_resource type="PackedScene" path="res://scenes/world/ShopTerminal.tscn" id="4_shop"]
+
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shop_pad"]
+albedo_color = Color(0.85, 0.6, 0.2, 1)
+
+[node name="ElevatorHall" type="Node3D"]
+script = ExtResource("1_module")
+footprint = Vector2i(5, 3)
+
+[node name="Kit" type="Node3D" parent="."]
+
+[node name="Model" parent="Kit" instance=ExtResource("2_kit")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
+
+[node name="Exits" type="Node3D" parent="."]
+
+[node name="ExitNegX" type="Marker3D" parent="Exits"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -20, 0, 0)
+
+[node name="ExitPosX" type="Marker3D" parent="Exits"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 20, 0, 0)
+
+[node name="ExitNegZ" type="Marker3D" parent="Exits"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -12)
+
+[node name="ExitPosZ" type="Marker3D" parent="Exits"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 12)
+
+[node name="OreSpot1" type="Marker3D" parent="." groups=["ore_spawn_points"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, -6)
+
+[node name="OreSpot2" type="Marker3D" parent="." groups=["ore_spawn_points"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 6)
+
+[node name="Light1" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 6, -4)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 16
+
+[node name="Light2" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 6, -4)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 16
+
+[node name="Light3" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 6, 5)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 16
+
+[node name="Light4" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 5)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.4
+omni_range = 16
+
+[node name="Elevator" parent="." instance=ExtResource("3_elevator")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
+
+[node name="ShopTerminal" parent="." instance=ExtResource("4_shop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 6)
+
+[node name="ShopPad1" type="CSGBox3D" parent="." groups=["shop_pads"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0.02, 6)
+size = Vector3(1.4, 0.04, 1.4)
+material = SubResource("StandardMaterial3D_shop_pad")
+
+[node name="ShopPad2" type="CSGBox3D" parent="." groups=["shop_pads"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0.02, 6)
+size = Vector3(1.4, 0.04, 1.4)
+material = SubResource("StandardMaterial3D_shop_pad")
+
+[node name="ShopPad3" type="CSGBox3D" parent="." groups=["shop_pads"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.02, 6)
+size = Vector3(1.4, 0.04, 1.4)
+material = SubResource("StandardMaterial3D_shop_pad")
+
+[node name="ShopPad4" type="CSGBox3D" parent="." groups=["shop_pads"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.02, 6)
+size = Vector3(1.4, 0.04, 1.4)
+material = SubResource("StandardMaterial3D_shop_pad")

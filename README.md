@@ -11,11 +11,22 @@
    Optional einen Seed eingeben (Zahl oder Text, auch per `--seed=…`): Mit demselben Seed kommen dieselben
    Erzstellen, Shop-Angebote (auch nach gleich vielen Rerolls) und Wellen. Der Seed steht im Esc-Menü.
 
-Gespielt wird in der Testmine (`scenes/world/TestMine.tscn`): Halle mit Aufzug und Shop, drei Schächte nach
-Westen, Osten und Norden mit je einem Erzraum und einem Gegner-Eingang am Ende. Erz gibt es nur in der Kampfphase:
-Zu ihrem Beginn brechen auf den Erzstellen (Marker in der Gruppe `ore_spawn_points`) neue Adern auf, am Ende stürzen
-sie ein. Was wo erscheint, steht in `data/run/ore_spawn.tres`. Der alte Testraum
-(`TestRoom.tscn`) lässt sich in `Main.tscn` als Instanz für „World“ wieder einsetzen.
+Gespielt wird in der Kenney-Mine (`scenes/world/cave/KenneyMine.tscn`), von Hand aus Höhlenmodulen zusammengesetzt:
+Aufzugshalle mit Shop in der Mitte, Gänge nach Westen, Osten und Norden mit je einem Erzraum, Erznischen und einem
+Gegner-Eingang am Ende. Erz gibt es nur in der Kampfphase: Zu ihrem Beginn brechen auf den Erzstellen (Marker in der
+Gruppe `ore_spawn_points`) neue Adern auf, am Ende stürzen sie ein. Was wo erscheint, steht in
+`data/run/ore_spawn.tres`. Die alte Testmine aus CSG (`TestMine.tscn`) und der Testraum (`TestRoom.tscn`) lassen sich
+in `Main.tscn` als Instanz für „World“ wieder einsetzen.
+
+### Höhlenmodule
+
+Grafik: Kenney-Packs unter `assets/` (CC0). Die Module unter `scenes/world/cave/modules/` bestehen aus Teilen des
+Cave Kits in doppelter Größe (Raster 8 m statt 4 m; schmale Gänge sind Engstellen, Räume 24 × 24 m, Halle 40 × 24 m).
+`CaveModule.gd` erzeugt beim Laden die Kollision aus den Meshes und listet die Ausgänge (Marker unter „Exits“,
+−Z zeigt hinaus), an denen später der Kartengenerator Module aneinandersetzt. Vorhanden: ElevatorHall, OreRoom,
+OreRoomVariation, Corridor, CorridorCorner, CorridorJunction, CorridorCross, OreNiche (Sackgasse mit Erzstelle),
+EnemyNest (Sackgasse mit Gegner-Eingang). Die Decke ist in der Karte eine dunkle Platte auf 8,2 m, weil das Kit
+oben offen ist.
 
 ## Multiplayer auf einem PC testen
 

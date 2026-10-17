@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/world/cave/CaveModule.gd" id="1_module"]
+
+[ext_resource type="PackedScene" path="res://assets/kenney-cave-kit/GLB format/corridor.glb" id="2_kit"]
+
+[node name="Corridor" type="Node3D"]
+script = ExtResource("1_module")
+footprint = Vector2i(1, 1)
+
+[node name="Kit" type="Node3D" parent="."]
+
+[node name="Model" parent="Kit" instance=ExtResource("2_kit")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
+
+[node name="Exits" type="Node3D" parent="."]
+
+[node name="ExitNegX" type="Marker3D" parent="Exits"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -4, 0, 0)
+
+[node name="ExitPosX" type="Marker3D" parent="Exits"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 4, 0, 0)
+
+[node name="Light1" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, 0)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1
+omni_range = 10

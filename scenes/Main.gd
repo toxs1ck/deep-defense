@@ -24,7 +24,8 @@ const SPAWN_SPACING: float = 1.5
 @onready var _shop_manager: ShopManager = $ShopManager
 @onready var _ore_spawner: OreSpawner = $OreSpawner
 @onready var _deposits: Node3D = $Deposits
-@onready var _reroll_station: InteractableComponent = $World/ShopTerminal/InteractableComponent
+## Die Würfel-Station steckt je nach Karte in einem Modul (z. B. ElevatorHall), daher per Name gesucht.
+@onready var _reroll_station: InteractableComponent = $World.find_child("ShopTerminal", true, false).get_node(^"InteractableComponent") as InteractableComponent
 @onready var _navigation: NavigationBaker = $World/NavigationRegion3D
 @onready var _network_status: Label = $UI/NetworkStatus
 
