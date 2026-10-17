@@ -13,6 +13,7 @@ signal quit_requested
 @onready var _quit_button: Button = %QuitButton
 @onready var _trait_select: OptionButton = %TraitSelect
 @onready var _trait_description: Label = %TraitDescription
+@onready var _seed_edit: LineEdit = %SeedEdit
 
 ## Wählbare Merkmale; zum Start sind laut GDD die Start-Knoten freigeschaltet (Prototyp: Hauer, Raufbold).
 const TRAIT_PATHS: Array[String] = ["res://data/traits/miner.tres", "res://data/traits/brawler.tres"]
@@ -20,6 +21,10 @@ const TRAIT_PATHS: Array[String] = ["res://data/traits/miner.tres", "res://data/
 
 func _ready() -> void:
 	_host_button.pressed.connect(func() -> void: host_requested.emit())
+	# Der Seed gilt nur beim Hosten; wer beitritt, spielt den Seed des Hosts.
+	_seed_edit.text = GameState.requested_seed_text
+	_seed_edit.text_changed.connect(func(text: String) -> void: GameState.requested_seed_text = text)
+	_seed_edit.text_submitted.connect(func(_text: String) -> void: host_requested.emit())
 	_join_button.pressed.connect(_request_join)
 	_address_edit.text_submitted.connect(func(_text: String) -> void: _request_join())
 	_quit_button.pressed.connect(func() -> void: quit_requested.emit())

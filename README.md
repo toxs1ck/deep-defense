@@ -8,6 +8,8 @@
 1. [Godot 4.7](https://godotengine.org/download) (Standard-Version, kein .NET) installieren.
 2. Im Projektmanager „Importieren“ wählen und `project.godot` in diesem Ordner öffnen.
 3. Mit F5 starten. Im Startmenü „Spiel hosten“ wählen (gilt auch für Solo); Esc beendet.
+   Optional einen Seed eingeben (Zahl oder Text, auch per `--seed=…`): Mit demselben Seed kommen dieselben
+   Erzstellen, Shop-Angebote (auch nach gleich vielen Rerolls) und Wellen. Der Seed steht im Esc-Menü.
 
 Gespielt wird in der Testmine (`scenes/world/TestMine.tscn`): Halle mit Aufzug und Shop, drei Schächte nach
 Westen, Osten und Norden mit je einem Erzraum und einem Gegner-Eingang am Ende. Erz gibt es nur in der Kampfphase:

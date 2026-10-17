@@ -4,7 +4,7 @@ extends Node
 ## Adern auf, am Ende stürzen sie wieder ein: Die anrückenden Gegner graben sich durch den Fels und legen dabei Erz
 ## frei. So muss in der Kampfphase verteidigt und geschürft werden.
 ## Welche Erzart wohin kommt, hängt von der Tiefe ab: der Weglänge zum Aufzug übers Navigationsnetz, gemessen einmal
-## nach dem ersten Backen des Netzes (dann stehen noch keine Bauteile). Zufall über GameState.rng.
+## nach dem ersten Backen des Netzes (dann stehen noch keine Bauteile). Zufall aus dem Seed-Strom „ore“ der Schicht: Gleicher Seed, gleiche Erzstellen.
 
 ## Auf allen Peers: kurze Ansage für das HUD (Adern brechen auf, werden instabil, Sonderschicht …).
 signal announced(text: String)
@@ -83,7 +83,7 @@ func _spawn_deposits(round_number: int) -> void:
 	var data := RunManager.data.ore_spawn
 	if data == null or _depths.is_empty():
 		return
-	var rng := GameState.rng
+	var rng := GameState.stream_rng(&"ore", round_number)
 	var occupancy := minf(data.occupancy_max, data.occupancy_start + data.occupancy_per_round * (round_number - 1))
 	var depth_bonus := 0.0
 	var message := "Neue Adern brechen auf!"
@@ -109,7 +109,7 @@ func _spawn_deposits(round_number: int) -> void:
 		var point := points[i] as Node3D
 		if not is_instance_valid(point):
 			continue
-		var ore := _pick_ore(data, clampf(_depths[point] + depth_bonus, 0.0, 1.0), round_number)
+		var ore := _pick_ore(rng, data, clampf(_depths[point] + depth_bonus, 0.0, 1.0), round_number)
 		if ore == null:
 			continue
 		var deposit := DEPOSIT_SCENE.instantiate() as OreDeposit
@@ -123,7 +123,7 @@ func _spawn_deposits(round_number: int) -> void:
 
 
 ## Gewichteter Zufall unter den Erzarten, die für diese Tiefe und Schicht erlaubt sind.
-func _pick_ore(data: OreSpawnData, depth: float, round_number: int) -> OreData:
+func _pick_ore(rng: RandomNumberGenerator, data: OreSpawnData, depth: float, round_number: int) -> OreData:
 	var candidates: Array[OreSpawnRule] = []
 	var total := 0.0
 	for rule in data.rules:
@@ -132,7 +132,7 @@ func _pick_ore(data: OreSpawnData, depth: float, round_number: int) -> OreData:
 			total += rule.weight
 	if candidates.is_empty():
 		return null
-	var roll := GameState.rng.randf() * total
+	var roll := rng.randf() * total
 	for rule in candidates:
 		roll -= rule.weight
 		if roll <= 0.0:

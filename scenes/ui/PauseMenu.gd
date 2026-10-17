@@ -11,6 +11,8 @@ signal quit_requested
 @onready var _leave_button: Button = %LeaveButton
 @onready var _quit_button: Button = %QuitButton
 @onready var _controls_grid: GridContainer = %ControlsGrid
+@onready var _seed_label: Label = %SeedLabel
+@onready var _copy_seed_button: Button = %CopySeedButton
 
 ## Zeilen der Steuerungsübersicht: Beschreibung und die Aktionen dazu. Ohne „actions“ gelten feste Texte
 ## (Maus und Sticks laufen nicht über die Input Map).
@@ -39,10 +41,12 @@ func _ready() -> void:
 	_leave_button.pressed.connect(func() -> void: leave_requested.emit())
 	_quit_button.pressed.connect(func() -> void: quit_requested.emit())
 	_fill_controls()
+	_copy_seed_button.pressed.connect(func() -> void: DisplayServer.clipboard_set(str(GameState.run_seed)))
 
 
 func open() -> void:
 	visible = true
+	_seed_label.text = "Seed: %d" % GameState.run_seed
 	GameState.input_blocked = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_resume_button.grab_focus()

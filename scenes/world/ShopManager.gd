@@ -4,6 +4,7 @@ extends Node
 ## Kisten auf den Stellplätzen (Gruppe „shop_pads“). Gekauft wird an der Kiste selbst (E halten, BlueprintCrate),
 ## nicht gekaufte Angebote verschwinden, wenn die Kampfphase beginnt. An der Würfel-Station ersetzt E halten alle
 ## übrigen Angebote, für steigende Kosten (GDD: 20 $, jedes weitere Mal +10 $). Entscheidungen trifft der Host.
+## Zufall aus dem Seed-Strom „shop“ der Schicht: Gleicher Seed, gleiche Angebote, auch nach gleich vielen Rerolls.
 
 ## Nur Host: Angebots-Kiste auf einem Stellplatz spawnen (Main spawnt sie mit is_offer).
 signal offer_crate_requested(buildable: BuildableData, at: Vector3)
@@ -15,6 +16,8 @@ const PAD_GROUP: StringName = &"shop_pads"
 const SPAWN_HEIGHT: float = 0.6
 
 var reroll_cost: int = 0
+## Nur Host: Zufallsstrom der laufenden Bauphase.
+var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 
 func _ready() -> void:
@@ -37,6 +40,7 @@ func _on_phase_changed(phase: int) -> void:
 		return
 	if phase == RunManager.Phase.BUILD:
 		_set_reroll_cost.rpc(RunManager.data.reroll_base_cost)
+		_rng = GameState.stream_rng(&"shop", RunManager.current_round)
 		_roll()
 	else:
 		# Der Shop schließt, sobald die Welle startet: übrige Angebote verschwinden, auch getragene.
@@ -49,7 +53,7 @@ func _roll() -> void:
 	var pads := get_tree().get_nodes_in_group(PAD_GROUP)
 	for i in mini(RunManager.data.shop_offer_count, pads.size()):
 		var pad := pads[i] as Node3D
-		var offer := pool[GameState.rng.randi_range(0, pool.size() - 1)]
+		var offer := pool[_rng.randi_range(0, pool.size() - 1)]
 		offer_crate_requested.emit(offer, pad.global_position + Vector3.UP * SPAWN_HEIGHT)
 
 

@@ -41,10 +41,10 @@ func is_local_player_ready() -> bool:
 	return multiplayer.get_unique_id() in ready_peers
 
 
-## Nur Host: neuen Run mit frischem Seed beginnen.
+## Nur Host: neuen Run beginnen, mit dem Seed aus dem Startmenü oder einem zufälligen.
 func start_run() -> void:
 	assert(multiplayer.is_server(), "Den Run startet der Host")
-	GameState.set_run_seed(GameState.new_random_seed())
+	_sync_seed.rpc(GameState.seed_from_text(GameState.requested_seed_text))
 	Economy.add_money(data.starting_money)
 	_start_round(1)
 
@@ -117,6 +117,7 @@ func _check_all_ready() -> void:
 func _on_player_joined(peer_id: int) -> void:
 	_players[peer_id] = false
 	if peer_id != multiplayer.get_unique_id():
+		_sync_seed.rpc_id(peer_id, GameState.run_seed)
 		_sync_state.rpc_id(peer_id, phase, current_round, _ready_list(), _players.size(), victory, false)
 	_check_all_ready()
 
@@ -139,6 +140,12 @@ func _broadcast(round_began: bool) -> void:
 	if phase == Phase.LOBBY:
 		return
 	_sync_state.rpc(phase, current_round, _ready_list(), _players.size(), victory, round_began)
+
+
+## Alle kennen den Seed, damit er im Menü steht; gewürfelt wird trotzdem nur auf dem Host.
+@rpc("authority", "call_local", "reliable")
+func _sync_seed(seed_value: int) -> void:
+	GameState.set_run_seed(seed_value)
 
 
 @rpc("authority", "call_local", "reliable")

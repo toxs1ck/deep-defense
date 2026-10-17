@@ -5,7 +5,8 @@ extends Node
 ## Zum Kampfbeginn kommt ein Pulk, danach Gruppen in zufälligen Abständen (RunData.burst_*, group_*), damit
 ## Verteidigen und Schürfen gleichzeitig nötig sind. Ein Zeitlimit gibt es nicht: Jeder Gegner, der verschwindet
 ## (besiegt oder mit Beute entkommen), zählt zum Rundenfortschritt; sind alle weg, endet die Kampfphase.
-## Zufall über GameState.rng, damit ein Run mit demselben Seed gleich abläuft.
+## Zufall aus den Seed-Strömen „wave“ (Plan) und „wave_timing“ (Abstände, Versatz) der Schicht, damit ein Run mit
+## demselben Seed dieselben Wellen bringt.
 
 ## Nur Host: ein Gegner hat Erz fallen lassen (z. B. ein besiegter Erzdieb); Main spawnt den Brocken.
 signal ore_dropped(ore: OreData, drop_position: Vector3, impulse: Vector3)
@@ -37,6 +38,8 @@ var _group_left: int = 0
 var _total: int = 0
 var _resolved: int = 0
 var _warned: bool = false
+## Nur Host: Zufall für Gruppengrößen, Abstände und Spawn-Versatz der geplanten Welle.
+var _timing_rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 
 func _ready() -> void:
@@ -68,7 +71,8 @@ func _on_phase_changed(phase: int) -> void:
 ## Budget = Basis × Schicht^Exponent, mal Faktor für die Spielerzahl. 1–2 Haupttypen, 1–3 Eingänge.
 func _plan_wave(round_number: int) -> void:
 	var run := RunManager.data
-	var rng := GameState.rng
+	var rng := GameState.stream_rng(&"wave", round_number)
+	_timing_rng = GameState.stream_rng(&"wave_timing", round_number)
 	var players := clampi(RunManager.player_count, 1, run.count_multiplier_by_players.size())
 	var budget := run.wave_budget_base * pow(round_number, run.wave_budget_exponent) * run.count_multiplier_by_players[players - 1]
 
@@ -136,7 +140,7 @@ func _next_spawn_delay() -> float:
 	_group_left -= 1
 	if _group_left > 0:
 		return run.burst_interval
-	var rng := GameState.rng
+	var rng := _timing_rng
 	_group_left = rng.randi_range(run.group_size_min, run.group_size_max)
 	return rng.randf_range(run.group_interval_min, run.group_interval_max)
 
@@ -172,7 +176,7 @@ func _spawn(enemy_data: EnemyData) -> void:
 	_spawn_index += 1
 	var run := RunManager.data
 	var players := clampi(RunManager.player_count, 1, run.health_multiplier_by_players.size())
-	var rng := GameState.rng
+	var rng := _timing_rng
 	var offset := Vector3(rng.randf_range(-SPAWN_JITTER, SPAWN_JITTER), 0, rng.randf_range(-SPAWN_JITTER, SPAWN_JITTER))
 	var enemy := ENEMY_SCENE.instantiate() as Enemy
 	enemy.data_path = enemy_data.resource_path

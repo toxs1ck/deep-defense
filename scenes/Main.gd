@@ -91,6 +91,9 @@ func _apply_command_line() -> void:
 	# Beide Listen prüfen, damit es mit und ohne „--“-Trenner funktioniert.
 	var args := OS.get_cmdline_args() + OS.get_cmdline_user_args()
 	for arg: String in args:
+		if arg.begins_with("--seed="):
+			GameState.requested_seed_text = arg.get_slice("=", 1)
+	for arg: String in args:
 		if arg == "--host":
 			_on_host_requested()
 			return
