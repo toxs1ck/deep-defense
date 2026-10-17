@@ -22,8 +22,10 @@ in `Main.tscn` als Instanz für „World“ wieder einsetzen.
 
 Grafik: Kenney-Packs unter `assets/` (CC0). Die Module unter `scenes/world/cave/modules/` bestehen aus Teilen des
 Cave Kits in doppelter Größe (Raster 8 m statt 4 m; schmale Gänge sind Engstellen, Räume 24 × 24 m, Halle 40 × 24 m).
-`CaveModule.gd` erzeugt beim Laden die Kollision aus den Meshes und listet die Ausgänge (Marker unter „Exits“,
-−Z zeigt hinaus), an denen später der Kartengenerator Module aneinandersetzt. Vorhanden: ElevatorHall, OreRoom,
+Die Modelle haben keine Kollision; jedes Modul hat unter „Collision“ einfache Formen (eine flache Box als Boden,
+Boxen entlang des vereinfachten Wandumrisses, grobe Formen für Deko), aus dem Kit-Umriss erzeugt und im Editor
+anpassbar. `CaveModule.gd` listet die Ausgänge (Marker unter „Exits“, −Z zeigt hinaus), an denen später der
+Kartengenerator Module aneinandersetzt. Vorhanden: ElevatorHall, OreRoom,
 OreRoomVariation, Corridor, CorridorCorner, CorridorJunction, CorridorCross, OreNiche (Sackgasse mit Erzstelle),
 EnemyNest (Sackgasse mit Gegner-Eingang). Die Decke ist in der Karte eine dunkle Platte auf 8,2 m, weil das Kit
 oben offen ist.
@@ -33,7 +35,7 @@ oben offen ist.
 - Spielfiguren: Kenney Mini Characters (pro Spieler eine andere Figur, Animationen für Stehen, Laufen, Sprinten,
   Springen, Fallen, Tragen und Schlagen), Spitzhacke aus dem Survival Kit.
 - Survival Kit: Erzadern (Fels), Erzbrocken, Kisten (Angebote als Truhe), Wand (Palisade), Würfel-Station
-  (Werkbank), Deko in Halle und Räumen (mit Kollision).
+  (Werkbank), Deko in Halle und Räumen (mit einfacher Kollision).
 - Factory Kit: Sockel des Geschützturms, Zahnrad des Klingenwirbels; die Förderbänder folgen mit Aufgabe 15.
 - Noch ohne Modell: Gegner (in den Packs gibt es keine Kreaturen), Stachelfalle, Aufzug.
 - `scripts/ModelTint.gd` färbt importierte Modelle ein (Erzfarbe, Schaden an Bauelementen).

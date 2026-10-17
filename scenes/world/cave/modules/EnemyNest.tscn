@@ -1,8 +1,38 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scenes/world/cave/CaveModule.gd" id="1_module"]
 
 [ext_resource type="PackedScene" path="res://assets/kenney-cave-kit/GLB format/corridor-end.glb" id="2_kit"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1"]
+size = Vector3(8, 0.5, 8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_2"]
+size = Vector3(2.74, 8.2, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_3"]
+size = Vector3(1.43, 8.2, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4"]
+size = Vector3(0.95, 8.2, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_5"]
+size = Vector3(1.12, 8.2, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_6"]
+size = Vector3(1.7, 8.2, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_7"]
+size = Vector3(0.83, 8.2, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8"]
+size = Vector3(1.1, 8.2, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_9"]
+size = Vector3(1.68, 8.2, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_10"]
+size = Vector3(2.36, 8.2, 1)
 
 [node name="EnemyNest" type="Node3D"]
 script = ExtResource("1_module")
@@ -12,6 +42,56 @@ footprint = Vector2i(1, 1)
 
 [node name="Model" parent="Kit" instance=ExtResource("2_kit")]
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
+
+[node name="Collision" type="StaticBody3D" parent="."]
+
+[node name="Floor" type="CollisionShape3D" parent="Collision"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+shape = SubResource("BoxShape3D_1")
+
+[node name="Wall1" type="CollisionShape3D" parent="Collision"]
+transform = Transform3D(-0.909091, 0, 0.416598, 0, 1, 0, -0.416598, 0, -0.909091, 2.442, 4.1, 1.855)
+shape = SubResource("BoxShape3D_2")
+
+[node name="Wall2" type="CollisionShape3D" parent="Collision"]
+transform = Transform3D(-0.974409, 0, -0.224781, 0, 1, 0, 0.224781, 0, -0.974409, 0.912, 4.1, 1.487)
+shape = SubResource("BoxShape3D_3")
+
+[node name="Wall3" type="CollisionShape3D" parent="Collision"]
+transform = Transform3D(-0.351188, 0, -0.936305, 0, 1, 0, 0.936305, 0, -0.351188, 0.468, 4.1, 1.726)
+shape = SubResource("BoxShape3D_4")
+
+[node name="Wall4" type="CollisionShape3D" parent="Collision"]
+transform = Transform3D(-0.98058, 0, 0.196117, 0, 1, 0, -0.196117, 0, -0.98058, -0.748, 4.1, 2.34)
+shape = SubResource("BoxShape3D_5")
+
+[node name="Wall5" type="CollisionShape3D" parent="Collision"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -1.65, 4.1, 0.95)
+shape = SubResource("BoxShape3D_6")
+
+[node name="Wall6" type="CollisionShape3D" parent="Collision"]
+transform = Transform3D(-0.961502, 0, 0.274798, 0, 1, 0, -0.274798, 0, -0.961502, -1.637, 4.1, 0.531)
+shape = SubResource("BoxShape3D_7")
+
+[node name="Wall7" type="CollisionShape3D" parent="Collision"]
+transform = Transform3D(0.099493, 0, 0.995038, 0, 1, 0, -0.995038, 0, 0.099493, -2.298, 4.1, -0.6)
+shape = SubResource("BoxShape3D_8")
+
+[node name="Wall8" type="CollisionShape3D" parent="Collision"]
+transform = Transform3D(0.998049, 0, 0.062442, 0, 1, 0, -0.062442, 0, 0.998049, -0.981, 4.1, -1.599)
+shape = SubResource("BoxShape3D_6")
+
+[node name="Wall9" type="CollisionShape3D" parent="Collision"]
+transform = Transform3D(0.351188, 0, 0.936305, 0, 1, 0, -0.936305, 0, 0.351188, -0.468, 4.1, -1.726)
+shape = SubResource("BoxShape3D_4")
+
+[node name="Wall10" type="CollisionShape3D" parent="Collision"]
+transform = Transform3D(0.948711, 0, -0.316146, 0, 1, 0, 0.316146, 0, 0.948711, 1.058, 4.1, -2.174)
+shape = SubResource("BoxShape3D_9")
+
+[node name="Wall11" type="CollisionShape3D" parent="Collision"]
+transform = Transform3D(0.975149, 0, 0.221548, 0, 1, 0, -0.221548, 0, 0.975149, 2.639, 4.1, -2.188)
+shape = SubResource("BoxShape3D_10")
 
 [node name="Exits" type="Node3D" parent="."]
 
