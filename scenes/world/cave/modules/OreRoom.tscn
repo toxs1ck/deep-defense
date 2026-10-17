@@ -1,8 +1,12 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scenes/world/cave/CaveModule.gd" id="1_module"]
 
 [ext_resource type="PackedScene" path="res://assets/kenney-cave-kit/GLB format/room-small.glb" id="2_kit"]
+
+[ext_resource type="PackedScene" path="res://assets/kenney-survival-kit/GLB format/rock-a.glb" id="p1_prop"]
+
+[ext_resource type="PackedScene" path="res://assets/kenney-survival-kit/GLB format/rock-b.glb" id="p2_prop"]
 
 [node name="OreRoom" type="Node3D"]
 script = ExtResource("1_module")
@@ -12,6 +16,12 @@ footprint = Vector2i(3, 3)
 
 [node name="Model" parent="Kit" instance=ExtResource("2_kit")]
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
+
+[node name="RockA1" parent="Kit" instance=ExtResource("p1_prop")]
+transform = Transform3D(1.73205, 0, 1, 0, 2, 0, -1, 0, 1.73205, 8.5, 0, 3.5)
+
+[node name="RockB2" parent="Kit" instance=ExtResource("p2_prop")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, -3.5, 0, -8.5)
 
 [node name="Exits" type="Node3D" parent="."]
 

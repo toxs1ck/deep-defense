@@ -1,24 +1,10 @@
 [gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://components/InteractableComponent.gd" id="1_interact"]
+[ext_resource type="PackedScene" path="res://assets/kenney-survival-kit/GLB format/workbench.glb" id="2_model"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_body"]
-size = Vector3(1, 1.4, 0.6)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
-albedo_color = Color(0.3, 0.33, 0.38, 1)
-
-[sub_resource type="BoxMesh" id="BoxMesh_body"]
-material = SubResource("StandardMaterial3D_body")
-size = Vector3(1, 1.4, 0.6)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_screen"]
-shading_mode = 0
-albedo_color = Color(0.95, 0.75, 0.3, 1)
-
-[sub_resource type="BoxMesh" id="BoxMesh_screen"]
-material = SubResource("StandardMaterial3D_screen")
-size = Vector3(0.7, 0.4, 0.05)
+size = Vector3(1.1, 1.0, 1.0)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_interact"]
 size = Vector3(1.2, 1.6, 0.9)
@@ -26,19 +12,14 @@ size = Vector3(1.2, 1.6, 0.9)
 [node name="ShopTerminal" type="StaticBody3D"]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 shape = SubResource("BoxShape3D_body")
 
-[node name="Mesh" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-mesh = SubResource("BoxMesh_body")
-
-[node name="Screen" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -0.31)
-mesh = SubResource("BoxMesh_screen")
+[node name="Model" parent="." instance=ExtResource("2_model")]
+transform = Transform3D(3.5, 0, 0, 0, 3.5, 0, 0, 0, 3.5, 0, 0, 0)
 
 [node name="Label3D" type="Label3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.75, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 billboard = 1
 outline_size = 6
 text = "Neu würfeln"

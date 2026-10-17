@@ -22,11 +22,11 @@ const DAMAGED_BRIGHTNESS: float = 0.35
 var data: BuildableData
 
 @onready var health: HealthComponent = $HealthComponent
-@onready var _mesh: MeshInstance3D = $Mesh
+## Sichtbares Modell; bei Schaden wird es dunkler.
+@onready var _mesh: Node3D = $Mesh
 @onready var _dismantle: InteractableComponent = $DismantleInteractable
 
-var _material: StandardMaterial3D = null
-var _base_color: Color = Color.WHITE
+var _tint: ModelTint = null
 
 
 func _enter_tree() -> void:
@@ -38,11 +38,8 @@ func _ready() -> void:
 	rotation.y = rotation_steps * PI / 2.0
 	data = load(data_path) as BuildableData
 	assert(data != null, "Buildable: ungültiger data_path '%s'" % data_path)
-	# Eigene Materialkopie, damit nur dieses Bauelement dunkler wird.
-	var mesh_material := _mesh.mesh.surface_get_material(0) as StandardMaterial3D
-	_material = mesh_material.duplicate() as StandardMaterial3D
-	_base_color = _material.albedo_color
-	_mesh.material_override = _material
+	# Eigene Materialkopien, damit nur dieses Bauelement dunkler wird.
+	_tint = ModelTint.new(_mesh)
 	health.setup(data.max_health, initial_health)
 	health.health_changed.connect(_on_health_changed)
 	health.died.connect(_on_died)
@@ -64,8 +61,8 @@ func apply_state(state: Dictionary) -> void:
 
 func _on_health_changed(current: int, maximum: int) -> void:
 	var fraction := float(current) / float(maximum)
-	_material.albedo_color = _base_color * lerpf(DAMAGED_BRIGHTNESS, 1.0, fraction)
-	_material.albedo_color.a = 1.0
+	var brightness := lerpf(DAMAGED_BRIGHTNESS, 1.0, fraction)
+	_tint.set_tint(Color(brightness, brightness, brightness))
 
 
 ## Nur Host: E lange genug gehalten.

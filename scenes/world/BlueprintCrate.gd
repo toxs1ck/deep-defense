@@ -9,8 +9,6 @@ const OFFER_GROUP: StringName = &"shop_offers"
 const BUY_HOLD_SECONDS: float = 2.0
 ## Getragene Kisten bremsen etwas, Sprinten geht beim Tragen ohnehin nicht.
 const CARRY_SPEED_MULTIPLIER: float = 0.85
-const OFFER_COLOR: Color = Color(0.85, 0.7, 0.3)
-const OWNED_COLOR: Color = Color(0.62, 0.45, 0.25)
 
 ## Pfad zur BuildableData; wird beim Spawnen mitgeschickt.
 @export var buildable_path: String = ""
@@ -30,14 +28,14 @@ var buildable: BuildableData
 var stored_state: Dictionary = {}
 
 @onready var _label: Label3D = $Label3D
-var _material: StandardMaterial3D
+## Angebote stehen als Truhe im Shop, gekaufte Bauelemente als einfache Kiste (Kenney Survival Kit).
+@onready var _box: Node3D = $Mesh/Box
+@onready var _chest: Node3D = $Mesh/Chest
 
 
 func _setup_item() -> void:
 	buildable = load(buildable_path) as BuildableData
 	assert(buildable != null, "BlueprintCrate: ungültiger buildable_path '%s'" % buildable_path)
-	_material = (mesh.mesh as BoxMesh).material.duplicate() as StandardMaterial3D
-	mesh.material_override = _material
 	_interactable.hold_completed.connect(_on_hold_completed)
 	_update_offer_state()
 
@@ -89,13 +87,14 @@ func _try_purchase(player: Player) -> void:
 
 
 func _update_offer_state() -> void:
+	_box.visible = not is_offer
+	_chest.visible = is_offer
 	if is_offer:
 		_label.text = "%s\n%d $" % [buildable.display_name, buildable.price]
 		_interactable.hold_seconds = BUY_HOLD_SECONDS
 		_interactable.hold_prompt = "Kaufen (%d $)" % buildable.price
-		_material.albedo_color = OFFER_COLOR
 	else:
 		_label.text = buildable.display_name
 		_interactable.hold_seconds = 0.0
 		_interactable.hold_prompt = ""
-		_material.albedo_color = OWNED_COLOR
+

@@ -4,15 +4,9 @@
 [ext_resource type="Script" path="res://components/HealthComponent.gd" id="2_health"]
 
 [ext_resource type="Script" path="res://components/InteractableComponent.gd" id="3_dismantle"]
+[ext_resource type="PackedScene" path="res://assets/kenney-survival-kit/GLB format/fence-fortified.glb" id="4_model"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
-size = Vector3(2, 2, 0.5)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
-albedo_color = Color(0.5, 0.42, 0.32, 1)
-
-[sub_resource type="BoxMesh" id="BoxMesh_wall"]
-material = SubResource("StandardMaterial3D_wall")
 size = Vector3(2, 2, 0.5)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_dismantle"]
@@ -41,9 +35,10 @@ script = ExtResource("1_buildable")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 shape = SubResource("BoxShape3D_wall")
 
-[node name="Mesh" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-mesh = SubResource("BoxMesh_wall")
+[node name="Mesh" type="Node3D" parent="."]
+
+[node name="Model" parent="Mesh" instance=ExtResource("4_model")]
+transform = Transform3D(4, 0, 0, 0, 4, 0, 0, 0, 4, 0, 0, 0.9)
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("2_health")

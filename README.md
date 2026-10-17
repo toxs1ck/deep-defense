@@ -28,6 +28,16 @@ OreRoomVariation, Corridor, CorridorCorner, CorridorJunction, CorridorCross, Ore
 EnemyNest (Sackgasse mit Gegner-Eingang). Die Decke ist in der Karte eine dunkle Platte auf 8,2 m, weil das Kit
 oben offen ist.
 
+### Modelle
+
+- Spielfiguren: Kenney Mini Characters (pro Spieler eine andere Figur, Animationen für Stehen, Laufen, Sprinten,
+  Springen, Fallen, Tragen und Schlagen), Spitzhacke aus dem Survival Kit.
+- Survival Kit: Erzadern (Fels), Erzbrocken, Kisten (Angebote als Truhe), Wand (Palisade), Würfel-Station
+  (Werkbank), Deko in Halle und Räumen (mit Kollision).
+- Factory Kit: Sockel des Geschützturms, Zahnrad des Klingenwirbels; die Förderbänder folgen mit Aufgabe 15.
+- Noch ohne Modell: Gegner (in den Packs gibt es keine Kreaturen), Stachelfalle, Aufzug.
+- `scripts/ModelTint.gd` färbt importierte Modelle ein (Erzfarbe, Schaden an Bauelementen).
+
 ## Multiplayer auf einem PC testen
 
 1. Im Editor **Debug → Laufende Instanzen anpassen…** (*Customize Run Instances*) öffnen.

@@ -40,7 +40,7 @@ func _build_collision() -> void:
 	body.collision_mask = 0
 	add_child(body)
 	var inverse := global_transform.affine_inverse()
-	for mesh_instance in _mesh_instances(kit):
+	for mesh_instance in ModelTint.mesh_instances(kit):
 		# Skalierung in die Dreiecke übernehmen, die Form selbst bleibt unskaliert (verträgt die Physik besser).
 		var relative := inverse * mesh_instance.global_transform
 		var scale_basis := Basis.from_scale(relative.basis.get_scale())
@@ -55,11 +55,3 @@ func _build_collision() -> void:
 		collision.transform = Transform3D(relative.basis.orthonormalized(), relative.origin)
 		body.add_child(collision)
 
-
-func _mesh_instances(node: Node) -> Array[MeshInstance3D]:
-	var result: Array[MeshInstance3D] = []
-	if node is MeshInstance3D and (node as MeshInstance3D).mesh != null:
-		result.append(node as MeshInstance3D)
-	for child in node.get_children():
-		result.append_array(_mesh_instances(child))
-	return result

@@ -26,7 +26,8 @@ const LAUNCH_SPEED_MAX: float = 1.8
 
 const COLLAPSE_TIME: float = 2.5
 
-@onready var _mesh: MeshInstance3D = $Mesh
+## Container um den Felsen aus dem Kenney Survival Kit; Ursprung am Boden, damit er beim Einsturz in sich zusammensackt.
+@onready var _mesh: Node3D = $Mesh
 @onready var _collision: CollisionShape3D = $CollisionShape3D
 @onready var _interactable: InteractableComponent = $InteractableComponent
 @onready var _sparks: CPUParticles3D = $Sparks
@@ -49,9 +50,7 @@ func _ready() -> void:
 		global_position = sync_position
 	assert(ore != null, "OreDeposit braucht eine OreData-Resource")
 	_chunks_left = ore.chunks_per_deposit
-	var material := StandardMaterial3D.new()
-	material.albedo_color = ore.color
-	_mesh.material_override = material
+	ModelTint.new(_mesh).set_tint(ore.color)
 	_interactable.prompt_text = "%s abbauen" % ore.display_name
 	_interactable.interacted.connect(_on_interacted)
 	NetworkManager.player_joined.connect(_on_player_joined)

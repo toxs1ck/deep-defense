@@ -1,8 +1,20 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scenes/world/cave/CaveModule.gd" id="1_module"]
 
 [ext_resource type="PackedScene" path="res://assets/kenney-cave-kit/GLB format/room-wide.glb" id="2_kit"]
+
+[ext_resource type="PackedScene" path="res://assets/kenney-survival-kit/GLB format/barrel.glb" id="p1_prop"]
+
+[ext_resource type="PackedScene" path="res://assets/kenney-survival-kit/GLB format/barrel-open.glb" id="p2_prop"]
+
+[ext_resource type="PackedScene" path="res://assets/kenney-survival-kit/GLB format/box-large.glb" id="p3_prop"]
+
+[ext_resource type="PackedScene" path="res://assets/kenney-survival-kit/GLB format/box.glb" id="p4_prop"]
+
+[ext_resource type="PackedScene" path="res://assets/kenney-survival-kit/GLB format/workbench-anvil.glb" id="p5_prop"]
+
+[ext_resource type="PackedScene" path="res://assets/kenney-survival-kit/GLB format/signpost.glb" id="p6_prop"]
 
 [ext_resource type="PackedScene" path="res://scenes/world/Elevator.tscn" id="3_elevator"]
 
@@ -20,6 +32,27 @@ footprint = Vector2i(5, 3)
 
 [node name="Model" parent="Kit" instance=ExtResource("2_kit")]
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
+
+[node name="Barrel1" parent="Kit" instance=ExtResource("p1_prop")]
+transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, -16, 0, -6)
+
+[node name="BarrelOpen2" parent="Kit" instance=ExtResource("p2_prop")]
+transform = Transform3D(2.29813, 0, 1.92836, 0, 3, 0, -1.92836, 0, 2.29813, -14.5, 0, -7)
+
+[node name="BoxLarge3" parent="Kit" instance=ExtResource("p3_prop")]
+transform = Transform3D(2.95442, 0, 0.520944, 0, 3, 0, -0.520944, 0, 2.95442, -6, 0, -7.5)
+
+[node name="Box4" parent="Kit" instance=ExtResource("p4_prop")]
+transform = Transform3D(2.89778, 0, -0.776457, 0, 3, 0, 0.776457, 0, 2.89778, -7.6, 0, -7.5)
+
+[node name="WorkbenchAnvil5" parent="Kit" instance=ExtResource("p5_prop")]
+transform = Transform3D(0, 0, 3, 0, 3, 0, -3, 0, 0, -16, 0, 1)
+
+[node name="Barrel6" parent="Kit" instance=ExtResource("p1_prop")]
+transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 6, 0, -7.5)
+
+[node name="Signpost7" parent="Kit" instance=ExtResource("p6_prop")]
+transform = Transform3D(0, 0, 3, 0, 3, 0, -3, 0, 0, -17, 0, -3.5)
 
 [node name="Exits" type="Node3D" parent="."]
 

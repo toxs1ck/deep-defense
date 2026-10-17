@@ -18,9 +18,7 @@ func _enter_tree() -> void:
 func _setup_item() -> void:
 	ore = load(ore_path) as OreData
 	assert(ore != null, "OreChunk: ungültiger ore_path '%s'" % ore_path)
-	var material := StandardMaterial3D.new()
-	material.albedo_color = ore.color
-	mesh.material_override = material
+	ModelTint.new(mesh).set_tint(ore.color)
 
 
 func get_display_name() -> String:

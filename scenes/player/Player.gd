@@ -45,6 +45,33 @@ const ATTACK_MAX_HEIGHT_DIFFERENCE: float = 1.5
 ## Der Host lässt Schläge etwas schneller zu als die Schlagrate (Netzwerk-Schwankungen).
 const SWING_RATE_TOLERANCE: float = 0.85
 ## Ruhe- und Schlagwinkel der Spitzhacke (um die lokale X-Achse) und Dauer des Schlags.
+## Figuren aus Kenneys Mini Characters (CC0). Jeder Spieler bekommt eine anhand seiner Peer-ID, der Host die erste;
+## so sieht jeder Peer dieselbe Figur, ohne dass etwas synchronisiert werden muss.
+const CHARACTER_MODELS: Array[PackedScene] = [
+	preload("res://assets/kenney-mini-characters/GLB format/character-male-a.glb"),
+	preload("res://assets/kenney-mini-characters/GLB format/character-female-a.glb"),
+	preload("res://assets/kenney-mini-characters/GLB format/character-male-b.glb"),
+	preload("res://assets/kenney-mini-characters/GLB format/character-female-b.glb"),
+	preload("res://assets/kenney-mini-characters/GLB format/character-male-c.glb"),
+	preload("res://assets/kenney-mini-characters/GLB format/character-female-c.glb"),
+	preload("res://assets/kenney-mini-characters/GLB format/character-male-d.glb"),
+	preload("res://assets/kenney-mini-characters/GLB format/character-female-d.glb"),
+	preload("res://assets/kenney-mini-characters/GLB format/character-male-e.glb"),
+	preload("res://assets/kenney-mini-characters/GLB format/character-female-e.glb"),
+	preload("res://assets/kenney-mini-characters/GLB format/character-male-f.glb"),
+	preload("res://assets/kenney-mini-characters/GLB format/character-female-f.glb"),
+]
+## Die Figuren sind im Kit 0,67 m groß und schauen nach +Z; hier gut 1,7 m und nach −Z wie die Spielfigur.
+const CHARACTER_SCALE: float = 2.6
+## Der Import setzt keine Schleifen; diese Animationen laufen im Kreis.
+const LOOPING_ANIMATIONS: Array[StringName] = [&"idle", &"walk", &"sprint", &"fall", &"holding-both"]
+const ANIMATION_BLEND: float = 0.15
+## Ab dieser Geschwindigkeit (m/s) läuft die Figur sichtbar; darüber hinaus (über walk_speed) sprintet sie.
+const WALK_ANIMATION_SPEED: float = 0.4
+## Senkrechte Geschwindigkeit, ab der Sprung bzw. Fallen gezeigt wird.
+const JUMP_ANIMATION_SPEED: float = 1.5
+const FALL_ANIMATION_SPEED: float = -2.5
+const ATTACK_ANIMATION: StringName = &"attack-melee-right"
 const PICKAXE_REST_DEGREES: float = 35.0
 const PICKAXE_STRIKE_DEGREES: float = -95.0
 const PICKAXE_STRIKE_TIME: float = 0.09
@@ -76,7 +103,13 @@ var trait_data: TraitData = null
 @onready var _pickaxe: Node3D = $Model/Pickaxe
 @onready var _camera: PlayerCamera = $PlayerCamera
 @onready var _model: Node3D = $Model
-@onready var _body: MeshInstance3D = $Model/Body
+var _character: Node3D = null
+var _animation: AnimationPlayer = null
+## Für die Animation: Geschwindigkeit aus der Positionsänderung, damit sie auch bei fremden Figuren stimmt.
+var _animation_last_position: Vector3 = Vector3.ZERO
+var _animation_velocity: Vector3 = Vector3.ZERO
+## Solange eine einmalige Animation (Schlag) läuft, wird sie nicht überschrieben.
+var _action_time_left: float = 0.0
 
 var _interaction_target: InteractableComponent = null
 ## Wartezeit bis zum nächsten Schlag mit der Spitzhacke.
@@ -111,7 +144,8 @@ func _ready() -> void:
 	# Der Host setzt sync_position vor dem Spawnen; sie kommt auch bei den Clients mit an.
 	global_position = sync_position
 	_model.rotation.y = sync_yaw
-	_apply_player_color()
+	_spawn_character()
+	_animation_last_position = global_position
 	carry.carried_changed.connect(func(is_carrying: bool) -> void: carrying_changed.emit(is_carrying))
 	health.setup(data.max_health)
 	_last_health = health.current_health
@@ -126,14 +160,14 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if is_multiplayer_authority():
-		return
-	if global_position.distance_to(sync_position) > remote_snap_distance:
-		global_position = sync_position
-	else:
-		var weight := 1.0 - exp(-remote_smoothing * delta)
-		global_position = global_position.lerp(sync_position, weight)
-	_model.rotation.y = lerp_angle(_model.rotation.y, sync_yaw, 1.0 - exp(-remote_smoothing * delta))
+	if not is_multiplayer_authority():
+		if global_position.distance_to(sync_position) > remote_snap_distance:
+			global_position = sync_position
+		else:
+			var weight := 1.0 - exp(-remote_smoothing * delta)
+			global_position = global_position.lerp(sync_position, weight)
+		_model.rotation.y = lerp_angle(_model.rotation.y, sync_yaw, 1.0 - exp(-remote_smoothing * delta))
+	_update_animation(delta)
 
 
 func _physics_process(delta: float) -> void:
@@ -303,6 +337,7 @@ func _play_swing_remote() -> void:
 
 
 func _play_swing() -> void:
+	_play_action(ATTACK_ANIMATION, PICKAXE_STRIKE_TIME + PICKAXE_RECOVER_TIME)
 	if _pickaxe_tween:
 		_pickaxe_tween.kill()
 	_pickaxe_tween = create_tween()
@@ -410,15 +445,64 @@ func _from_host() -> bool:
 	return sender == 0 or sender == 1
 
 
-## Jeder Spieler bekommt eine eigene Farbe aus seiner Peer-ID, damit man Figuren unterscheiden kann.
-## Der Host (ID 1) behält das Orange aus der Szene.
-func _apply_player_color() -> void:
+func _spawn_character() -> void:
 	var peer_id := get_multiplayer_authority()
-	if peer_id == 1:
+	var index := 0 if peer_id == 1 else 1 + peer_id % (CHARACTER_MODELS.size() - 1)
+	_character = CHARACTER_MODELS[index].instantiate() as Node3D
+	_character.name = "Character"
+	_character.transform = Transform3D(Basis(Vector3.UP, PI).scaled(Vector3.ONE * CHARACTER_SCALE), Vector3.ZERO)
+	_model.add_child(_character)
+	var players := _character.find_children("*", "AnimationPlayer", true, false)
+	if players.is_empty():
 		return
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color.from_hsv(fposmod(peer_id * 0.618034, 1.0), 0.65, 0.85)
-	_body.material_override = material
+	_animation = players[0] as AnimationPlayer
+	for animation_name in LOOPING_ANIMATIONS:
+		if _animation.has_animation(animation_name):
+			_animation.get_animation(animation_name).loop_mode = Animation.LOOP_LINEAR
+	_play_animation(&"idle")
+
+
+## Läuft auf allen Peers: wählt die Animation aus der Bewegung der Figur.
+func _update_animation(delta: float) -> void:
+	if delta <= 0.0:
+		return
+	var moved := (global_position - _animation_last_position) / delta
+	_animation_last_position = global_position
+	_animation_velocity = _animation_velocity.lerp(moved, 1.0 - exp(-12.0 * delta))
+	if _action_time_left > 0.0:
+		_action_time_left -= delta
+		return
+	var horizontal := Vector2(_animation_velocity.x, _animation_velocity.z).length()
+	var animation_name := &"idle"
+	if _animation_velocity.y > JUMP_ANIMATION_SPEED:
+		animation_name = &"jump"
+	elif _animation_velocity.y < FALL_ANIMATION_SPEED:
+		animation_name = &"fall"
+	elif horizontal > data.walk_speed + 0.5:
+		animation_name = &"sprint"
+	elif horizontal > WALK_ANIMATION_SPEED:
+		animation_name = &"walk"
+	elif carry.is_carrying():
+		animation_name = &"holding-both"
+	_play_animation(animation_name)
+
+
+func _play_animation(animation_name: StringName, speed: float = 1.0) -> void:
+	if _animation == null or not _animation.has_animation(animation_name):
+		return
+	if _animation.current_animation == animation_name and is_equal_approx(_animation.get_playing_speed(), speed):
+		return
+	_animation.play(animation_name, ANIMATION_BLEND, speed)
+
+
+## Einmalige Animation, auf die angegebene Dauer gestreckt.
+func _play_action(animation_name: StringName, duration: float) -> void:
+	if _animation == null or not _animation.has_animation(animation_name):
+		return
+	var length := _animation.get_animation(animation_name).length
+	_action_time_left = duration
+	_animation.stop()
+	_play_animation(animation_name, length / maxf(duration, 0.01))
 
 
 ## Beim Tragen: Angreifen wirft in Blickrichtung (nicht im Baumodus, dort baut es auf), Interagieren ohne Ziel legt ab.
