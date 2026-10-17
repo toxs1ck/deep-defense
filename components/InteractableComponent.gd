@@ -6,13 +6,17 @@ extends Area3D
 
 ## Wird nur auf dem Host gesendet. Das Objekt entscheidet dann selbst, was passiert, und verteilt das Ergebnis.
 signal interacted(player: Player)
-## Nur Host: Der Spieler hat die Taste hold_seconds lang gehalten (z. B. Kaufen im Shop).
+## Nur Host: Der Spieler hat die Taste hold_seconds lang gehalten (z. B. Abbauen, Neu würfeln).
 signal hold_completed(player: Player)
+## Nur Host: Der Spieler hat die zweite Taste (SECONDARY_ACTION, R) secondary_hold_seconds lang gehalten
+## (z. B. Angebot kaufen, Falle spannen).
+signal secondary_hold_completed(player: Player)
 
 ## Spielraum für die Entfernungsprüfung auf dem Host, weil der Raycast die Oberfläche trifft,
 ## geprüft aber zur Mitte des Objekts wird; dazu kommt Netzwerk-Verzögerung.
 const HOST_RANGE_TOLERANCE: float = 2.0
 const INTERACTABLE_LAYER: int = 1 << 5
+const SECONDARY_ACTION: StringName = &"use_secondary"
 
 ## Text im Prompt, z. B. „Abbauen“ → „E: Abbauen“.
 @export var prompt_text: String = "Benutzen"
@@ -36,6 +40,10 @@ const INTERACTABLE_LAYER: int = 1 << 5
 ## Mit welcher Aktion interagiert wird. „interact“ (E) für Aufheben, Einladen usw.; „attack“ (Linksklick) für
 ## Abbauen: Dann löst jeder Schlag mit der Spitzhacke die Interaktion aus, Halten schlägt im Takt weiter.
 @export var action: StringName = &"interact"
+## > 0: Halten von SECONDARY_ACTION (R) löst nach so vielen Sekunden secondary_hold_completed aus; 0 = aus.
+@export var secondary_hold_seconds: float = 0.0
+## Text dafür, z. B. „Kaufen (60 $)“ → „R halten: Kaufen (60 $)“.
+@export var secondary_hold_prompt: String = ""
 
 
 func _ready() -> void:
@@ -52,6 +60,18 @@ func request_interact() -> void:
 ## Vom lokalen Spieler, nachdem er die Taste hold_seconds lang gehalten hat.
 func request_hold() -> void:
 	_hold_on_host.rpc_id(1)
+
+
+## Vom lokalen Spieler, nachdem er SECONDARY_ACTION secondary_hold_seconds lang gehalten hat.
+func request_secondary_hold() -> void:
+	_secondary_hold_on_host.rpc_id(1)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _secondary_hold_on_host() -> void:
+	var player := _validated_sender()
+	if player and secondary_hold_seconds > 0.0:
+		secondary_hold_completed.emit(player)
 
 
 @rpc("any_peer", "call_local", "reliable")

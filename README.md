@@ -40,6 +40,14 @@ oben offen ist.
 - Noch ohne Modell: Gegner (in den Packs gibt es keine Kreaturen), Stachelfalle, Aufzug.
 - `scripts/ModelTint.gd` färbt importierte Modelle ein (Erzfarbe, Schaden an Bauelementen).
 
+### Verteidigungen
+
+- Geschützturm: mit Eisen geladen voller Schaden, ohne Munition schwach.
+- Klingenwirbel: Kohle nachlegen (E mit Kohle in der Hand) gibt 15 s volle Leistung, bis zu 30 s gespeichert; die
+  Zeit läuft nur in der Kampfphase. Ohne Kohle dreht er langsamer und trifft schwächer.
+- Stachelfalle: löst einmal mit hohem Schaden aus, danach R 3 s halten zum Neuspannen.
+- Werte in `data/buildables/` (DefenseData).
+
 ## Multiplayer auf einem PC testen
 
 1. Im Editor **Debug → Laufende Instanzen anpassen…** (*Customize Run Instances*) öffnen.
@@ -71,7 +79,8 @@ Im Spiel zeigt das Esc-Menü die komplette Belegung (Tastatur & Maus und Control
 Input Map gelesen (`scripts/InputNames.gd`, auch für die HUD-Prompts).
 
 Zusätzlich (nicht im GDD): `camera_switch_shoulder` – V / rechten Stick drücken wechselt die Kameraschulter;
-`purchase_carried` – R / RB halten kauft ein getragenes Shop-Angebot.
+`use_secondary` – R / RB halten: zweite Halte-Aktion, z. B. Shop-Angebote kaufen (liegend oder getragen) und
+ausgelöste Stachelfallen neu spannen.
 
 ## Fortschritt (Prototyp-Plan)
 

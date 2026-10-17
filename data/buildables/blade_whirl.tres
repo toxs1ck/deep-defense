@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="DefenseData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="DefenseData" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/DefenseData.gd" id="1_data"]
 [ext_resource type="PackedScene" path="res://scenes/buildables/BladeWhirl.tscn" id="2_scene"]
+[ext_resource type="Resource" path="res://data/ores/coal.tres" id="3_coal"]
 
 [resource]
 script = ExtResource("1_data")
@@ -15,3 +16,8 @@ attack_range = 1.9
 damage = 6
 interval = 0.4
 knockback = 2.0
+unloaded_damage = 2
+unloaded_interval = 0.8
+fuel_ore = ExtResource("3_coal")
+fuel_seconds_per_load = 15.0
+max_fuel_seconds = 30.0

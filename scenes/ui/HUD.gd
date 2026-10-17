@@ -51,6 +51,9 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	# Ziele können ihren Prompt ändern, während man sie anschaut (z. B. Falle ausgelöst); günstig genug pro Frame.
+	if _target:
+		_refresh_prompt()
 	# Countdown bis zum Respawn läuft lokal.
 	if _respawn_left > 0.0:
 		_respawn_left = maxf(0.0, _respawn_left - delta)
@@ -215,10 +218,13 @@ func _refresh_prompt() -> void:
 			_prompt_label.text = "%s: %s" % [key, _target.prompt_text]
 			if _target.hold_seconds > 0.0:
 				_prompt_label.text += " · %s halten: %s" % [key, _target.hold_prompt]
+		if _target.secondary_hold_seconds > 0.0:
+			_prompt_label.text += " · %s halten: %s" % [
+				_action_key_name(InteractableComponent.SECONDARY_ACTION), _target.secondary_hold_prompt]
 	elif _carrying:
 		_prompt_label.text = "%s: Ablegen · %s: Werfen" % [_action_key_name(&"interact"), _action_key_name(&"attack")]
 		if _carried_offer_price > 0:
-			_prompt_label.text += " · %s halten: Kaufen (%d $)" % [_action_key_name(&"purchase_carried"), _carried_offer_price]
+			_prompt_label.text += " · %s halten: Kaufen (%d $)" % [_action_key_name(InteractableComponent.SECONDARY_ACTION), _carried_offer_price]
 
 
 func _action_key_name(action: StringName) -> String:

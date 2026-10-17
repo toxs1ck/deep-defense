@@ -1,11 +1,11 @@
 class_name BlueprintCrate
 extends Carryable
 ## Blaupausen-Kiste (wie in PlateUp). Als Shop-Angebot (is_offer) steht sie mit Preis auf einem Stellplatz:
-## E tippen trägt sie herum, E halten kauft sie aus der Teamkasse, in der Hand kauft R halten. Nicht gekaufte Angebote verschwinden, wenn die
+## E tippen trägt sie herum, R halten kauft sie aus der Teamkasse (liegend wie getragen). Nicht gekaufte Angebote verschwinden, wenn die
 ## Kampfphase beginnt. Gekauft baut man sie im Baumodus auf; abgebaute Bauelemente werden wieder zu solchen Kisten.
 
 const OFFER_GROUP: StringName = &"shop_offers"
-## So lange muss man E halten, um ein Angebot zu kaufen.
+## So lange muss man R halten, um ein Angebot zu kaufen (liegend oder getragen).
 const BUY_HOLD_SECONDS: float = 2.0
 ## Getragene Kisten bremsen etwas, Sprinten geht beim Tragen ohnehin nicht.
 const CARRY_SPEED_MULTIPLIER: float = 0.85
@@ -36,7 +36,7 @@ var stored_state: Dictionary = {}
 func _setup_item() -> void:
 	buildable = load(buildable_path) as BuildableData
 	assert(buildable != null, "BlueprintCrate: ungültiger buildable_path '%s'" % buildable_path)
-	_interactable.hold_completed.connect(_on_hold_completed)
+	_interactable.secondary_hold_completed.connect(_on_hold_completed)
 	_update_offer_state()
 
 
@@ -69,7 +69,7 @@ func _purchase_carried_on_host() -> void:
 		_try_purchase(_find_player(sender))
 
 
-## Nur Host: am Stellplatz lange genug E gehalten.
+## Nur Host: am liegenden Angebot lange genug R gehalten.
 func _on_hold_completed(player: Player) -> void:
 	_try_purchase(player)
 
@@ -91,10 +91,10 @@ func _update_offer_state() -> void:
 	_chest.visible = is_offer
 	if is_offer:
 		_label.text = "%s\n%d $" % [buildable.display_name, buildable.price]
-		_interactable.hold_seconds = BUY_HOLD_SECONDS
-		_interactable.hold_prompt = "Kaufen (%d $)" % buildable.price
+		_interactable.secondary_hold_seconds = BUY_HOLD_SECONDS
+		_interactable.secondary_hold_prompt = "Kaufen (%d $)" % buildable.price
 	else:
 		_label.text = buildable.display_name
-		_interactable.hold_seconds = 0.0
-		_interactable.hold_prompt = ""
+		_interactable.secondary_hold_seconds = 0.0
+		_interactable.secondary_hold_prompt = ""
 

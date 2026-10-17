@@ -1,7 +1,7 @@
 class_name ShopManager
 extends Node
 ## Bauelemente-Shop wie in PlateUp: Zu Beginn jeder Bauphase stehen 4 zufällige Angebote (RunData.shop_pool) als
-## Kisten auf den Stellplätzen (Gruppe „shop_pads“). Gekauft wird an der Kiste selbst (E halten, BlueprintCrate),
+## Kisten auf den Stellplätzen (Gruppe „shop_pads“). Gekauft wird an der Kiste selbst (R halten, BlueprintCrate),
 ## nicht gekaufte Angebote verschwinden, wenn die Kampfphase beginnt. An der Würfel-Station ersetzt E halten alle
 ## übrigen Angebote, für steigende Kosten (GDD: 20 $, jedes weitere Mal +10 $). Entscheidungen trifft der Host.
 ## Zufall aus dem Seed-Strom „shop“ der Schicht: Gleicher Seed, gleiche Angebote, auch nach gleich vielen Rerolls.

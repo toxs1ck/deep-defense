@@ -23,6 +23,17 @@ rings = 1
 [sub_resource type="BoxShape3D" id="BoxShape3D_dismantle"]
 size = Vector3(1.4, 1.4, 1.4)
 
+[sub_resource type="Gradient" id="Gradient_bar"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_bar"]
+gradient = SubResource("Gradient_bar")
+width = 32
+height = 4
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_load"]
+size = Vector3(1.6, 2.2, 1.6)
+
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_build"]
 properties/0/path = NodePath(".:sync_position")
 properties/0/spawn = true
@@ -36,6 +47,9 @@ properties/2/replication_mode = 0
 properties/3/path = NodePath(".:initial_health")
 properties/3/spawn = true
 properties/3/replication_mode = 0
+properties/4/path = NodePath(".:fuel")
+properties/4/spawn = true
+properties/4/replication_mode = 2
 
 [node name="BladeWhirl" type="StaticBody3D"]
 collision_layer = 8
@@ -55,6 +69,39 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
 
 [node name="Cog" parent="Blades" instance=ExtResource("4_cog")]
 transform = Transform3D(3.6, 0, 0, 0, 1.5, 0, 0, 0, 3.6, 0, 0, 0)
+
+[node name="FuelBar" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.48, 1.6, 0)
+
+[node name="Background" type="Sprite3D" parent="FuelBar"]
+modulate = Color(0.1, 0.1, 0.1, 0.8)
+centered = false
+pixel_size = 0.03
+billboard = 1
+no_depth_test = true
+texture = SubResource("GradientTexture2D_bar")
+
+[node name="Fill" type="Sprite3D" parent="FuelBar"]
+sorting_offset = 0.1
+modulate = Color(1, 0.45, 0.15, 1)
+centered = false
+pixel_size = 0.03
+billboard = 1
+no_depth_test = true
+texture = SubResource("GradientTexture2D_bar")
+
+[node name="LoadInteractable" type="Area3D" parent="."]
+collision_layer = 32
+collision_mask = 0
+monitoring = false
+script = ExtResource("3_dismantle")
+prompt_text = "Kohle nachlegen"
+extra_range = 1.0
+requires_carrying = true
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LoadInteractable"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("BoxShape3D_load")
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("2_health")

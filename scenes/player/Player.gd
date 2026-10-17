@@ -125,7 +125,9 @@ var _pickaxe_tween: Tween = null
 var _hold_target: InteractableComponent = null
 var _hold_time: float = 0.0
 ## Kaufen eines getragenen Angebots mit R: wie lange schon gehalten, und welcher Preis zuletzt gemeldet wurde.
-var _purchase_hold_time: float = 0.0
+## Laufendes Halten von R: worauf es wirkt und wie lange schon.
+var _secondary_subject: Object = null
+var _secondary_hold_time: float = 0.0
 var _carried_offer_price: int = 0
 
 ## Restzeit, in der ein Sprung noch erlaubt ist; am Boden immer voll.
@@ -220,7 +222,7 @@ func _physics_process(delta: float) -> void:
 	_update_interaction_target()
 	_handle_carry_input()
 	_handle_interact_input(delta)
-	_handle_purchase_input(delta)
+	_handle_secondary_input(delta)
 	# Baumodus genau dann, wenn eine gekaufte Kiste in der Hand liegt.
 	build.set_active(build.has_crate())
 	_swing_cooldown = maxf(0.0, _swing_cooldown - delta)
@@ -277,8 +279,9 @@ func _handle_interact_input(delta: float) -> void:
 		hold_progress_changed.emit(0.0)
 
 
-## Mit einem Angebot in der Hand: R lange genug halten kauft es (BlueprintCrate.BUY_HOLD_SECONDS).
-func _handle_purchase_input(delta: float) -> void:
+## R halten (InteractableComponent.SECONDARY_ACTION): wirkt auf das anvisierte Objekt, sofern es eine zweite
+## Halte-Aktion hat (z. B. Angebot kaufen, Falle spannen), sonst auf ein getragenes Angebot (kaufen).
+func _handle_secondary_input(delta: float) -> void:
 	var offer: BlueprintCrate = null
 	for item in carry.carried:
 		var crate := item as BlueprintCrate
@@ -288,16 +291,26 @@ func _handle_purchase_input(delta: float) -> void:
 	if price != _carried_offer_price:
 		_carried_offer_price = price
 		carried_offer_changed.emit(price)
-	if offer == null or not _pressed(&"purchase_carried"):
-		if _purchase_hold_time > 0.0:
-			_purchase_hold_time = 0.0
+	var target := _interaction_target if _interaction_target and _interaction_target.secondary_hold_seconds > 0.0 else null
+	var subject: Object = offer
+	if target:
+		subject = target
+	var duration := target.secondary_hold_seconds if target else BlueprintCrate.BUY_HOLD_SECONDS
+	if subject == null or subject != _secondary_subject or not _pressed(InteractableComponent.SECONDARY_ACTION):
+		if _secondary_hold_time > 0.0:
+			_secondary_hold_time = 0.0
 			hold_progress_changed.emit(0.0)
+		_secondary_subject = subject if subject and _just_pressed(InteractableComponent.SECONDARY_ACTION) else null
 		return
-	_purchase_hold_time += delta
-	hold_progress_changed.emit(minf(1.0, _purchase_hold_time / BlueprintCrate.BUY_HOLD_SECONDS))
-	if _purchase_hold_time >= BlueprintCrate.BUY_HOLD_SECONDS:
-		offer.request_purchase()
-		_purchase_hold_time = 0.0
+	_secondary_hold_time += delta
+	hold_progress_changed.emit(minf(1.0, _secondary_hold_time / duration))
+	if _secondary_hold_time >= duration:
+		if target:
+			target.request_secondary_hold()
+		else:
+			offer.request_purchase()
+		_secondary_hold_time = 0.0
+		_secondary_subject = null
 		hold_progress_changed.emit(0.0)
 
 
