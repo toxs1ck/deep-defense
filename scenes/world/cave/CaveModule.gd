@@ -12,9 +12,10 @@ extends Node3D
 ## Alles außer # und s ist begehbarer Boden. Boden- oder Schlitz-Tiles am Rand sind Ausgänge (Marker unter
 ## „Exits“, −Z zeigt hinaus); daran setzt der Kartengenerator später Module aneinander.
 ## Sichtbar sind die Kit-Teile: Wände stehen im Fels-Tile hinter der Kante und zeigen ihre Felsseite zum Boden.
-## In Innenecken laufen beide Wände ins diagonale Fels-Tile weiter und überschneiden sich dort, so bleibt keine Fuge;
-## an Außenecken verdeckt ein Eckpfeiler den Stoß. Die Kollision besteht aus einfachen Boxen: eine Bodenplatte, eine
-## Box hinter jeder Wandkante, zwei pro Schlitz.
+## Innenecken rundet das Eckteil (template-corner) auf dem Boden-Tile ab; dahinter laufen die Wände trotzdem weiter
+## bis ins diagonale Fels-Tile, damit zwischen Rundung und Nachbarwand nie ein Spalt bleibt. An Außenecken verdeckt
+## ein Eckpfeiler den Stoß. Die Kollision besteht aus einfachen Boxen: eine Bodenplatte, eine Box hinter jeder
+## Wandkante, drei entlang jeder Rundung, zwei pro Schlitz.
 
 const TILE_SIZE: float = 4.0
 ## Höhe einer Kit-Ebene; die gespiegelte zweite Ebene endet bei der doppelten Höhe (Decke).
@@ -40,6 +41,9 @@ const FLOOR_PIECES: Array[String] = ["template-floor", "template-floor", "templa
 const ELEVATOR_SCENE: PackedScene = preload("res://scenes/world/Elevator.tscn")
 const SHOP_TERMINAL_SCENE: PackedScene = preload("res://scenes/world/ShopTerminal.tscn")
 const SHOP_PAD_COLOR: Color = Color(0.85, 0.6, 0.2)
+
+## Innenseite der Rundung (template-corner, Fels bei +X/+Z), vereinfacht auf drei Kanten für die Kollision.
+const CORNER_ARC: Array[Vector2] = [Vector2(1.3, -2.4), Vector2(0.2, -0.7), Vector2(-0.7, 0.15), Vector2(-2.4, 1.1)]
 
 ## Himmelsrichtungen als Raster-Schritte: Osten, Süden, Westen, Norden.
 const DIRECTIONS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)]
@@ -142,8 +146,19 @@ func _build_tile(cell: Vector2i) -> void:
 			walled.append(d)
 		elif neighbor == "s":
 			slit.append(d)
-	var piece := FLOOR_PIECES[posmod(cell.x * 31 + cell.y * 17, FLOOR_PIECES.size())] if c == "." else "template-floor"
-	_add_piece(KIT % piece, center, 0.0)
+	var corner := _corner_direction(cell, walled, slit)
+	if corner >= 0:
+		# Im Kit liegt der Fels der Rundung bei +X/+Z, also zwischen Osten (0) und Süden (1).
+		var angle := -corner * PI / 2.0
+		_add_piece(KIT % "template-corner", center, angle)
+		var turn := Basis(Vector3.UP, angle)
+		for k in CORNER_ARC.size() - 1:
+			var a := turn * Vector3(CORNER_ARC[k].x, 0, CORNER_ARC[k].y)
+			var b := turn * Vector3(CORNER_ARC[k + 1].x, 0, CORNER_ARC[k + 1].y)
+			_add_wall_segment(center + a, center + b, turn * Vector3(1, 0, 1))
+	else:
+		var piece := FLOOR_PIECES[posmod(cell.x * 31 + cell.y * 17, FLOOR_PIECES.size())] if c == "." else "template-floor"
+		_add_piece(KIT % piece, center, 0.0)
 	for d in walled:
 		_build_wall(center, d)
 		# Innenecke: Wand und Nachbarwand laufen ins diagonale Fels-Tile weiter.
@@ -156,6 +171,18 @@ func _build_tile(cell: Vector2i) -> void:
 	for d in slit:
 		_build_slit_edge(center, d)
 	_build_content(c, cell, center)
+
+
+## Richtung der Rundung (0 = Fels im Osten und Süden, dann im Uhrzeigersinn) oder −1. Nur auf leerem Boden, weil
+## der Fels der Rundung bis zur Tile-Mitte reicht, wo sonst Marker und Deko stehen.
+func _corner_direction(cell: Vector2i, walled: Array[int], slit: Array[int]) -> int:
+	if _at(cell) != "." or walled.size() != 2 or not slit.is_empty():
+		return -1
+	for d in 4:
+		var e := (d + 1) % 4
+		if d in walled and e in walled and _at(cell + DIRECTIONS[d] + DIRECTIONS[e]) == "#":
+			return d
+	return -1
 
 
 ## Wand an einer Tile-Kante. template-wall liegt hinter der Kante (Richtung −Z im Kit).
@@ -285,6 +312,16 @@ func _build_exits() -> void:
 				marker.rotation.y = _facing_angle(direction)
 				_add(marker, exits, "Exit")
 				run.clear()
+
+
+## Kollisionsbox entlang einer Strecke, um ihre Dicke nach outward versetzt.
+func _add_wall_segment(a: Vector3, b: Vector3, outward: Vector3) -> void:
+	var along := b - a
+	var normal := Vector3(-along.z, 0, along.x).normalized()
+	if normal.dot(outward) < 0.0:
+		normal = -normal
+	_add_box((a + b) / 2.0 + normal * WALL_THICKNESS / 2.0 + Vector3.UP * WALL_HEIGHT / 2.0, atan2(-along.z, along.x),
+			Vector3(along.length(), WALL_HEIGHT, WALL_THICKNESS))
 
 
 ## Drehung um die Hochachse, die −Z (Kit-Vorderseite der Wände: dahinter liegt der Fels) auf dir dreht.
