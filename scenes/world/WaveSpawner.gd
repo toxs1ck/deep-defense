@@ -21,7 +21,8 @@ const ENEMY_SCENE: PackedScene = preload("res://scenes/enemies/Enemy.tscn")
 const SPAWN_GROUP: StringName = &"enemy_spawns"
 ## Namenspräfix der Eingangs-Marker; der Rest des Namens erscheint in der Vorschau (z. B. „EnemySpawnWest“ → „West“).
 const SPAWN_NAME_PREFIX: String = "EnemySpawn"
-## Heißt der Marker nur „EnemySpawn“ (wie im Höhlenmodul EnemyNest), kommt der Name vom Modul („NestWest“ → „West“).
+## Heißt der Marker nur „EnemySpawn“ oder „EnemySpawn“ plus Nummer (wie in den Höhlenmodulen), kommt der Name vom
+## Modul („NestWest“ → „West“).
 const NEST_NAME_PREFIX: String = "Nest"
 ## Zufälliger Versatz um den Eingang, damit Gegner nicht exakt aufeinander erscheinen.
 const SPAWN_JITTER: float = 1.0
@@ -40,6 +41,9 @@ var _group_left: int = 0
 var _total: int = 0
 var _resolved: int = 0
 var _warned: bool = false
+## Letzte Vorschau, damit später Beitretende sie auch bekommen.
+var _preview_enemies: PackedStringArray = PackedStringArray()
+var _preview_entrances: PackedStringArray = PackedStringArray()
 ## Nur Host: Zufall für Gruppengrößen, Abstände und Spawn-Versatz der geplanten Welle.
 var _timing_rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
@@ -116,12 +120,14 @@ func _plan_wave(round_number: int) -> void:
 	var entrance_names := PackedStringArray()
 	for point in _entrances:
 		entrance_names.append(_entrance_name(point))
+	_preview_enemies = enemy_names
+	_preview_entrances = entrance_names
 	_show_preview.rpc(enemy_names, entrance_names)
 
 
 func _entrance_name(point: Node3D) -> String:
 	var label := String(point.name).trim_prefix(SPAWN_NAME_PREFIX)
-	if label.is_empty() and point.get_parent() != null:
+	if (label.is_empty() or label.is_valid_int()) and point.get_parent() != null:
 		label = String(point.get_parent().name).trim_prefix(NEST_NAME_PREFIX)
 	return label
 
@@ -170,6 +176,8 @@ func _on_enemy_gone(_node: Node) -> void:
 func _on_player_joined(peer_id: int) -> void:
 	if multiplayer.is_server() and peer_id != multiplayer.get_unique_id():
 		_sync_progress.rpc_id(peer_id, _resolved, _total)
+		if not _preview_enemies.is_empty():
+			_show_preview.rpc_id(peer_id, _preview_enemies, _preview_entrances)
 
 
 @rpc("authority", "call_local", "reliable")
