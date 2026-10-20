@@ -23,13 +23,14 @@ einsetzen.
 
 Grafik: Kenney-Packs unter `assets/` (CC0). Das Cave Kit wird in Originalgröße genutzt: Ein Tile ist 4 m, also
 2 × 2 Baufelder. Über jedes Teil kommt eine senkrecht gespiegelte Kopie; so ist die Höhle 8 m hoch, der gespiegelte
-Boden bildet die Decke. Wände stehen im Fels-Tile hinter der Kante und zeigen ihre Felsseite zum Raum. Jedes Modul unter `scenes/world/cave/modules/` ist ein ASCII-Layout
+Boden bildet die Decke. Wände stehen im Fels-Tile hinter der Kante und zeigen ihre Felsseite zum Raum; in
+Innenecken laufen sie ins diagonale Fels-Tile weiter, an Außenecken steht ein Eckpfeiler. Jedes Modul unter `scenes/world/cave/modules/` ist ein ASCII-Layout
 (Eigenschaft `layout`, im Inspector editierbar), aus dem `CaveModule.gd` beim Laden Boden, Wände, abgerundete Ecken,
 Schlitze, Marker, Shop, Aufzug, Deko und Licht aufbaut. Zeichen: `#` Fels, `.` Boden, `s` Schlitz (nur für Spieler),
 `o` Erzstelle, `N` Gegner-Eingang, `E` Aufzug, `T` Würfel-Station, `P` zwei Shop-Stellplätze, `b`/`x`/`a`/`r` Deko,
 `L` Licht. Boden am Modulrand ist ein Ausgang (Marker unter „Exits“, −Z zeigt hinaus); die Ausgänge benachbarter
 Module müssen sich treffen. Die Kollision besteht aus einfachen Boxen (Bodenplatte, eine Box hinter jeder Wandkante,
-drei entlang jeder abgerundeten Ecke, zwei pro Schlitz). Vorhanden: ElevatorHall, Tunnel, OreRoom, OreRoomLarge,
+zwei pro Schlitz). Vorhanden: ElevatorHall, Tunnel, OreRoom, OreRoomLarge,
 EnemyNest, SlitPocket. Das Kit ist oben offen; die Decke ist in der Karte eine dunkle Platte.
 
 Bauen: Die Baufelder liegen genau auf den Tile-Kanten. Pro Feld steht höchstens ein Bauelement (auch keine Mauer auf

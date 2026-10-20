@@ -11,10 +11,10 @@ extends Node3D
 ##   b  Fass      x  Kisten           a  Amboss    r  Felsbrocken    L  zusätzliches Licht
 ## Alles außer # und s ist begehbarer Boden. Boden- oder Schlitz-Tiles am Rand sind Ausgänge (Marker unter
 ## „Exits“, −Z zeigt hinaus); daran setzt der Kartengenerator später Module aneinander.
-## Sichtbar sind die Kit-Teile: Wände stehen im Fels-Tile hinter der Kante und zeigen ihre Felsseite zum Boden,
-## Ecken von Räumen werden abgerundet (template-corner, nur auf leeren Boden-Tiles), Eckpfeiler verdecken Fugen.
-## Die Kollision besteht aus einfachen Boxen: eine Bodenplatte, eine Box hinter jeder Wandkante, drei entlang jeder
-## abgerundeten Ecke, zwei pro Schlitz.
+## Sichtbar sind die Kit-Teile: Wände stehen im Fels-Tile hinter der Kante und zeigen ihre Felsseite zum Boden.
+## In Innenecken laufen beide Wände ins diagonale Fels-Tile weiter und überschneiden sich dort, so bleibt keine Fuge;
+## an Außenecken verdeckt ein Eckpfeiler den Stoß. Die Kollision besteht aus einfachen Boxen: eine Bodenplatte, eine
+## Box hinter jeder Wandkante, zwei pro Schlitz.
 
 const TILE_SIZE: float = 4.0
 ## Höhe einer Kit-Ebene; die gespiegelte zweite Ebene endet bei der doppelten Höhe (Decke).
@@ -41,9 +41,6 @@ const ELEVATOR_SCENE: PackedScene = preload("res://scenes/world/Elevator.tscn")
 const SHOP_TERMINAL_SCENE: PackedScene = preload("res://scenes/world/ShopTerminal.tscn")
 const SHOP_PAD_COLOR: Color = Color(0.85, 0.6, 0.2)
 
-## Innenseite der abgerundeten Ecke (template-corner, Fels bei +X/+Z), vereinfacht auf drei Kanten.
-const CORNER_ARC: Array[Vector2] = [Vector2(1.3, -2.4), Vector2(0.2, -0.7), Vector2(-0.7, 0.15), Vector2(-2.4, 1.1)]
-
 ## Himmelsrichtungen als Raster-Schritte: Osten, Süden, Westen, Norden.
 const DIRECTIONS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)]
 
@@ -57,6 +54,7 @@ var _height: int = 0
 var _kit: Node3D
 var _collision: StaticBody3D
 var _shapes: Dictionary = {}
+var _placed: Dictionary = {}
 var _counter: int = 0
 
 
@@ -144,43 +142,20 @@ func _build_tile(cell: Vector2i) -> void:
 			walled.append(d)
 		elif neighbor == "s":
 			slit.append(d)
-	var corner := _corner_direction(cell, walled, slit)
-	if corner >= 0:
-		# Abgerundete Ecke: im Kit liegt der Fels bei +X/+Z, also zwischen Osten (0) und Süden (1).
-		var angle := -corner * PI / 2.0
-		_add_piece(KIT % "template-corner", center, angle)
-		var turn := Basis(Vector3.UP, angle)
-		for k in CORNER_ARC.size() - 1:
-			var a := turn * Vector3(CORNER_ARC[k].x, 0, CORNER_ARC[k].y)
-			var b := turn * Vector3(CORNER_ARC[k + 1].x, 0, CORNER_ARC[k + 1].y)
-			var outward := turn * Vector3(1, 0, 1)
-			_add_wall_segment(center + a, center + b, outward)
-		# Wo die Rundung auf die geraden Wände der Nachbarn trifft, bleibt sonst ein Spalt.
-		var along_a := Vector3(DIRECTIONS[corner].x, 0, DIRECTIONS[corner].y)
-		var along_b := Vector3(DIRECTIONS[(corner + 1) % 4].x, 0, DIRECTIONS[(corner + 1) % 4].y)
-		var toward := Vector2(along_a.x + along_b.x, along_a.z + along_b.z)
-		for end: Vector3 in [along_a - along_b, along_b - along_a]:
-			_add_piece(KIT % "template-wall-corner", center + end * TILE_SIZE / 2.0, _quadrant_angle(toward))
-	else:
-		var piece := FLOOR_PIECES[posmod(cell.x * 31 + cell.y * 17, FLOOR_PIECES.size())] if c == "." else "template-floor"
-		_add_piece(KIT % piece, center, 0.0)
-		for d in walled:
-			_build_wall(center, d)
-		for d in slit:
-			_build_slit_edge(center, d)
-	_build_content(c, cell, center)
-
-
-## Richtung der abgerundeten Ecke (0 = Fels im Osten und Süden, dann im Uhrzeigersinn), oder −1.
-func _corner_direction(cell: Vector2i, walled: Array[int], slit: Array[int]) -> int:
-	# Der Fels der Rundung reicht bis zur Tile-Mitte; Marker und Deko brauchen dort freien Boden.
-	if _at(cell) != "." or walled.size() != 2 or not slit.is_empty():
-		return -1
-	for d in 4:
+	var piece := FLOOR_PIECES[posmod(cell.x * 31 + cell.y * 17, FLOOR_PIECES.size())] if c == "." else "template-floor"
+	_add_piece(KIT % piece, center, 0.0)
+	for d in walled:
+		_build_wall(center, d)
+		# Innenecke: Wand und Nachbarwand laufen ins diagonale Fels-Tile weiter.
 		var e := (d + 1) % 4
-		if d in walled and e in walled and _is_rock(cell + DIRECTIONS[d] + DIRECTIONS[e]):
-			return d
-	return -1
+		if e in walled and _at(cell + DIRECTIONS[d] + DIRECTIONS[e]) == "#":
+			var diagonal := center + Vector3(DIRECTIONS[d].x + DIRECTIONS[e].x, 0, DIRECTIONS[d].y + DIRECTIONS[e].y) * TILE_SIZE
+			for side: int in [d, e]:
+				var dir := Vector3(DIRECTIONS[side].x, 0, DIRECTIONS[side].y)
+				_add_piece(KIT % "template-wall", diagonal, _facing_angle(-dir))
+	for d in slit:
+		_build_slit_edge(center, d)
+	_build_content(c, cell, center)
 
 
 ## Wand an einer Tile-Kante. template-wall liegt hinter der Kante (Richtung −Z im Kit).
@@ -227,34 +202,17 @@ func _build_slit(cell: Vector2i, center: Vector3) -> void:
 		_add_box(center + offset + Vector3.UP * WALL_HEIGHT / 2.0, angle, Vector3(TILE_SIZE, WALL_HEIGHT, side_width))
 
 
-## An Rasterpunkten, wo Wände über Eck zusammenstoßen, verdeckt ein Eckstück die Fuge.
+## An Außenecken (der Boden läuft um eine Fels-Ecke herum) verdeckt ein Eckpfeiler den Stoß der beiden Wände.
 func _build_vertex(vertex: Vector2i) -> void:
 	var quadrants: Array[Vector2i] = [Vector2i(-1, -1), Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 0)]
 	var rock: Array[Vector2i] = []
 	for q in quadrants:
 		if _is_rock(vertex + q):
 			rock.append(q)
-	var target := Vector2i(-2, -2)
-	if rock.size() == 1:
-		target = rock[0]
-	elif rock.size() == 3:
-		for q in quadrants:
-			if not q in rock:
-				# Der Boden-Tile rundet die Ecke womöglich schon selbst ab.
-				var floor_cell := vertex + q
-				var walled: Array[int] = []
-				var slit: Array[int] = []
-				for d in 4:
-					var neighbor := _at(floor_cell + DIRECTIONS[d])
-					if neighbor == "#":
-						walled.append(d)
-					elif neighbor == "s":
-						slit.append(d)
-				if _corner_direction(floor_cell, walled, slit) >= 0:
-					return
-				target = Vector2i(-1, -1) - q
-	if target.x < -1:
+	# Nur Außenecken (ein Fels-Tile); Innenecken schließen die verlängerten Wände.
+	if rock.size() != 1:
 		return
+	var target := rock[0]
 	if _at(vertex + target) == "s":
 		return
 	var point := _tile_center(Vector2i.ZERO) + Vector3(vertex.x - 0.5, 0, vertex.y - 0.5) * TILE_SIZE
@@ -334,18 +292,13 @@ static func _facing_angle(dir: Vector3) -> float:
 	return atan2(-dir.x, -dir.z)
 
 
-func _add_wall_segment(a: Vector3, b: Vector3, outward: Vector3) -> void:
-	var along := b - a
-	var normal := Vector3(-along.z, 0, along.x).normalized()
-	if normal.dot(outward) < 0.0:
-		normal = -normal
-	var angle := atan2(-along.z, along.x)
-	_add_box((a + b) / 2.0 + normal * WALL_THICKNESS / 2.0 + Vector3.UP * WALL_HEIGHT / 2.0, angle,
-			Vector3(along.length(), WALL_HEIGHT, WALL_THICKNESS))
-
-
-## Kit-Teil samt gespiegelter Kopie darüber (zweite Ebene bis zur Decke).
+## Kit-Teil samt gespiegelter Kopie darüber (zweite Ebene bis zur Decke). Dasselbe Teil an derselben Stelle kommt
+## nur einmal (doppelte, deckungsgleiche Flächen würden flackern).
 func _add_piece(path: String, at: Vector3, angle: float) -> void:
+	var key := "%s|%s|%.2f" % [path, at.snappedf(0.01), wrapf(angle, -PI, PI)]
+	if _placed.has(key):
+		return
+	_placed[key] = true
 	var scene := load(path) as PackedScene
 	for upper: bool in [false, true]:
 		var piece := scene.instantiate() as Node3D
